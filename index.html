@@ -20,6 +20,8 @@
   #hud { position: fixed; inset: 0; pointer-events: none; }
   #topbar { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
   .chip { background: var(--panel); padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+  #musicBtn { pointer-events: auto; border: 0; color: inherit; font: inherit; cursor: pointer; }
+  #musicBtn.off { opacity: .45; text-decoration: line-through; }
   #tickets { position: absolute; top: 54px; left: 10px; display: flex; flex-direction: column; gap: 6px; width: 190px; }
   .ticket { background: var(--paper); color: var(--ink); border-radius: 4px; padding: 6px 9px 7px; font-size: 12px;
     box-shadow: 0 2px 6px rgba(0,0,0,.4); border-top: 4px solid var(--red); }
@@ -172,6 +174,7 @@
     <div class="chip" id="money">¥0</div>
     <div class="chip" id="rating">평점 —</div>
     <div class="chip" id="queueChip" style="display:none"></div>
+    <button class="chip" id="musicBtn" title="배경 음악 켜기/끄기">🎵</button>
   </div>
   <div id="tickets"></div>
   <div id="labels"></div>
@@ -393,6 +396,40 @@ const Sound = (() => {
     src.connect(f).connect(g).connect(master); src.start();
     return g;
   }
+  // ---- 배경 음악 (music()에서 켜고 끔) ----
+  let musicGain = null, musicTimer = null, nextBeat = 0, beat = 0, rainGain = null, melo = 3;
+  const N = m => 440 * Math.pow(2, (m - 69) / 12);                 // MIDI 번호 → 주파수
+  const YO = [62, 64, 67, 69, 71, 74, 76, 79, 81];                  // D E G A B (요나누키 음계)
+  const BARS = [[50, 57, 62, 66], [47, 54, 62, 66], [43, 50, 59, 62], [45, 52, 57, 64]]; // D · Bm · G · A
+  const EIGHTH = 60 / 80 / 2;                                       // 80 BPM 8분음표
+  function voice(freq, t, dur, vol, type = 'triangle', cutoff = 2400) {
+    const o = ctx.createOscillator(); o.type = type; o.frequency.value = freq;
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cutoff;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f).connect(g).connect(musicGain); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function pluck(m, t, vol = 0.07) { voice(N(m), t, 1.4, vol); voice(N(m) * 2.01, t, 0.5, vol * 0.25, 'sine'); }
+  function scheduleMusic() {
+    while (nextBeat < ctx.currentTime + 0.35) {
+      const t = nextBeat, i = beat % 16, bar = BARS[Math.floor(beat / 16) % 4];
+      if (i === 0) { // 마디 첫 박: 화음 + 베이스
+        for (const m of bar.slice(1)) { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = N(m);
+          g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.025, t + 0.6); g.gain.linearRampToValueAtTime(0.0001, t + EIGHTH * 16);
+          o.connect(g).connect(musicGain); o.start(t); o.stop(t + EIGHTH * 16 + 0.1); }
+        voice(N(bar[0] - 12), t, 1.6, 0.12, 'sine', 600);
+      }
+      if (i === 8) voice(N(bar[0] - 5), t, 1.2, 0.08, 'sine', 600);
+      if (i === 4 || i === 12) { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 1800; o.type = 'square'; // 나무 딱
+        g.gain.setValueAtTime(0.012, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04); o.connect(g).connect(musicGain); o.start(t); o.stop(t + 0.05); }
+      if (i % 2 === 0 && Math.random() < 0.6) { // 멜로디: 음계 위를 천천히 오르내림
+        melo = Math.max(0, Math.min(YO.length - 1, melo + [-2, -1, -1, 0, 1, 1, 2][Math.floor(Math.random() * 7)]));
+        pluck(YO[melo], t);
+        if (Math.random() < 0.15) pluck(YO[Math.max(0, melo - 2)], t + EIGHTH);
+      }
+      nextBeat += EIGHTH; beat++;
+    }
+  }
   function tone(freq, dur, { type = 'sine', vol = 0.15, slide = 0, delay = 0 } = {}) {
     if (!ctx) return;
     const t = ctx.currentTime + delay;
@@ -427,6 +464,16 @@ const Sound = (() => {
       loopNoise('lowpass', 240, 0.7).gain.value = 0.025; // 가게 웅성거림
     },
     suspend() { ctx?.suspend(); },
+    // 비 오는 날 빗소리
+    setRain(on) { if (!ctx) return; rainGain ??= loopNoise('highpass', 900, 0.4); rainGain.gain.setTargetAtTime(on ? 0.05 : 0, ctx.currentTime, 0.5); },
+    // 배경 음악: 일본 음계(요나누키)로 코토처럼 뜯는 멜로디 + 부드러운 화음 + 베이스를 그 자리에서 만들어 연주
+    music(on) {
+      if (!ctx) return;
+      if (!musicGain) { musicGain = ctx.createGain(); musicGain.gain.value = 0; musicGain.connect(master); }
+      musicGain.gain.setTargetAtTime(on ? 0.5 : 0, ctx.currentTime, 0.4);
+      if (on && !musicTimer) { nextBeat = ctx.currentTime + 0.1; musicTimer = setInterval(scheduleMusic, 100); }
+      if (!on && musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+    },
     update(dt) {
       if (!ctx) return;
       const now = ctx.currentTime;
@@ -2549,6 +2596,7 @@ function startDay() {
   const lv = levelCfg();
   G.event = pickEvent(day);
   if (day === 1 && !tutDone()) startTutorial();
+  Sound.music(musicOn); Sound.setRain(G.event === 'rain');
   const e = ev();
   toast(`📅 <b>Day ${day} — ${lv.title}</b><br><small>${lv.note}</small>` + (G.event !== 'normal' ? `<br><b>${e.icon} 오늘은 ${e.name}!</b> <small>${e.note}</small>` : ''), 'warn');
 }
@@ -2650,6 +2698,16 @@ const Promo = (() => {
   };
 })();
 document.getElementById('promoBtn').onclick = () => { Sound.init(); Promo.open(); };
+// 배경 음악 켜기/끄기 (저장)
+let musicOn = store.get('ramen-music', true);
+const musicBtn = document.getElementById('musicBtn');
+musicBtn.classList.toggle('off', !musicOn);
+musicBtn.onclick = e => {
+  e.currentTarget.blur();
+  musicOn = !musicOn; store.set('ramen-music', musicOn);
+  musicBtn.classList.toggle('off', !musicOn);
+  Sound.music(musicOn);
+};
 document.getElementById('dayInfo').innerHTML = startInfoHtml();
 renderShop('startShop');
 document.getElementById('startBtn').textContent = day > 1 ? `Day ${day} 영업 시작` : '영업 시작';
