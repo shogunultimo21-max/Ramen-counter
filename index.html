@@ -43,13 +43,6 @@
     background: rgba(255,255,255,.85); box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
   #hint { position: absolute; left: 50%; top: calc(50% + 18px); transform: translateX(-50%); background: var(--panel);
     padding: 4px 10px; border-radius: 6px; font-size: 14px; white-space: nowrap; display: none; }
-  #potPanel { position: absolute; top: 100px; right: 12px; background: var(--panel); border-radius: 8px; padding: 8px 10px; width: 190px; }
-  #potPanel:empty { display: none; }
-  #potPanel h5 { margin: 0 0 6px; font-size: 13px; }
-  #potPanel .row { display: grid; grid-template-columns: 22px 74px 1fr; align-items: center; gap: 4px; font-size: 13px; font-weight: 700;
-    padding: 3px 4px; border-radius: 5px; margin-bottom: 3px; }
-  #potPanel .row > b { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: #fff; color: #2b211b; align-items: center; justify-content: center; }
-  #potPanel .doneness { width: 100%; margin: 0; }
   .wl.firm-raw, .row.firm-raw { background: #555; color: #fff; }
   .wl.firm-katame, .row.firm-katame { background: #f5dc7a; color: #2b211b; }
   .wl.firm-futsu, .row.firm-futsu { background: #e9b544; color: #2b211b; }
@@ -85,6 +78,14 @@
   .kit-btn.in::after { content: '✓'; position: absolute; top: 2px; left: 5px; color: #2f7a3a; font-size: 13px; }
   .kit-btn.grill { background: #ffd2b8; }
   .kit-btn.off { opacity: .45; }
+  /* 뒤돌았을 때 아래 가운데: 면 바구니 버튼판 (솥 안 자리와 같은 배치) */
+  #basketPad { position: absolute; bottom: calc(8px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: grid; gap: 5px;
+    pointer-events: auto; background: rgba(30, 22, 16, .62); padding: 5px; border-radius: 14px; }
+  #basketPad[hidden] { display: none; }
+  .bk-btn { width: 92px; height: 40px; border: 0; border-radius: 10px; font: inherit; font-weight: 800; font-size: 13px; background: var(--paper); color: var(--ink);
+    display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; box-shadow: 0 3px 0 #b99e74; }
+  .bk-btn b { display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: #2b211b; color: #fff; align-items: center; justify-content: center; }
+  body.mobile .bk-btn { width: 80px; height: 34px; font-size: 11.5px; }
   /* 주문대로 완성된 그릇 */
   .wl.done { background: #2f8a3e; color: #fff; font-size: 13px; padding: 4px 9px; box-shadow: 0 0 0 2px #bff0c8; }
   .wl.done small { opacity: .9; font-size: 11px; }
@@ -216,7 +217,6 @@
   body.mobile .ticket .line { line-height: 1.3; }
   body.mobile .ticket .tag { font-size: 9.5px; }
   body.mobile #hand { font-size: 11px; bottom: 70px; padding: 3px 10px; }
-  body.mobile #potPanel { display: none; } /* 솥을 가려서 숨김 — 바구니 위 익힘 이름표로 충분 */
   body.mobile .wl { font-size: 10px; padding: 2px 5px; }
   body.mobile .wl.tray, body.mobile .wl.tray small { font-size: 9px; }
   body.mobile .wl.say, body.mobile .wl.bubble { font-size: 11px; }
@@ -260,10 +260,10 @@
   <div id="toast"></div>
   <div id="guide"></div>
   <div id="tut"></div>
-  <div id="potPanel"></div>
   <!-- 조작 버튼: 왼손 엄지(뒤돌기·빼기) / 오른손 엄지(내기·버리기) -->
   <div id="barL" class="thumbs"><button id="mTurn">↻ 뒤돌기</button><button id="mUndo">↶ 빼기</button></div>
   <div id="kit"></div>
+  <div id="basketPad"></div>
   <div id="barR" class="thumbs"><button id="mServe">🍜 내기</button><button id="mTrash">🗑 버리기</button></div>
 </div>
 
@@ -1389,10 +1389,10 @@ function makeNoodleBasket(noodleMatColor = 0xf2d27a) {
   const noodles = cyl(0.07, 0.068, 0.12, 16, mat(noodleMatColor), 0, -0.1, 0, g);
   return { group: g, noodles };
 }
-// 셰프가 뒤돌아 봤을 때 1 2 (안쪽) / 3 4 (바깥쪽) 순서
+// 자리는 basketLayout()이 2줄 격자로 정함
 // 면 바구니: 기본 4개(네모 배치), 업그레이드하면 6개(둥글게 배치)
 const BASKET_LETTERS = '123456'; // 바구니 번호
-const BASKET_POS = [[0.16, 0.16], [-0.16, 0.16], [0.16, -0.16], [-0.16, -0.16], [0, 0], [0, 0]];
+const BASKET_POS = [[0.15, 0.15], [-0.15, 0.15], [0.15, -0.15], [-0.15, -0.15], [0, 0], [0, 0]]; // 처음 만들 때 자리 (곧 basketLayout이 정리)
 const baskets = BASKET_POS.map(([dx, dz], i) => {
   const g = new THREE.Group(); g.position.set(dx, 0.26, dz); noodlePot.add(g); // 바구니 입구가 물 위로 살짝
   const arm = new THREE.Group(); arm.rotation.y = Math.atan2(-dx, -dz); g.add(arm); // 손잡이가 솥 벽 쪽을 향하게
@@ -1402,14 +1402,26 @@ const baskets = BASKET_POS.map(([dx, dz], i) => {
   interact(g, { kind: 'basket', i, lift: 0.04 });
   return { group: g, arm, noodles, num, cooking: false, t: 0 };
 });
+// 바구니 자리는 2줄 격자로 고정: 뒤돌아 봤을 때 뒷줄 1 2 (3) / 앞줄 3 4 (4 5 6)
+// (뒤돌면 화면 오른쪽 = 월드 -x, 위쪽(먼 쪽) = +z)
+const BASKET_GRID = {
+  4: { cols: 2, xs: [0.15, -0.15], zs: [0.15, -0.15] },
+  6: { cols: 3, xs: [0.22, 0, -0.22], zs: [0.14, -0.14] },
+};
+const basketHolder = new THREE.Group(); noodlePot.add(basketHolder); // 칸막이 철망 (자리를 눈으로 보이게)
 function basketLayout() {
-  const n = upgValue('baskets');
+  const n = upgValue('baskets'), grid = BASKET_GRID[n];
   baskets.forEach((b, i) => {
     b.group.visible = i < n;
-    if (n === 6) { const a = Math.PI / 6 + i * Math.PI / 3; b.group.position.set(Math.cos(a) * 0.25, 0.26, Math.sin(a) * 0.25); }
-    else if (i < 4) b.group.position.set(BASKET_POS[i][0], 0.26, BASKET_POS[i][1]);
-    b.arm.rotation.y = Math.atan2(-b.group.position.x, -b.group.position.z);
+    if (i >= n) return;
+    const x = grid.xs[i % grid.cols], z = grid.zs[Math.floor(i / grid.cols)];
+    b.group.position.set(x, 0.26, z);
+    b.arm.rotation.y = Math.atan2(-x, -z);
   });
+  basketHolder.clear();
+  const bar = (w, d, x, z) => box(w, 0.012, d, basketMetal, x, 0.25, z, basketHolder);
+  bar(0.78, 0.012, 0, 0);                                                     // 앞줄·뒷줄 사이
+  for (let c = 0; c < grid.cols - 1; c++) bar(0.012, 0.66, (grid.xs[c] + grid.xs[c + 1]) / 2, 0); // 칸 사이
 }
 label('면 솥', -0.45, 1.45, 1.2);
 // 육수 냄비: 낮은 육수 화구 위의 큰 통 (돈코츠는 아주 큰 들통)
@@ -2849,6 +2861,25 @@ const KIT_ICON = (() => {
     miso: draw(g => { g.fillStyle = '#e9e2d2'; g.beginPath(); g.roundRect(10, 22, 44, 34, 8); g.fill(); g.fillStyle = '#b07a3a'; g.beginPath(); g.ellipse(32, 24, 22, 7, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = '#c4a27a'; g.save(); g.translate(40, 12); g.rotate(0.5); g.fillRect(0, 0, 5, 22); g.restore(); }),
   };
 })();
+// 면 바구니 버튼판: 뒤돌았을 때 재료 버튼 대신 아래에 보임. 솥 안 배치와 같은 격자
+function updateBasketPad() {
+  const pad = document.getElementById('basketPad'), kit = document.getElementById('kit');
+  const show = G.running && facingBack;
+  pad.hidden = !show; kit.hidden = show;
+  if (!show) return;
+  const n = upgValue('baskets');
+  if (pad.childElementCount !== n) {
+    pad.style.gridTemplateColumns = `repeat(${BASKET_GRID[n].cols}, auto)`;
+    pad.innerHTML = baskets.slice(0, n).map((b, i) => `<button class="bk-btn" data-i="${i}"><b>${i + 1}</b><span></span></button>`).join('');
+    pad.querySelectorAll('.bk-btn').forEach(el => el.addEventListener('click', e => { e.currentTarget.blur(); if (G.running && !G.paused) act({ kind: 'basket', i: +el.dataset.i }); }));
+  }
+  pad.querySelectorAll('.bk-btn').forEach((el, i) => {
+    const b = baskets[i], f = b.cooking ? firmOf(b.t) : null;
+    const txt = f ? FIRM_ALL[f] : '비었음';
+    const span = el.querySelector('span'); if (span.textContent !== txt) span.textContent = txt;
+    el.className = 'bk-btn' + (f ? ` row firm-${f}` : '');
+  });
+}
 function buildKit() {
   const kit = document.getElementById('kit');
   const items = [
@@ -2935,21 +2966,15 @@ function worldLabel(key, pos, html, cls = 'wl') {
 function updateLabels() {
   for (const el of labelEls.values()) el._seen = false;
   const wp = new THREE.Vector3();
-  const panel = [];
   baskets.forEach((b, i) => {
     b.num.visible = !b.cooking;
     if (!b.cooking) return;
     const f = firmOf(b.t);
     b.noodles.material.color.setHex(FIRM_COLOR[f]);
-    // 안쪽 줄(1·2)은 더 높이 띄워서 바깥쪽 줄(3·4) 라벨과 겹치지 않게
-    b.group.getWorldPosition(wp); wp.y += i < 2 ? 0.34 : 0.18;
-    const pct = Math.min(1, b.t / 33) * 100;
+    b.group.getWorldPosition(wp); wp.y += 0.1; // 바구니 바로 위 (모두 같은 높이)
     worldLabel('basket' + i, wp, `<b>${BASKET_LETTERS[i]}</b> ${FIRM_ALL[f]}`, `wl firm-${f}`);
-    panel.push(`<div class="row firm-${f}"><b>${BASKET_LETTERS[i]}</b><span>${FIRM_ALL[f]}</span><div class="doneness"><b style="left:${pct}%"></b></div></div>`);
   });
-  const pp = document.getElementById('potPanel');
-  const html = panel.length ? '<h5>🍜 면 솥</h5>' + panel.join('') : '';
-  if (pp._html !== html) { pp.innerHTML = html; pp._html = html; }
+  updateBasketPad();
   // 토핑 통 이름·남은 양은 아래 재료 버튼 줄(#kit)에 보임
   // 방금 그릇에 넣은/뺀 것 ("+파", "−김")
   for (const [i, p] of Object.entries(G.pop)) {
