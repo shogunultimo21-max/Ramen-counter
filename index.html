@@ -80,6 +80,7 @@
   .kit-btn.in { background: #d6eac4; }
   .kit-btn.in::after { content: '✓'; position: absolute; top: 2px; left: 5px; color: #2f7a3a; font-size: 13px; }
   .kit-btn.grill { background: #ffd2b8; }
+  .kit-btn.off { opacity: .45; }
   .kit-btn .cnt { position: absolute; top: -6px; right: -6px; background: #2b211b; color: #fff; font-style: normal; font-size: 10px; border-radius: 999px; padding: 1px 6px; }
   .kit-btn .cnt.empty { background: #b8322a; }
   .kit-btn .cnt.fill { background: #d9a21b; color: #2b211b; }
@@ -345,7 +346,7 @@ const LEVELS = [
   { title: '첫 영업', menu: ['tonkotsu'], stock: false, spawn: 1.0,
     note: '돈코츠 라멘 한 가지로 시작해요.' },
   { title: '토핑 재고', menu: ['tonkotsu'], stock: true, spawn: 0.95,
-    note: '오늘부터 토핑이 떨어져요! 토핑 통이 비면 <b>조리대 아래 냉장고</b>를 클릭해 꺼낸 뒤, 토핑 통을 클릭해 보충하세요.' },
+    note: '오늘부터 토핑이 떨어져요! 버튼에 <b>채우기</b>가 뜨면 한 번 누르세요. 냉장고에서 2초 만에 채워져요.' },
   { title: '쇼유 라멘 개시', menu: ['tonkotsu', 'shoyu'], stock: true, spawn: 0.9,
     note: '새 메뉴 <b>쇼유 라멘</b>! 뒤쪽에 쇼유 육수 냄비가 생겼어요. 주문서를 보고 맞는 육수를 담으세요. (쇼유는 목이버섯이 기본으로 안 들어가요)' },
   { title: '점심 러시', menu: ['tonkotsu', 'shoyu'], stock: true, spawn: 0.75,
@@ -353,7 +354,7 @@ const LEVELS = [
   { title: '멘마 입고', menu: ['tonkotsu', 'shoyu'], stock: true, spawn: 0.75, tops: ['menma'],
     note: '새 토핑 <b>멘마</b>(죽순 절임)! 쇼유 라멘에는 기본으로 올라가고, 돈코츠에 추가하는 손님도 있어요.' },
   { title: '미소 라멘 개시', menu: ['tonkotsu', 'shoyu', 'miso'], stock: true, spawn: 0.8, tops: ['menma', 'corn'],
-    note: '새 메뉴 <b>미소 라멘</b>! 그릇에 <b>미소 항아리</b>(그릇 더미 뒤)를 클릭해 된장을 넣고, <b>돈코츠 육수</b>를 부어요. 새 토핑 <b>콘</b>도 올려 주세요.' },
+    note: '새 메뉴 <b>미소 라멘</b>! 빈 그릇에 아래 <b>미소</b> 버튼으로 된장을 넣고, <b>돈코츠 육수</b>를 부어요. 새 토핑 <b>콘</b>도 올려 주세요.' },
   { title: '주말 러시', menu: ['tonkotsu', 'shoyu', 'miso'], stock: true, spawn: 0.65, tops: ['menma', 'corn'],
     note: '주말이라 손님이 몰려와요! 업그레이드를 잘 써 보세요.' },
 ];
@@ -2359,17 +2360,20 @@ const MOBILE = params.has('mobile') || matchMedia('(pointer: coarse)').matches;
 if (MOBILE) document.body.classList.add('mobile');
 function isShown(o) { while (o) { if (!o.visible) return false; o = o.parent; } return true; }
 const AIM_ASSIST_PX = MOBILE ? 120 : 90; // 손가락은 커서보다 덜 정확하니 더 넓게
+// 토핑 통·그릴·미소 항아리·냉장고는 아래 버튼으로만 (화면에서 잘못 눌리지 않게)
+const TAP_OFF = new Set(['topping', 'grill', 'miso', 'fridge']);
+const tappable = d => d && !TAP_OFF.has(d.kind);
 const aimTmp = new THREE.Vector3();
 function aimed() {
   const ndc = dragMode ? aimNDC : new THREE.Vector2(0, 0);
   raycaster.setFromCamera(ndc, camera);
   const hits = raycaster.intersectObjects(interactMeshes, false);
-  for (const h of hits) if (isShown(h.object)) return h.object.userData.desc;
+  for (const h of hits) if (isShown(h.object) && tappable(h.object.userData.desc)) return h.object.userData.desc;
   // 조준 보정: 정확히 맞지 않아도 화면에서 가장 가까운 물건을 고른다
   const sx = (ndc.x + 1) / 2 * innerWidth, sy = (1 - ndc.y) / 2 * innerHeight;
   let best = null, bestDist = AIM_ASSIST_PX;
   for (const d of interactDescs) {
-    if (!isShown(d.anchor)) continue;
+    if (!isShown(d.anchor) || !tappable(d)) continue;
     d.anchor.getWorldPosition(aimTmp); aimTmp.y += d.lift ?? 0.05;
     if (aimTmp.distanceTo(camera.position) > 4.2) continue;
     aimTmp.project(camera);
@@ -2445,12 +2449,17 @@ function act(d) {
         G.bowls[d.slot] = null; G.active = null;
         setHand({ type: 'bowl', bowl: b }); Sound.pick(); return;
       }
-      // 손에 든 걸 그 그릇에 넣음 (선택한 그릇은 바뀌지 않음 — 토핑이 엉뚱한 그릇에 가지 않게)
+      // 손에 든 걸 그 그릇에 넣음 — 순서는 꼭 육수 → 면 → 챠슈·토핑
       if (h.type === 'broth') { if (b.broth != null) return toast('육수는 이미 들어 있어요', 'warn'); b.broth = h.ramen; b.temp = 92; Sound.pour(); addTo(b, 'broth', `${RAMEN[h.ramen].name} 육수`); }
-      else if (h.type === 'noodles') { if (b.noodles != null) return toast('면은 이미 들어 있어요', 'warn'); b.noodles = h.t; Sound.splash(); addTo(b, 'noodles', '면'); }
-      else if (h.type === 'chashu') { if (b.chashu.length >= 3) return toast('챠슈는 3장까지만', 'warn'); b.chashu.push(h.q); addTo(b, 'chashu', '챠슈'); }
-      else if (h.type === 'topping') { if (b.top.has(h.key)) return toast(`${TOPPINGS[h.key]}는 이미 올렸어요`, 'warn'); b.top.add(h.key); addTo(b, 'top', TOPPINGS[h.key], h.key); }
-      else return;
+      else if (h.type === 'noodles') {
+        if (b.broth == null) return toast('육수를 먼저 부어요', 'warn');
+        if (b.noodles != null) return toast('면은 이미 들어 있어요', 'warn');
+        b.noodles = h.t; Sound.splash(); addTo(b, 'noodles', '면');
+      } else if (h.type === 'chashu') {
+        if (!readyForToppings(b)) return toast('챠슈는 육수와 면을 넣은 다음에 올려요', 'warn');
+        if (b.chashu.length >= 3) return toast('챠슈는 3장까지만', 'warn');
+        b.chashu.push(h.q); addTo(b, 'chashu', '챠슈');
+      } else return;
       b.refresh(); setHand(null); Sound.place();
       if (G.active == null) G.active = d.slot;
       return;
@@ -2468,24 +2477,22 @@ function act(d) {
       setHand({ type: 'broth', ramen: d.ramen }); Sound.pour();
       return;
     }
-    case 'topping': {
-      if (h) return;
+    case 'topping': { // 아래 토핑 버튼: 육수·면이 든 그릇에만 올라감
       const stockOn = levelCfg().stock;
-      const b = activeBowl();
-      if (b?.top.has(d.key)) return toast(`${TOPPINGS[d.key]}는 이미 올렸어요 (방금 넣은 거라면 ↶로 빼기)`, 'warn');
       if (G.refill[d.key] != null) return toast(`${TOPPINGS[d.key]} 꺼내는 중이에요… 조금만 기다려요`, 'warn');
       if (stockOn && G.stock[d.key] <= 0) return startRefill(d.key); // 비었으면 냉장고에서 알아서 꺼내 채움
+      const b = toppingTarget();
+      if (!b) return toast('토핑은 육수와 면을 넣은 그릇에 올려요', 'warn');
+      if (b.top.has(d.key)) return toast(`${TOPPINGS[d.key]}는 이미 올렸어요 (방금 넣은 거라면 ↶로 빼기)`, 'warn');
       if (stockOn) { G.stock[d.key]--; updateTray(d.key); }
-      if (!b) { setHand({ type: 'topping', key: d.key }); Sound.pick(); return; }
       b.top.add(d.key); b.refresh(); Sound.place(); addTo(b, 'top', TOPPINGS[d.key], d.key);
       return;
     }
-    case 'miso': {
-      if (h) return;
-      const b = activeBowl();
-      if (!b) return toast('먼저 그릇을 놓고 선택하세요', 'warn');
-      if (b.miso) return toast('미소는 이미 넣었어요 (방금 넣은 거라면 ↶로 빼기)', 'warn');
-      if (b.broth != null) return toast('미소는 육수를 붓기 전에 넣어요', 'warn');
+    case 'miso': { // 미소는 육수 붓기 전: 선택한 그릇, 아니면 아직 육수 없는 첫 그릇
+      const a = activeBowl();
+      const b = a && a.broth == null && !a.miso ? a : G.bowls.find(x => x && x.broth == null && !x.miso);
+      if (!b) return toast(a?.miso ? '미소는 이미 넣었어요' : '미소는 육수를 붓기 전에 넣어요 — 빈 그릇을 먼저 놓으세요', 'warn');
+      G.active = G.bowls.indexOf(b);
       b.miso = true; b.refresh(); Sound.place(); addTo(b, 'miso', '미소');
       return;
     }
@@ -2502,6 +2509,17 @@ function act(d) {
       return;
     }
   }
+}
+// 챠슈·토핑을 올릴 그릇: 육수와 면이 다 들어간 그릇만.
+// 선택한 그릇이 아직 준비 전이면, 준비된 그릇 중 왼쪽 것으로 (그 그릇을 선택)
+const readyForToppings = b => !!b && b.broth != null && b.noodles != null;
+function toppingTarget() {
+  const a = activeBowl();
+  if (readyForToppings(a)) return a;
+  const i = G.bowls.findIndex(readyForToppings);
+  if (i < 0) return null;
+  G.active = i;
+  return G.bowls[i];
 }
 function placeBowl(b, i) {
   G.bowls[i] = b;
@@ -2585,7 +2603,7 @@ function grillEnd() {
   if (!G.grill.holding) return;
   const t = G.grill.t; G.grill.holding = false; grillMeat.visible = false; Sound.setSizzle(false);
   const q = t < 0.5 ? 'raw' : t <= 0.72 ? 'good' : 'burnt';
-  const b = activeBowl();
+  const b = toppingTarget(); // 육수·면이 든 그릇에만
   if (b && b.chashu.length < 3) { b.chashu.push(q); b.refresh(); addTo(b, 'chashu', '챠슈'); }
   else setHand({ type: 'chashu', q });
   if (q === 'good') Sound.pick(); else Sound.normal();
@@ -2817,6 +2835,7 @@ function buildKit() {
       b.addEventListener('pointerdown', e => {
         e.preventDefault(); if (!G.running || G.paused) return;
         if (G.hand) return toast('손을 먼저 비우세요 (🗑 버리기)', 'warn');
+        if (!G.bowls.some(readyForToppings)) return toast('챠슈는 육수와 면을 넣은 그릇에 올려요', 'warn');
         b.classList.add('held'); grillStart();
       });
       const up = () => { b.classList.remove('held'); grillEnd(); };
@@ -2829,10 +2848,12 @@ function buildKit() {
 }
 // 버튼 상태: 선택한 그릇에 이미 있으면 ✓, 남은 양 / 비었음 / 채우는 중
 function updateKit() {
-  const b = activeBowl(), stockOn = levelCfg().stock;
+  const a = activeBowl(), stockOn = levelCfg().stock;
+  const b = readyForToppings(a) ? a : G.bowls.find(readyForToppings); // 챠슈·토핑이 들어갈 그릇
   for (const el of document.querySelectorAll('#kit .kit-btn')) {
     const k = el.dataset.k, cnt = el.querySelector('.cnt');
-    const inBowl = k === 'miso' ? !!b?.miso : k === 'chashu' ? (b?.chashu.length ?? 0) > 0 : !!b?.top.has(k);
+    const inBowl = k === 'miso' ? !!a?.miso : k === 'chashu' ? (b?.chashu.length ?? 0) > 0 : !!b?.top.has(k);
+    el.classList.toggle('off', k !== 'miso' && !b); // 육수·면이 든 그릇이 없으면 흐리게
     el.classList.toggle('in', inBowl);
     let txt = '', cls = 'cnt';
     if (k === 'chashu' && b?.chashu.length) txt = `${b.chashu.length}장`;
@@ -3066,18 +3087,18 @@ function nextStep() {
   const want = waiting[0]?.order;
   if (b.noodles == null && !cooking) return turn('back', '면 솥 바구니 클릭 (면 삶기 시작)');
   const wr = want?.ramen ?? 'tonkotsu';
-  if (b.broth == null && RAMEN[wr].miso && !b.miso) return turn('front', '미소 항아리 클릭 (미소 넣기)');
+  if (b.broth == null && RAMEN[wr].miso && !b.miso) return turn('front', '아래 미소 버튼 누르기 (육수 붓기 전에)');
   if (b.broth == null) return turn('back', `${RAMEN[brothOf(wr)].name} 육수 냄비 클릭 (육수 뜨기)${RAMEN[wr].miso ? ' — 미소는 돈코츠 육수로!' : ''}`);
   if (b.noodles == null) {
     const target = want ? FIRM[want.firm] : '';
     return turn('back', `면이 ${target ? target + '이 되면' : '익으면'} 바구니 클릭해서 건지기`);
   }
   if (want) {
-    if (b.chashu.length < want.chashu) return turn('front', `그릴을 누르고 있다가 초록에서 떼기 (챠슈 ${want.chashu}장)`);
+    if (b.chashu.length < want.chashu) return turn('front', `🔥 챠슈 버튼을 누르고 있다가 초록에서 떼기 (${want.chashu}장)`);
     const empty = [...want.top].find(k => !b.top.has(k) && levelCfg().stock && G.stock[k] <= 0);
-    if (empty) return turn('front', G.refill[empty] != null ? `${TOPPINGS[empty]} 채우는 중… 잠깐만요` : `${TOPPINGS[empty]}가 떨어졌어요 → ${TOPPINGS[empty]} 통 클릭 (냉장고에서 자동으로 채워요)`);
+    if (empty) return turn('front', G.refill[empty] != null ? `${TOPPINGS[empty]} 채우는 중… 잠깐만요` : `${TOPPINGS[empty]}가 떨어졌어요 → ${TOPPINGS[empty]} 버튼을 눌러 채우기`);
     const missing = [...want.top].filter(k => !b.top.has(k)).map(k => TOPPINGS[k]);
-    if (missing.length) return turn('front', `토핑 클릭: ${missing.join(', ')}`);
+    if (missing.length) return turn('front', `토핑 버튼: ${missing.join(', ')}`);
     const extra = [...b.top].filter(k => !want.top.has(k)).map(k => TOPPINGS[k]);
     if (extra.length) return turn('front', `${extra.join(', ')}는 주문에 없어요 (방금 넣었으면 ↶로 빼기)`);
   }
