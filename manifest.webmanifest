@@ -1,0 +1,9 @@
+{
+  "name": "라멘 카운터",
+  "short_name": "라멘 카운터",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#120d0a",
+  "theme_color": "#120d0a"
+}
