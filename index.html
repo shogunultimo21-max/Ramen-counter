@@ -2822,7 +2822,9 @@ function update(dt) {
   if (!G.tut && G.time >= G.nextSpawn && G.time < CFG.dayLength - 25) { // 튜토리얼 중엔 연습 손님만
     spawnCustomer();
     const t = G.time;
-    G.nextSpawn = t + (t < 60 ? rand(40, 46) : t < 150 ? rand(24, 30) : rand(30, 36)) * levelCfg().spawn * repSpawn() * (ev().spawn ?? 1);
+    // 날짜·평판·행사로 빨라지는 건 곱해지지만, 가장 바쁠 때도 약 15초에 한 명보다 빨리 오진 않게
+    const crowd = Math.max(0.62, levelCfg().spawn * repSpawn() * (ev().spawn ?? 1));
+    G.nextSpawn = t + (t < 60 ? rand(40, 46) : t < 150 ? rand(24, 30) : rand(30, 36)) * crowd;
   }
   tryAssignSeats();
   // 면 솥
