@@ -24,7 +24,7 @@
   .chip { background: var(--panel); padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap; }
   #musicBtn, #mPause { pointer-events: auto; border: 0; color: inherit; font: inherit; cursor: pointer; }
   #musicBtn.off { opacity: .45; text-decoration: line-through; }
-  #tickets { position: absolute; top: 54px; left: 10px; display: flex; flex-direction: column; gap: 6px; width: 190px; }
+  #tickets { position: absolute; top: 54px; left: 10px; display: flex; flex-direction: column; gap: 6px; width: 190px; max-height: calc(100vh - 170px); overflow: hidden; }
   .ticket { background: var(--paper); color: var(--ink); border-radius: 4px; padding: 6px 9px 7px; font-size: 12px;
     box-shadow: 0 2px 6px rgba(0,0,0,.4); border-top: 4px solid var(--red); }
   .ticket.kae { border-top-color: var(--yellow); background: #fff6d6; }
@@ -55,16 +55,19 @@
   #guide { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: #ffd23a; color: #2b211b;
     padding: 8px 16px; border-radius: 8px; font-size: 16px; font-weight: 800; white-space: nowrap; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
   #guide:empty { display: none; }
-  #turnBtn { position: absolute; right: 16px; bottom: 16px; pointer-events: auto; border: 0; border-radius: 10px; padding: 12px 18px;
-    background: #b8322a; color: #fff; font: 800 16px inherit; font-family: inherit; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
-  #turnBtn:hover { filter: brightness(1.1); }
   #hand { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--panel);
     padding: 7px 14px; border-radius: 8px; font-size: 15px; white-space: nowrap; }
   #hand small { opacity: .65; margin-left: 8px; }
-  #undoBtn { position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); pointer-events: auto; border: 0; border-radius: 8px;
-    padding: 6px 12px; background: rgba(40,30,22,.85); color: #ffe9c4; font: inherit; font-size: 13px; cursor: pointer; }
-  #undoBtn:hover { background: #5a3a22; }
-  #undoBtn:disabled { display: none; }
+  /* 조작 버튼: 왼손(뒤돌기·빼기) · 오른손(내기·버리기) */
+  .thumbs { position: absolute; bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
+  #barL { left: calc(10px + env(safe-area-inset-left)); align-items: flex-start; }
+  #barR { right: calc(10px + env(safe-area-inset-right)); align-items: flex-end; }
+  .thumbs button { border: 0; border-radius: 14px; font: inherit; font-weight: 800; color: #ffe9c4; padding: 11px 16px; font-size: 15px;
+    background: rgba(40,30,22,.88); box-shadow: 0 2px 6px rgba(0,0,0,.4); cursor: pointer; }
+  .thumbs button:active { filter: brightness(1.3); }
+  .thumbs button:disabled { opacity: .35; }
+  #mServe { background: #2f7a3a; color: #fff; font-size: 18px; padding: 16px 22px; }
+  #mTurn { background: var(--red); color: #fff; font-size: 17px; padding: 15px 20px; }
   .wl.pop { font-size: 14px; font-weight: 800; color: #fff; }
   .wl.pop.in { background: #2f7a3a; }
   .wl.pop.out { background: #b8322a; }
@@ -96,7 +99,6 @@
     font-size: 12px; white-space: nowrap; text-align: center; }
   .wl.below { transform: translate(-50%, 0); } /* 기준점 아래로 매달기 */
   .wl.tray { font-size: 11px; padding: 2px 5px; line-height: 1.25; }
-  .wl.tray .k { display: inline-block; min-width: 14px; border-radius: 3px; background: #ffd23a; color: #2b211b; }
   .wl.tray small { font-size: 11px; opacity: .85; }
   .wl .bar { width: 70px; margin: 3px auto 0; background: rgba(255,255,255,.15); }
   .wl.bubble { background: var(--paper); color: var(--ink); font-weight: 700; font-size: 14px; }
@@ -121,8 +123,6 @@
   .toast.bad { border-left: 4px solid var(--red); }
   .toast.warn { border-left: 4px solid var(--yellow); }
   @keyframes fade { 0% { opacity: 0; transform: translateY(6px); } 8% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
-  #help { position: absolute; bottom: 72px; right: 16px; background: var(--panel); border-radius: 8px; padding: 8px 12px; font-size: 12px; line-height: 1.6; text-align: right; }
-  #help b { color: #ffd27a; }
   #queue { position: absolute; top: 54px; right: 12px; transform: translateY(150px); }
   .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(10,7,5,.82); padding: 16px; }
   .overlay.hidden { display: none; }
@@ -169,33 +169,25 @@
   /* ---------- 모바일 (터치 화면, 가로) ---------- */
   html, body { overscroll-behavior: none; }
   canvas { touch-action: none; }
-  .mobile-only, #mobileBar, #rotate { display: none; }
-  body.mobile .pc-only { display: none; }
-  body.mobile .mobile-only { display: block; }
+  #rotate { display: none; }
   body.mobile { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
-  body.mobile #help, body.mobile #hint, body.mobile #crosshair, body.mobile #turnBtn { display: none; }
-  body.mobile #mobileBar { display: flex; position: absolute; right: calc(8px + env(safe-area-inset-right)); bottom: 8px; flex-direction: column; gap: 7px; align-items: flex-end; pointer-events: auto; }
-  #mobileBar button { border: 0; border-radius: 14px; font: inherit; font-weight: 800; color: #ffe9c4; padding: 9px 13px; font-size: 14px; background: rgba(40,30,22,.88); box-shadow: 0 2px 6px rgba(0,0,0,.4); }
-  #mobileBar button:active { filter: brightness(1.3); }
-  #mobileBar #mServe { background: #2f7a3a; color: #fff; font-size: 16px; padding: 13px 16px; }
-  #mobileBar #mTurn { background: var(--red); color: #fff; font-size: 15px; padding: 12px 15px; }
-  #mobileBar .row { display: flex; gap: 7px; }
+  body.mobile #hint, body.mobile #crosshair { display: none; }
   body.mobile #topbar { top: 5px; gap: 5px; }
   body.mobile .chip { font-size: 11px; padding: 4px 8px; }
   body.mobile #guide { top: 32px; font-size: 12px; padding: 4px 10px; max-width: 52vw; white-space: normal; text-align: center; }
-  body.mobile #tickets { width: 130px; gap: 4px; top: 6px; left: calc(6px + env(safe-area-inset-left)); max-height: calc(100vh - 12px); overflow: hidden; }
+  body.mobile #tickets { width: 130px; gap: 4px; top: 6px; left: calc(6px + env(safe-area-inset-left)); max-height: calc(100vh - 112px); overflow: hidden; }
+  body.mobile .thumbs button { font-size: 13px; padding: 9px 12px; }
+  body.mobile #mServe { font-size: 16px; padding: 14px 18px; }
+  body.mobile #mTurn { font-size: 15px; padding: 13px 16px; }
   body.mobile .ticket { font-size: 10px; padding: 4px 6px 5px; border-top-width: 3px; }
   body.mobile .ticket h4 { font-size: 11px; margin-bottom: 1px; }
   body.mobile .ticket .line { line-height: 1.3; }
   body.mobile .ticket .tag { font-size: 9.5px; }
   body.mobile #hand { font-size: 11px; bottom: 6px; padding: 4px 10px; }
-  body.mobile #undoBtn { display: none; }
   body.mobile #potPanel { top: 34px; right: calc(6px + env(safe-area-inset-right)); width: 128px; padding: 4px 6px; }
   body.mobile #potPanel .row { font-size: 11px; grid-template-columns: 18px 58px 1fr; }
   body.mobile .wl { font-size: 10px; padding: 2px 5px; }
   body.mobile .wl.tray, body.mobile .wl.tray small { font-size: 9px; }
-  body.mobile .wl.tray .k { display: none; }
-  body.mobile .wl.tray .k + br { display: none; }
   body.mobile .wl.say, body.mobile .wl.bubble { font-size: 11px; }
   body.mobile #toast { bottom: 34px; font-size: 12px; max-width: 50vw; }
   body.mobile #tut { top: 30px; font-size: 12.5px; width: min(430px, 56vw); padding: 6px 10px; line-height: 1.45; }
@@ -226,7 +218,7 @@
     <div class="chip" id="rating">평점 —</div>
     <div class="chip" id="queueChip" style="display:none"></div>
     <button class="chip" id="musicBtn" title="배경 음악 켜기/끄기">🎵</button>
-    <button class="chip mobile-only" id="mPause" title="일시정지">⏸</button>
+    <button class="chip" id="mPause" title="일시정지">⏸</button>
   </div>
   <div id="tickets"></div>
   <div id="labels"></div>
@@ -234,23 +226,13 @@
   <div id="hint"></div>
   <div id="grillGauge"><div class="track"><div class="marker"></div></div><div class="lbl">초록 구간에서 손을 떼세요!</div></div>
   <div id="hand">손: 비어 있음</div>
-  <button id="undoBtn" disabled>↶ 되돌리기 (U)</button>
   <div id="toast"></div>
   <div id="guide"></div>
   <div id="tut"></div>
   <div id="potPanel"></div>
-  <button id="turnBtn">↻ 뒤돌기 — 면 솥·육수 (Space)</button>
-  <div id="mobileBar">
-    <button id="mServe">🍜 내기</button>
-    <div class="row"><button id="mUndo">↶</button><button id="mTrash">🗑</button></div>
-    <button id="mTurn">↻ 뒤돌기</button>
-  </div>
-  <div id="help">
-    <b>E</b> 그릇 · <b>1-4</b> 그릇 선택/넣기 · 그릇 든 채 <b>1-6</b> 손님<br>
-    <b>ZXCV(BN)</b> 면 바구니 · <b>T</b>/<b>Y</b> 육수 · <b>M</b> 미소 · <b>R</b> 챠슈<br>
-    <b>ASDFGH</b> 토핑 (<b>⇧</b> 통 채우기) · <b>K</b> 카에다마 · <b>U</b> 되돌리기<br>
-    <b>Space</b> 뒤돌기 · <b>Q</b> 버리기 · <b>Esc</b> 일시정지
-  </div>
+  <!-- 조작 버튼: 왼손 엄지(뒤돌기·빼기) / 오른손 엄지(내기·버리기) -->
+  <div id="barL" class="thumbs"><button id="mTurn">↻ 뒤돌기</button><button id="mUndo">↶ 빼기</button></div>
+  <div id="barR" class="thumbs"><button id="mServe">🍜 내기</button><button id="mTrash">🗑 버리기</button></div>
 </div>
 
 <div id="rotate"><div><span class="ico">📱</span>휴대폰을 <b>가로로</b> 돌려 주세요</div></div>
@@ -259,39 +241,8 @@
   <div class="card">
     <h1>라멘 <span>카운터</span></h1>
     <p>카운터석 6자리짜리 작은 돈코츠 라멘집. 오늘 점심 영업은 당신 혼자 주방을 맡습니다. 손님이 자리에 앉으면 직접 주문해요.</p>
-    <div class="pc-only">
-    <h3>🍜 돈코츠 라멘 만드는 법</h3>
-    <ol>
-      <li><b>그릇 더미</b>를 클릭해 그릇 놓기 (타레는 자동으로 들어가요)</li>
-      <li><kbd>Space</kbd>로 뒤돌아 <b>면 솥</b> 바구니를 클릭해 면 삶기 시작</li>
-      <li><b>육수 냄비</b>를 클릭해 육수를 뜨고, 앞으로 돌아 그릇에 붓기</li>
-      <li>면이 알맞게 익으면 건져서 그릇에 넣기 <br><small>카타메 6~15초 · 보통 15~24초 · 야와라카메 24~33초</small></li>
-      <li><b>그릴</b>을 누르고 있다가 초록 구간에서 떼기 → 챠슈가 그릇에 바로 올라가요</li>
-      <li>토핑 통을 한 번씩 클릭 → 그릇에 바로 올라가요</li>
-      <li>그릇을 한 번 더 클릭해 들고, <b>손님</b>을 클릭해서 내기</li>
-    </ol>
-    <h3>🔥 알아 두기</h3>
-    <ul>
-      <li>토핑과 챠슈는 <b>노란 테두리의 선택한 그릇</b>에 들어가요. 다른 그릇을 클릭하면 선택이 바뀌어요.</li>
-      <li>조준이 조금 빗나가도 가장 가까운 물건이 노란 상자로 표시되고 그걸 클릭해요.</li>
-      <li>먹던 손님이 <b>"카에다마!"</b>를 외치면 면만 삶아서 손님을 클릭해 넣어 주세요.</li>
-      <li>빠르고 정확할수록 😊 만족, 늦거나 틀리면 😐 보통 / 😠 화남.</li>
-    </ul>
-    <h3>⌨️ 단축키 (마우스 대신 써도 돼요)</h3>
-    <div class="keys">
-      <kbd>E</kbd><span>새 그릇 놓기</span>
-      <kbd>1 2 3 4</kbd><span>그릇 자리 선택 · 손에 든 걸 그 그릇에 넣기 (그릇을 들고 있으면 → <b>1~6번 손님</b>에게 내기)</span>
-      <kbd>Z X C V</kbd><span>면 바구니 (삶기 시작 / 건지기) · 업그레이드하면 <kbd>B</kbd> <kbd>N</kbd>까지</span>
-      <kbd>T</kbd><span>돈코츠 육수 뜨기 · <kbd>Y</kbd> 쇼유 육수 · <kbd>M</kbd> 미소 넣기</span>
-      <kbd>R</kbd><span>누르고 있기: 챠슈 굽기</span>
-      <kbd>A S D F G H</kbd><span>토핑 (파·목이버섯·김·아지타마고·멘마·콘) · 통이 비면 누르기만 해도 냉장고에서 채워요</span>
-      <kbd>U</kbd><span>되돌리기: 방금 넣은 것 하나만 빼기 (토핑·챠슈·미소 — 육수·면은 안 돼요)</span>
-      <kbd>K</kbd><span>카에다마 면을 손님에게 주기</span>
-      <kbd>Space</kbd><span>뒤돌기 · <kbd>Q</kbd> 버리기 · <kbd>Esc</kbd> 일시정지</span>
-    </div>
-    </div>
-    <div class="mobile-only">
-      <h3>📱 터치로 하기</h3>
+    <div>
+      <h3>👆 조작 (탭 · 클릭)</h3>
       <ul>
         <li><b>물건을 탭</b>하면 집기 · 넣기 (그릇 더미, 면 바구니, 육수 냄비, 토핑 통)</li>
         <li><b>그릴은 누르고 있다가</b> 초록일 때 손가락을 떼요</li>
@@ -1011,14 +962,14 @@ cyl(0.08, 0.07, 0.16, 12, mat(0x3b2a20), 0, 0.08, 0, tareJar);
 cyl(0.07, 0.07, 0.005, 12, mat(0x4a2a14), 0, 0.158, 0, tareJar);
 const tareSpoon = cyl(0.006, 0.006, 0.22, 5, mat(0xc4a27a), 0.03, 0.2, 0, tareJar); tareSpoon.rotation.z = -0.4;
 label('타레 (자동)', -1.3, 1.27, -1.12, { scale: 0.26 });
-label('그릇 [E]', -1.0, 1.22, -0.8);
+label('그릇', -1.0, 1.22, -0.8);
 // 미소 항아리 (미소 라멘 날부터): 흰 도기 항아리에 된장 + 나무 주걱
 const misoJar = new THREE.Group(); misoJar.position.set(-1.0, 0.95, -1.12); scene.add(misoJar);
 cyl(0.085, 0.075, 0.13, 16, mat(0xe9e2d2, { roughness: 0.35, flatShading: false }), 0, 0.065, 0, misoJar);
 cyl(0.075, 0.075, 0.005, 16, mat(0xb07a3a), 0, 0.126, 0, misoJar);
 { const sp = box(0.02, 0.2, 0.005, mat(0xc4a27a), 0.03, 0.2, 0, misoJar); sp.rotation.z = -0.35; }
 interact(misoJar, { kind: 'miso' });
-const misoLabel = label('미소 [M]', -1.0, 1.24, -1.12, { scale: 0.26 });
+const misoLabel = label('미소', -1.0, 1.24, -1.12, { scale: 0.26 });
 
 // 그릇 자리 (업그레이드하면 4개)
 const slotPads = BOWL_SLOTS.map((x, i) => {
@@ -1250,8 +1201,7 @@ label('그릴 (챠슈)', 0.78, 1.3, -0.9);
 
 // 토핑 트레이 (스테인리스 밧드 안에 재료가 소복이)
 const trayFood = {}, trays = {};
-// 토핑 단축키 (통 이름표에도 표시)
-const TOP_KEYS = { negi: 'A', kikurage: 'S', nori: 'D', ajitama: 'F', menma: 'G', corn: 'H' };
+
 const TRAY_NAME = { ...TOPPINGS, kikurage: '목이', ajitama: '아지타마' }; // 좁은 통 이름표용 짧은 이름
 for (const key of Object.keys(TOPPINGS)) {
   const x = 0, z = TOPPING_Z; // 실제 자리는 trayLayout()이 그날 열린 토핑 수에 맞춰 정함
@@ -1301,7 +1251,7 @@ for (const [key, x] of Object.entries(FRIDGE_X)) {
   const d = new THREE.Group(); d.position.set(x, 0, -0.6); scene.add(d);
   box(0.57, 0.72, 0.02, mat(0xb4bac0, { metalness: 0.5, roughness: 0.35 }), 0, 0.46, 0, d);
   box(0.36, 0.03, 0.04, steelDark, 0, 0.76, 0.02, d);
-  const tag = textSprite(`❄ ${TOPPINGS[key]} [⇧${TOP_KEYS[key]}]`, { scale: 0.22 }); tag.position.set(0, 0.6, 0.04); d.add(tag);
+  const tag = textSprite(`❄ ${TOPPINGS[key]}`, { scale: 0.24 }); tag.position.set(0, 0.6, 0.04); d.add(tag);
   interact(d, { kind: 'fridge', key, lift: 0.5 });
   fridges[key] = { group: d, tag, openT: 0 };
 }
@@ -1368,7 +1318,7 @@ const noodlePot = new THREE.Group(); noodlePot.position.set(-0.45, 0.96, 1.2); s
 }
 // 셰프가 뒤돌아 봤을 때 1 2 (안쪽) / 3 4 (바깥쪽) 순서
 // 면 바구니: 기본 4개(네모 배치), 업그레이드하면 6개(둥글게 배치)
-const BASKET_LETTERS = 'ZXCVBN';
+const BASKET_LETTERS = '123456'; // 바구니 번호
 const BASKET_POS = [[0.15, 0.15], [-0.15, 0.15], [0.15, -0.15], [-0.15, -0.15], [0, 0], [0, 0]];
 const baskets = BASKET_POS.map(([dx, dz], i) => {
   const g = new THREE.Group(); g.position.set(dx, 0.2, dz); noodlePot.add(g);
@@ -1407,7 +1357,7 @@ const brothPot = new THREE.Group(); brothPot.position.set(0.4, 0.96, 1.2); scene
 const brothSurface = cyl(0.265, 0.265, 0.01, 20, mat(0xe2c896, { roughness: 0.5 }), 0, 0.42, 0, brothPot);
 const fireLight = new THREE.PointLight(0xff7a2a, 0, 1.4, 2); fireLight.position.set(0, 0.05, -0.3); brothPot.add(fireLight);
 interact(brothPot, { kind: 'brothPot', ramen: 'tonkotsu' });
-label('돈코츠 육수 [T]', 0.4, 1.62, 1.2);
+label('돈코츠 육수', 0.4, 1.62, 1.2);
 // 쇼유 육수 냄비 (Day 3부터): 맑은 갈색 국물
 const shoyuPot = new THREE.Group(); shoyuPot.position.set(0.98, 0.96, 1.2); scene.add(shoyuPot);
 {
@@ -1420,7 +1370,7 @@ const shoyuPot = new THREE.Group(); shoyuPot.position.set(0.98, 0.96, 1.2); scen
   ladle.rotation.z = -0.35; ladle.rotation.x = 0.2;
 }
 interact(shoyuPot, { kind: 'brothPot', ramen: 'shoyu' });
-const shoyuLabel = label('쇼유 육수 [Y]', 0.98, 1.5, 1.2);
+const shoyuLabel = label('쇼유 육수', 0.98, 1.5, 1.2);
 // 불 조절 손잡이 (벤치 앞면)
 const knob = new THREE.Group(); knob.position.set(0.55, 0.72, 0.85); scene.add(knob);
 const knobBody = cyl(0.05, 0.05, 0.04, 12, mat(0xb8322a), 0, 0, 0, knob); knobBody.rotation.x = Math.PI / 2;
@@ -1769,12 +1719,25 @@ const torchRig = new THREE.Group(); scene.add(torchRig);
   torchRig.visible = false;
 }
 let heldMesh = null;
+const HELD_LAYER = 1;
+// 손·든 물건은 HELD_LAYER에만 (조명은 두 층 모두 비춤)
+const toHeldLayer = obj => obj.traverse(o => o.layers.set(HELD_LAYER));
+toHeldLayer(camHand.group);
 function setHeldMesh(obj) {
   if (heldMesh && heldMesh !== obj) holdGroup.remove(heldMesh);
   heldMesh = obj;
-  if (obj) holdGroup.add(obj);
+  if (obj) { toHeldLayer(obj); holdGroup.add(obj); }
   camHand.setCurl(obj ? 0.95 : 0.35); // 뭔가 들면 손을 쥠
 }
+// 테보(면 건지는 원뿔 철망) 재질: 촘촘한 격자 무늬로 비쳐 보이게
+const teboNetMat = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d'); x.strokeStyle = '#fff'; x.lineWidth = 2;
+  for (let i = 0; i <= 64; i += 8) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 64); x.moveTo(0, i); x.lineTo(64, i); x.stroke(); }
+  const tex = new THREE.CanvasTexture(c); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(6, 2);
+  return new THREE.MeshStandardMaterial({ color: 0xc4c8cc, metalness: 0.6, roughness: 0.35, alphaMap: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false });
+})();
+const teboMetal = new THREE.MeshStandardMaterial({ color: 0xc4c8cc, metalness: 0.75, roughness: 0.3 });
 function buildHeld(h) {
   if (!h) return null;
   const g = new THREE.Group();
@@ -1787,11 +1750,25 @@ function buildHeld(h) {
       cyl(0.006, 0.006, 0.2, 5, mat(0xb8bcc0, { metalness: 0.6 }), 0, 0.05, 0.0, g).rotation.x = 1.3;
       break;
     }
-    case 'noodles': {
-      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.14, 10, 1, true), mat(0x8c8f93, { side: THREE.DoubleSide }));
-      b.position.set(0, 0.06, -0.12); g.add(b);
-      cyl(0.055, 0.045, 0.1, 10, mat(0xf2d27a), 0, 0.05, -0.12, g);
-      cyl(0.008, 0.008, 0.2, 5, mat(0x5a3a24), 0, 0.06, 0.0, g).rotation.x = 1.3;
+    case 'noodles': { // 테보: 깊은 원뿔 모양 철망 + 가늘고 긴 손잡이, 안에 면이 비쳐 보임
+      const t = new THREE.Group(); t.position.set(0.01, 0.01, -0.21); t.rotation.x = -0.15; g.add(t);
+      const net = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.02, 0.12, 20, 1, true), teboNetMat);
+      t.add(net);
+      const tip = new THREE.Mesh(new THREE.CircleGeometry(0.02, 14), teboNetMat); tip.rotation.x = Math.PI / 2; tip.position.y = -0.06; t.add(tip);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.003, 6, 24), teboMetal); rim.rotation.x = Math.PI / 2; rim.position.y = 0.06; t.add(rim);
+      const nd = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.018, 0.1, 16), new THREE.MeshStandardMaterial({ color: FIRM_COLOR[firmOf(h.t)], roughness: 0.5 }));
+      nd.position.y = -0.005; t.add(nd);
+      for (let i = 0; i < 3; i++) { // 면 가닥이 망 위로 살짝
+        const s = new THREE.Mesh(new THREE.TorusGeometry(0.02 + i * 0.008, 0.002, 4, 16, Math.PI * 1.2), noodleMat);
+        s.rotation.set(Math.PI / 2, 0, i * 2); s.position.y = 0.046; t.add(s);
+      }
+      // 손잡이: 테 가장자리에서 손 쪽으로 비스듬히 올라오는 가는 쇠막대 + 끝에 나무 손잡이
+      const from = new THREE.Vector3(0.01, 0.07, -0.16), to = new THREE.Vector3(0.0, 0.04, 0.03);
+      const len = from.distanceTo(to), mid = from.clone().add(to).multiplyScalar(0.5);
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.0035, len, 6), teboMetal);
+      rod.position.copy(mid); rod.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), to.clone().sub(from).normalize()); g.add(rod);
+      const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.008, 0.07, 8), mat(0x5a3a24));
+      grip.position.copy(to); grip.quaternion.copy(rod.quaternion); g.add(grip);
       break;
     }
     case 'chashu': {
@@ -1904,7 +1881,6 @@ function turnAround() {
   facingBack = !facingBack;
   const v = facingBack ? VIEW.back : VIEW.front;
   turnTarget = v.yaw; pitchTarget = v.pitch;
-  document.getElementById('turnBtn').textContent = facingBack ? '↻ 앞 보기 (Space)' : '↻ 뒤돌기 — 면 솥·육수 (Space)';
   document.getElementById('mTurn').textContent = facingBack ? '↻ 앞 보기' : '↻ 뒤돌기';
 }
 
@@ -1925,7 +1901,7 @@ function updateHandText() {
     water: '물 주전자',
     bowl: '라멘 그릇 → 손님을 클릭해서 내기',
   }[h.type];
-  document.getElementById('hand').innerHTML = `손: ${t}${h ? '<small>Q: 버리기</small>' : ''}`;
+  document.getElementById('hand').textContent = `손: ${t}`;
 }
 
 // ---------- 유틸 ----------
@@ -2023,22 +1999,22 @@ function orderHtml(o) {
 const TUT_ORDER = () => ({ ramen: 'tonkotsu', firm: 'futsu', chashu: 1, top: new Set(['negi', 'kikurage', 'nori']) });
 const anyBowl = f => G.bowls.some(b => b && f(b));
 const TUT = [
-  { text: '<kbd>E</kbd>를 누르거나 <b>그릇 더미</b>를 클릭해서 그릇을 놓아요.', done: () => anyBowl(() => true) },
-  { text: '<kbd>Space</kbd>를 눌러 뒤돌아요. 면 솥과 육수 냄비가 있어요.', done: () => facingBack },
-  { text: '<kbd>Z</kbd>를 누르거나 <b>면 바구니</b>를 클릭해서 면을 삶기 시작해요.', done: () => baskets.some(b => b.cooking) || G.hand?.type === 'noodles' || anyBowl(b => b.noodles != null) },
-  { text: '<kbd>T</kbd>를 누르거나 <b>돈코츠 육수 냄비</b>를 클릭해서 육수를 떠요.', done: () => G.hand?.type === 'broth' || anyBowl(b => b.broth) },
-  { text: '<kbd>Space</kbd>로 앞으로 돌아서 <kbd>1</kbd>을 누르거나 <b>그릇</b>을 클릭해 육수를 부어요.', done: () => anyBowl(b => b.broth) },
-  { text: '<kbd>R</kbd>을 누르고 있거나 <b>그릴</b>을 누르고 있다가, 게이지가 <b style="color:#2f7a3a">초록</b>일 때 떼요. 챠슈가 그릇에 올라가요.', done: () => anyBowl(b => b.chashu.length > 0) },
-  { text: '<kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>를 눌러 <b>파 · 목이버섯 · 김</b>을 올려요. (토핑 통을 클릭해도 돼요)', done: () => anyBowl(b => ['negi', 'kikurage', 'nori'].every(k => b.top.has(k))) },
-  { text: '면이 <b>보통</b>(진한 노랑)이 되면 <kbd>Space</kbd>로 뒤돌아 <kbd>Z</kbd>로 건져요. 오른쪽 위 면 솥 칸에서 익힘을 볼 수 있어요.', done: () => G.hand?.type === 'noodles' || anyBowl(b => b.noodles != null) },
-  { text: '<kbd>Space</kbd>로 앞으로 돌아 <kbd>1</kbd>로 그릇에 면을 넣어요.', done: () => anyBowl(b => b.noodles != null) },
-  { text: '<kbd>1</kbd>을 한 번 더 눌러 그릇을 들고, 손님 자리 번호(<kbd>1</kbd>~<kbd>6</kbd>)를 누르거나 <b>손님</b>을 클릭해서 내요!', done: () => G.tutCustomer && G.tutCustomer.state !== 'waiting' && G.tutCustomer.state !== 'walking' && G.tutCustomer.state !== 'queue' },
+  { done: () => anyBowl(() => true) },
+  { done: () => facingBack },
+  { done: () => baskets.some(b => b.cooking) || G.hand?.type === 'noodles' || anyBowl(b => b.noodles != null) },
+  { done: () => G.hand?.type === 'broth' || anyBowl(b => b.broth) },
+  { done: () => anyBowl(b => b.broth) },
+  { done: () => anyBowl(b => b.chashu.length > 0) },
+  { done: () => anyBowl(b => ['negi', 'kikurage', 'nori'].every(k => b.top.has(k))) },
+  { done: () => G.hand?.type === 'noodles' || anyBowl(b => b.noodles != null) },
+  { done: () => anyBowl(b => b.noodles != null) },
+  { done: () => G.tutCustomer && G.tutCustomer.state !== 'waiting' && G.tutCustomer.state !== 'walking' && G.tutCustomer.state !== 'queue' },
 ];
-// 터치 화면용 튜토리얼 문구 (TUT와 같은 순서)
-const TUT_TOUCH = [
+// 튜토리얼 문구 (TUT와 같은 순서)
+const TUT_TEXT = [
   '<b>그릇 더미</b>(왼쪽에 쌓인 그릇)를 탭해서 그릇을 놓아요.',
   '오른쪽 아래 <b>↻ 뒤돌기</b>를 눌러요. 면 솥과 육수 냄비가 있어요.',
-  '<b>면 바구니</b>(Z)를 탭해서 면을 삶기 시작해요.',
+  '<b>면 바구니</b>를 탭해서 면을 삶기 시작해요.',
   '<b>돈코츠 육수 냄비</b>를 탭해서 육수를 떠요.',
   '<b>↻ 앞 보기</b>를 누르고, <b>그릇</b>을 탭해서 육수를 부어요.',
   '<b>그릴</b>을 누르고 있다가, 게이지가 <b style="color:#2f7a3a">초록</b>일 때 손가락을 떼요.',
@@ -2061,8 +2037,7 @@ function startTutorial() {
 function renderTut() {
   const el = document.getElementById('tut');
   if (!G.tut) { el.innerHTML = ''; return; }
-  const s = TUT[G.tut.i];
-  el.innerHTML = `<div class="tut-head">🎓 따라 해 보기 <b>${G.tut.i + 1} / ${TUT.length}</b><button id="tutSkip">건너뛰기</button></div><div>${MOBILE ? TUT_TOUCH[G.tut.i] : s.text}</div>`;
+  el.innerHTML = `<div class="tut-head">🎓 따라 해 보기 <b>${G.tut.i + 1} / ${TUT.length}</b><button id="tutSkip">건너뛰기</button></div><div>${TUT_TEXT[G.tut.i]}</div>`;
   document.getElementById('tutSkip').onclick = e => { e.currentTarget.blur(); finishTutorial(true); };
 }
 function tickTutorial() {
@@ -2485,7 +2460,7 @@ function act(d) {
       if (h) return;
       const stockOn = levelCfg().stock;
       const b = activeBowl();
-      if (b?.top.has(d.key)) return toast(`${TOPPINGS[d.key]}는 이미 올렸어요 (방금 넣은 거라면 U로 빼기)`, 'warn');
+      if (b?.top.has(d.key)) return toast(`${TOPPINGS[d.key]}는 이미 올렸어요 (방금 넣은 거라면 ↶로 빼기)`, 'warn');
       if (G.refill[d.key] != null) return toast(`${TOPPINGS[d.key]} 꺼내는 중이에요… 조금만 기다려요`, 'warn');
       if (stockOn && G.stock[d.key] <= 0) return startRefill(d.key); // 비었으면 냉장고에서 알아서 꺼내 채움
       if (stockOn) { G.stock[d.key]--; updateTray(d.key); }
@@ -2497,7 +2472,7 @@ function act(d) {
       if (h) return;
       const b = activeBowl();
       if (!b) return toast('먼저 그릇을 놓고 선택하세요', 'warn');
-      if (b.miso) return toast('미소는 이미 넣었어요 (방금 넣은 거라면 U로 빼기)', 'warn');
+      if (b.miso) return toast('미소는 이미 넣었어요 (방금 넣은 거라면 ↶로 빼기)', 'warn');
       if (b.broth != null) return toast('미소는 육수를 붓기 전에 넣어요', 'warn');
       b.miso = true; b.refresh(); Sound.place(); addTo(b, 'miso', '미소');
       return;
@@ -2538,7 +2513,7 @@ function lastUndoable() {
   const still = { top: () => b.top.has(e.key), chashu: () => b.chashu.length > 0, miso: () => b.miso && b.broth == null }[e.type]();
   return still ? e : null;
 }
-// 바로 내기 (모바일 🍜 버튼 · PC Enter): 선택한 그릇(또는 들고 있는 그릇)을 주문이 가장 잘 맞는 손님에게.
+// 바로 내기 (🍜 버튼): 선택한 그릇(또는 들고 있는 그릇)을 주문이 가장 잘 맞는 손님에게.
 // 카에다마 면을 들고 있으면 카에다마 손님에게.
 function orderMismatch(c, b) {
   const o = c.order;
@@ -2622,7 +2597,8 @@ canvas.addEventListener('pointerdown', e => {
   if (dragMode) setAim(e);
   try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* 무시 */ }
   const used = press(); // 그릴은 누르고 있는 동안 굽고, 손을 떼면 끝
-  if (dragMode && !used) { dragging = true; lastX = e.clientX; lastY = e.clientY; }
+  // 빈 곳을 끌어 둘러보기는 PC 마우스만 (모바일은 앞·뒤 두 시점으로 충분하고, 끌다가 물건이 눌리는 걸 막음)
+  if (dragMode && !used && !MOBILE) { dragging = true; lastX = e.clientX; lastY = e.clientY; }
 });
 const release = () => { dragging = false; grillEnd(); };
 addEventListener('pointerup', release);
@@ -2639,46 +2615,9 @@ function look(dx, dy) {
   yaw -= dx * 0.0024; pitch -= dy * 0.0024;
   pitch = Math.max(-1.25, Math.min(0.7, pitch));
 }
-addEventListener('keydown', e => {
-  keys[e.code] = true;
-  if (!G.running || G.paused) return;
-  if (e.metaKey || e.ctrlKey || e.altKey) return; // Cmd+Shift+R 같은 브라우저 단축키는 그대로
-  if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) turnAround(); }
-  if (e.code === 'KeyQ') discard();
-  if (e.code === 'KeyU' || e.code === 'Backspace') { e.preventDefault(); undoBowl(); }
-  if (e.code === 'Enter') { e.preventDefault(); autoServe(); }
-  if (!e.repeat) shortcut(e);
-});
-addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'KeyR') grillEnd(); });
-// 단축키: 그 물건을 클릭한 것과 똑같이 동작 (어느 쪽을 보고 있어도 됨)
-const findDesc = pred => [...interactDescs].find(d => pred(d) && isShown(d.anchor));
-const BASKET_KEYS = { KeyZ: 0, KeyX: 1, KeyC: 2, KeyV: 3, KeyB: 4, KeyN: 5 };
-function shortcut(e) {
-  const h = G.hand, code = e.code;
-  const num = /^Digit([1-6])$/.exec(code)?.[1];
-  if (num) {
-    const n = +num - 1;
-    if (h?.type === 'bowl') { // 그릇을 들고 있으면 숫자 = 손님 자리
-      const c = seatCustomer(n);
-      return c?.state === 'waiting' ? act(c.desc) : toast(`${n + 1}번 자리에 라멘을 기다리는 손님이 없어요`, 'warn');
-    }
-    if (n < G.bowls.length) act(findDesc(d => d.kind === 'bowlSlot' && d.slot === n));
-    return;
-  }
-  if (code in BASKET_KEYS) return act(findDesc(d => d.kind === 'basket' && d.i === BASKET_KEYS[code]));
-  if (code === 'KeyE') return act(findDesc(d => d.kind === 'bowlStack'));
-  if (code === 'KeyT') return act(findDesc(d => d.kind === 'brothPot' && d.ramen === 'tonkotsu'));
-  if (code === 'KeyY') return act(findDesc(d => d.kind === 'brothPot' && d.ramen === 'shoyu'));
-  if (code === 'KeyM') return act(findDesc(d => d.kind === 'miso'));
-  if (code === 'KeyR') { if (!h) grillStart(); return; }
-  if (code === 'KeyK') {
-    const c = G.customers.filter(c => c.state === 'kaedama').sort((a, b) => a.patience - b.patience)[0];
-    if (!c) return toast('카에다마를 기다리는 손님이 없어요', 'warn');
-    return h?.type === 'noodles' ? act(c.desc) : toast('먼저 면을 삶아서 건지세요 (Z X C V)', 'warn');
-  }
-  const top = Object.keys(TOP_KEYS).find(k => 'Key' + TOP_KEYS[k] === code);
-  if (top && toppingsOn().includes(top)) act(findDesc(d => d.kind === (e.shiftKey ? 'fridge' : 'topping') && d.key === top));
-}
+// 키보드는 PC에서 방향키로 둘러보기만 (단축키 없음 — 터치·클릭으로 조작)
+addEventListener('keydown', e => { keys[e.code] = true; });
+addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('contextmenu', e => e.preventDefault());
 
 document.addEventListener('pointerlockchange', () => {
@@ -2836,8 +2775,6 @@ document.getElementById('resetBtn').onclick = () => { // 금고·업그레이드
   day = 1; saveDay(); bank = 0; for (const k in upgLv) delete upgLv[k]; store.set('ramen-bank', 0); store.set('ramen-upg', []); store.set('ramen-upg2', {}); store.set('ramen-seen', 1); store.set('ramen-tut-done', false); setRep(3); startDay();
 };
 document.getElementById('resumeBtn').onclick = () => { pause(false); lockPointer(); };
-document.getElementById('turnBtn').onclick = e => { e.currentTarget.blur(); if (G.running && !G.paused) turnAround(); };
-document.getElementById('undoBtn').onclick = e => { e.currentTarget.blur(); if (G.running && !G.paused) undoBowl(); };
 // 모바일 버튼
 const tapBtn = (id, fn) => document.getElementById(id).addEventListener('click', e => { e.currentTarget.blur(); if (G.running && !G.paused) fn(); });
 tapBtn('mServe', autoServe);
@@ -2899,7 +2836,7 @@ function updateLabels() {
     wp.set(trays[key].group.position.x, 1.02, TOPPING_Z - 0.06);
     const filling = G.refill[key] != null;
     const left = !stockOn ? '' : `<br><small>${filling ? '채우는 중…' : n > 0 ? `${n}/${stockMax()}` : '비었음!'}</small>`;
-    worldLabel('tray' + key, wp, `<b class="k">${TOP_KEYS[key]}</b><br>${TRAY_NAME[key]}${left}`,
+    worldLabel('tray' + key, wp, `${TRAY_NAME[key]}${left}`,
       `wl tray${filling ? ' firm-katame' : stockOn && n <= 1 ? ' firm-nobi' : ''}`);
   }
   // 방금 그릇에 넣은/뺀 것 ("+파", "−김")
@@ -3079,17 +3016,18 @@ function nextStep() {
     const missing = [...want.top].filter(k => !b.top.has(k)).map(k => TOPPINGS[k]);
     if (missing.length) return turn('front', `토핑 클릭: ${missing.join(', ')}`);
     const extra = [...b.top].filter(k => !want.top.has(k)).map(k => TOPPINGS[k]);
-    if (extra.length) return turn('front', `${extra.join(', ')}는 주문에 없어요 (방금 넣었으면 U로 빼기)`);
+    if (extra.length) return turn('front', `${extra.join(', ')}는 주문에 없어요 (방금 넣었으면 ↶로 빼기)`);
   }
   return turn('front', '그릇을 클릭해서 들고 → 손님 클릭');
 }
 function updateHud() {
   const step = G.running && !G.paused && !G.tut ? nextStep() : '';
-  document.getElementById('guide').textContent = step ? '👉 ' + (MOBILE ? step.replace(/Space로 /g, '↻ 버튼으로 ').replace(/클릭/g, '탭').replace(/ \(U\)| U로/g, ' ↶로').replace('그릇을 탭해서 들고 → 손님 탭', '🍜 내기 버튼 누르기') : step) : '';
-  // 되돌리기 버튼: 방금 넣은 것을 뺄 수 있을 때만 보임
-  const ub = document.getElementById('undoBtn'), last = G.running && !G.paused && lastUndoable();
+  document.getElementById('guide').textContent = step ? '👉 ' + step.replace(/Space로 /g, '↻ 버튼으로 ').replace(/클릭/g, '탭').replace(/ \(U\)| U로/g, ' ↶로').replace('그릇을 탭해서 들고 → 손님 탭', '🍜 내기 버튼 누르기') : '';
+  // 빼기 버튼: 방금 넣은 것을 뺄 수 있을 때만 켜짐
+  const ub = document.getElementById('mUndo'), last = G.running && !G.paused && lastUndoable();
   ub.disabled = !last;
-  if (last) { const txt = `↶ 방금 넣은 ${last.name} 빼기 (${G.bowls.indexOf(last.b) + 1}번 그릇 · U)`; if (ub.textContent !== txt) ub.textContent = txt; }
+  const txt = last ? `↶ ${last.name} 빼기` : '↶ 빼기';
+  if (ub.textContent !== txt) ub.textContent = txt;
   const t = Math.min(G.time, CFG.dayLength) / CFG.dayLength;
   const mins = Math.floor(11 * 60 + t * 180);
   const clk = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
@@ -3155,7 +3093,12 @@ function frame() {
   updateLabels();
   hudTimer -= dt;
   if (hudTimer <= 0) { hudTimer = 0.1; updateHud(); }
-  renderer.render(scene, camera);
+  // 1) 가게 전체 2) 손에 든 것·손은 깊이를 지우고 한 번 더 그려서 냄비·조리대에 묻히지 않게
+  camera.layers.set(0); renderer.autoClear = true; renderer.render(scene, camera);
+  const bg = scene.background; scene.background = null; // 배경색이 있으면 두 번째 그리기 때 화면을 지워 버리므로 잠시 뺌
+  renderer.autoClear = false; renderer.clearDepth(); camera.layers.set(HELD_LAYER); renderer.render(scene, camera);
+  scene.background = bg;
+  camera.layers.set(0);
   requestAnimationFrame(frame);
 }
 // 좁은 화면에서도 좌우 조리대가 보이도록 가로 시야각을 기준으로 맞춘다
@@ -3176,6 +3119,7 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
 });
 
+scene.traverse(o => { if (o.isLight) o.layers.enable(HELD_LAYER); }); // 손·든 물건도 같은 조명으로
 fitCamera();
 newGame();
 frame();
