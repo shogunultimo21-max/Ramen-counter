@@ -147,6 +147,7 @@
   .keys { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 13px; margin-top: 6px; }
   .keys kbd { text-align: center; }
   .ticket .ramen { font-weight: 800; }
+  .ticket .tag { font-weight: 800; color: #8a5a00; background: #fff0c2; border-radius: 3px; padding: 0 4px; margin-bottom: 2px; display: inline-block; }
   .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
   .result-grid div { background: #ebe1cc; border-radius: 8px; padding: 10px; text-align: center; font-size: 14px; }
   .result-grid b { display: block; font-size: 26px; }
@@ -1749,6 +1750,7 @@ function newGame() {
     bowls: Array(slotCount()).fill(null), active: null, // active = 토핑·챠슈가 바로 들어가는 선택된 그릇 자리
     seats: SEAT_X.map(x => ({ x, c: null, dirty: false, bowl: null })),
     customers: [], queue: [], nextSpawn: 3, nextId: 1, recentRamen: [],
+    event: 'normal', repBonus: 0, criticCame: false, // 오늘의 행사 · 평론가 등으로 오늘 바뀐 평판
     refill: {}, pop: {}, lastAdd: null, // 보충 중인 토핑(남은 초) · 그릇 위 "+파" 표시 · 되돌릴 수 있는 방금 넣은 것
     day, stock: Object.fromEntries(Object.keys(TOPPINGS).map(k => [k, stockMax()])),
   };
@@ -1889,11 +1891,69 @@ function orderHtml(o) {
   if (removed.length) lines.push('빼기: ' + removed.join(' · '));
   return lines.map(l => `<div class="line">${l}</div>`).join('');
 }
+// ---------- 오늘의 날씨·행사 (Day 4부터 무작위) ----------
+const EVENTS = {
+  normal:   { icon: '🌤', name: '평범한 날', note: '평소처럼 영업해요.' },
+  rain:     { icon: '☔', name: '비 오는 날', note: '손님이 적게 오지만, 조금 더 오래 기다려 줘요.', spawn: 1.35, patience: 1.2 },
+  festival: { icon: '🎆', name: '동네 축제', note: '손님이 몰려와요! 대신 팁을 50% 더 줘요.', spawn: 0.72, tip: 1.5 },
+  critic:   { icon: '📰', name: '잡지 취재', note: '오늘 음식 평론가가 와요. 만족시키면 평판 +0.3, 화나게 하면 −0.3!' },
+};
+function pickEvent(d) {
+  if (d < 4) return 'normal';
+  const r = Math.random();
+  return r < 0.45 ? 'normal' : r < 0.65 ? 'rain' : r < 0.85 ? 'festival' : 'critic';
+}
+const ev = () => EVENTS[G.event];
+
+// ---------- 특별한 손님 ----------
+// 단골: 이름이 있고 생김새·주문이 늘 같음 (저장됨). 오래 기다려 주고 만족하면 팁 2배
+// 급한 손님: 금방 지치지만 만족하면 팁 2배 · 평론가: 잡지 취재 날 한 번, 결과가 평판에 크게 반영
+const REGULAR_NAMES = ['다나카 씨', '스즈키 씨', '사토 할아버지', '야마다 씨', '기무라 할머니', '하야시 씨'];
+const REGULAR_KIND = { '사토 할아버지': 'grandpa', '기무라 할머니': 'grandma' };
+function makeSpecial() {
+  if (G.event === 'critic' && !G.criticCame && G.time > 40) {
+    G.criticCame = true;
+    return { type: 'critic', tag: '📰 음식 평론가', patMul: 0.9, tipMul: 1 };
+  }
+  if (day < 3) return null;
+  const r = Math.random();
+  if (r < 0.15) {
+    const name = pick(REGULAR_NAMES.filter(n => !G.customers.some(c => c.special?.name === n)));
+    return name ? { type: 'regular', name, tag: `⭐ ${name} (단골)`, patMul: 1.4, tipMul: 2 } : null;
+  }
+  if (r < 0.27) return { type: 'hurry', tag: '⏱ 급한 손님', patMul: 0.6, tipMul: 2 };
+  return null;
+}
+// 단골은 처음 온 날의 생김새·주문을 저장해 두고 다음에도 똑같이
+function regularOf(name) {
+  const regs = store.get('ramen-regulars', {}), saved = regs[name];
+  if (saved && levelCfg().menu.includes(saved.order.ramen)) return { look: saved.look, order: { ...saved.order, top: new Set(saved.order.top) } };
+  const kind = REGULAR_KIND[name];
+  let look = randomLook();
+  while (kind ? look.kind !== kind : look.kind === 'grandpa' || look.kind === 'grandma') look = randomLook();
+  const order = makeOrder();
+  regs[name] = { look, order: { ...order, top: [...order.top] } }; store.set('ramen-regulars', regs);
+  return { look, order };
+}
+const custPatience = c => patienceMax() * (c.special?.patMul ?? 1) * (ev().patience ?? 1);
+// 평론가 결과는 오늘 평판에 바로 더해짐
+function criticVerdict(c) {
+  if (c.special?.type !== 'critic') return;
+  const d = { happy: 0.3, normal: 0, angry: -0.3 }[c.result];
+  G.repBonus += d;
+  toast(d > 0 ? '📰 평론가: "훌륭한 한 그릇이군요." 평판 +0.3!' : d < 0 ? '📰 평론가가 실망한 얼굴로 수첩에 뭔가 적었어요… 평판 −0.3' : '📰 평론가: "음… 평범하군요."', d > 0 ? 'good' : d < 0 ? 'bad' : 'warn');
+}
 function spawnCustomer() {
-  const look = randomLook(), mesh = makePerson(look);
+  const special = makeSpecial();
+  let look, order;
+  if (special?.type === 'regular') ({ look, order } = regularOf(special.name));
+  else if (special?.type === 'critic') look = { ...randomLook(), kind: 'salaryman', female: false, skirt: false, suit: true, tie: 0x2a2a2a, top: 0x1a1a1a, hairStyle: 'neat', glasses: 0x1a1a1a, bag: true, cap: false };
+  else look = randomLook();
+  const mesh = makePerson(look);
   mesh.position.copy(OUTSIDE); scene.add(mesh);
-  const c = { id: G.nextId++, mesh, state: 'queue', seat: -1, path: [], order: makeOrder(), patience: 0, maxPatience: patienceMax(),
+  const c = { id: G.nextId++, mesh, state: 'queue', seat: -1, path: [], order: order ?? makeOrder(), patience: 0, maxPatience: 0, special,
     queueT: 0, result: null, eatT: 0, look, voice: customerVoice(look), kaedamaAt: -1, kaedama: null, bubble: '', ticket: null, bob: Math.random() * 10 };
+  c.maxPatience = custPatience(c);
   mesh.visible = false;
   G.customers.push(c);
   G.queue.push(c);
@@ -1927,7 +1987,7 @@ function createTicket(c, kae = false) {
   el.className = 'ticket' + (kae ? ' kae' : '') + (!kae && c.order.ramen !== 'tonkotsu' ? ' ' + c.order.ramen : '');
   el.innerHTML = kae
     ? `<h4><span>🍜 카에다마</span><span>${c.seat + 1}번 자리</span></h4><div class="line"><span class="firm">면 ${FIRM[c.kaedama.firm]}</span> · 면만 추가</div><div class="bar"><i></i></div>`
-    : `<h4><span class="ramen">${RAMEN[c.order.ramen].name} #${c.id}</span><span>${c.seat + 1}번 자리</span></h4>${orderHtml(c.order)}<div class="bar"><i></i></div>`;
+    : `<h4><span class="ramen">${RAMEN[c.order.ramen].name} #${c.id}</span><span>${c.seat + 1}번 자리</span></h4>${c.special ? `<div class="tag">${c.special.tag}</div>` : ''}${orderHtml(c.order)}<div class="bar"><i></i></div>`;
   document.getElementById('tickets').appendChild(el);
   c.ticket = el; c.ticketBar = el.querySelector('.bar > i');
 }
@@ -2013,7 +2073,7 @@ function customerLeaves(c, res) {
   c.state = 'leaving';
   c.ticket?.remove(); c.ticket = null;
   removeCustomerInteract(c);
-  G.results[c.result]++;
+  G.results[c.result]++; criticVerdict(c);
   G.scores.push({ happy: 5, normal: 3, angry: 1 }[c.result]);
   const seat = G.seats[c.seat];
   seat.c = null; seat.dirty = true; seat.clearAt = G.time + 2.5; // 잠시 뒤 그릇이 치워지고 자리가 빔
@@ -2026,7 +2086,7 @@ function updateCustomers(dt) {
       c.queueT += dt;
       if (c.queueT > CFG.queuePatience) {
         G.queue.splice(G.queue.indexOf(c), 1);
-        G.results.angry++; G.scores.push(1);
+        G.results.angry++; G.scores.push(1); c.result = 'angry'; criticVerdict(c);
         toast('😠 자리가 없어서 기다리던 손님이 돌아갔어요', 'bad'); Sound.angry();
         scene.remove(c.mesh); G.customers.splice(G.customers.indexOf(c), 1);
       }
@@ -2066,7 +2126,7 @@ function updateCustomers(dt) {
           customerSay(c, `🍜 카에다마! ${FIRM[kf]}${kf === 'futsu' ? '으로' : '로'}요!`, 'kae', 'kaedama_' + kf,
             'すみません、替え玉' + { katame: 'カタメで！', futsu: 'お願いします！', yawa: 'やわめで！' }[kf]);
         } else if (c.eatT <= 0) {
-          G.money += RAMEN[c.order.ramen].price + (c.result === 'happy' ? tipAmount() : 0);
+          G.money += RAMEN[c.order.ramen].price + (c.result === 'happy' ? Math.round(tipAmount() * (c.special?.tipMul ?? 1) * (ev().tip ?? 1)) : 0);
           G.seats[c.seat].bowl?.empty();
           if (c.result === 'happy') customerSay(c, '😋 잘 먹었습니다!', 'happy', 'gochisousama', 'ごちそうさまでした！');
           else customerSay(c, c.result === 'normal' ? '🙂 잘 먹었어요' : '😠 …', c.result);
@@ -2096,9 +2156,12 @@ function updateSeats(dt) {
     if (c.state !== 'ordering') continue;
     c.orderT -= dt;
     if (c.orderT <= 0) {
-      c.state = 'waiting'; c.patience = c.maxPatience = patienceMax();
+      c.state = 'waiting'; c.patience = c.maxPatience = custPatience(c);
       createTicket(c); Sound.ding();
-      customerSay(c, `📝 ${RAMEN[c.order.ramen].name} ${FIRM[c.order.firm]}${c.order.firm === 'futsu' ? '으로' : '로'} 주세요!`, '');
+      const what = `${RAMEN[c.order.ramen].name} ${FIRM[c.order.firm]}${c.order.firm === 'futsu' ? '으로' : '로'}`;
+      const t = c.special?.type;
+      customerSay(c, t === 'regular' ? `⭐ 사장님, 늘 먹던 걸로요! (${what})` : t === 'hurry' ? `⏱ ${what}, 빨리 부탁해요! 시간이 없어서…` :
+        t === 'critic' ? `📰 (수첩을 꺼내며) ${what} 주시죠.` : `📝 ${what} 주세요!`, '');
     }
   }
   for (const s of G.seats) {
@@ -2424,7 +2487,9 @@ function startDay() {
   G.running = true; Sound.init(); VoiceFiles.decode(); lockPointer();
   store.set('ramen-seen', Math.max(day, store.get('ramen-seen', 0)));
   const lv = levelCfg();
-  toast(`📅 <b>Day ${day} — ${lv.title}</b><br><small>${lv.note}</small>`, 'warn');
+  G.event = pickEvent(day);
+  const e = ev();
+  toast(`📅 <b>Day ${day} — ${lv.title}</b><br><small>${lv.note}</small>` + (G.event !== 'normal' ? `<br><b>${e.icon} 오늘은 ${e.name}!</b> <small>${e.note}</small>` : ''), 'warn');
 }
 function dayInfoHtml(d) {
   const lv = levelCfg(d);
@@ -2638,7 +2703,7 @@ function update(dt) {
   if (G.time >= G.nextSpawn && G.time < CFG.dayLength - 25) {
     spawnCustomer();
     const t = G.time;
-    G.nextSpawn = t + (t < 60 ? rand(40, 46) : t < 150 ? rand(24, 30) : rand(30, 36)) * levelCfg().spawn * repSpawn();
+    G.nextSpawn = t + (t < 60 ? rand(40, 46) : t < 150 ? rand(24, 30) : rand(30, 36)) * levelCfg().spawn * repSpawn() * (ev().spawn ?? 1);
   }
   tryAssignSeats();
   // 면 솥
@@ -2772,7 +2837,7 @@ function updateHud() {
   const t = Math.min(G.time, CFG.dayLength) / CFG.dayLength;
   const mins = Math.floor(11 * 60 + t * 180);
   const clk = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
-  document.getElementById('clock').textContent = `Day ${G.day} · ` + (G.time >= CFG.dayLength ? `${clk} · 마지막 손님 마무리` : `🕐 ${clk}`);
+  document.getElementById('clock').textContent = `Day ${G.day} · ${ev().icon} · ` + (G.time >= CFG.dayLength ? `${clk} · 마지막 손님 마무리` : `🕐 ${clk}`);
   document.getElementById('money').textContent = `¥${G.money.toLocaleString()}`;
   const avg = G.scores.length ? G.scores.reduce((a, b) => a + b, 0) / G.scores.length : null;
   document.getElementById('rating').textContent = `오늘 ${avg ? '★' + avg.toFixed(1) : '—'} · 평판 ★${rep.toFixed(1)}`;
@@ -2802,7 +2867,7 @@ function endDay() {
     '오늘은 힘들었어요… 내일은 더 잘할 수 있어요!';
   // 내일 열리는 요소 미리 보기
   // 가게 평판: 오늘 평점이 40% 반영 + 가게 꾸미기 보너스
-  if (G.scores.length) { const before = rep; setRep(rep * 0.6 + avg * 0.4 + upgValue('decor') * 0.05); G.repBefore = before; }
+  if (G.scores.length) { const before = rep; setRep(rep * 0.6 + avg * 0.4 + upgValue('decor') * 0.05 + G.repBonus); G.repBefore = before; }
   showRep();
   const next = day + 1;
   document.getElementById('endNext').innerHTML = '내일은… ' + dayInfoHtml(next);
