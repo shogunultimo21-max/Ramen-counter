@@ -78,6 +78,41 @@
   .kit-btn.in::after { content: '✓'; position: absolute; top: 2px; left: 5px; color: #2f7a3a; font-size: 13px; }
   .kit-btn.grill { background: #ffd2b8; }
   .kit-btn.off { opacity: .45; }
+  /* 조작 안내: 실제 게임 화면 위에 말풍선으로 */
+  .coach-open { margin-top: 4px; }
+  .coach-hint { text-align: center; font-size: 13px; opacity: .75; margin: 6px 0 10px; }
+  .flow { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; counter-reset: f; justify-content: center; }
+  .flow li { counter-increment: f; background: #fff3d1; border-radius: 8px; padding: 5px 9px; font-size: 13px; }
+  .flow li::before { content: counter(f) '. '; font-weight: 800; color: var(--red); }
+  #coach { position: fixed; inset: 0; z-index: 40; background: rgba(10, 7, 5, .55); }
+  #coach > .btn { position: absolute; left: calc(16px + env(safe-area-inset-left)); top: 40%; width: auto; padding: 10px 22px; }
+  .tip { position: absolute; white-space: nowrap; transform: translate(-50%, -100%); background: #fff3d1; color: var(--ink); border: 2px solid var(--yellow);
+    border-radius: 10px; padding: 4px 8px; font-size: 12.5px; font-weight: 700; line-height: 1.35; max-width: 170px; text-align: center; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
+  .tip.below { transform: translate(-50%, 0); }
+  .tip.left { transform: translate(-100%, -50%); }
+  .tip.right { transform: translate(0, -50%); }
+  .tip.left::after { left: 100%; top: 50%; margin: -6px 0 0; border-top-color: transparent; border-left-color: var(--yellow); }
+  .tip.right::after { left: auto; right: 100%; top: 50%; margin: -6px 0 0; border-top-color: transparent; border-right-color: var(--yellow); }
+  .tip::after { content: ''; position: absolute; left: 50%; top: 100%; margin-left: -6px; border: 6px solid transparent; border-top-color: var(--yellow); }
+  .tip.below::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--yellow); }
+  .tip-ring { position: absolute; border: 3px solid #ffd23a; border-radius: 12px; box-shadow: 0 0 0 3px rgba(255, 210, 58, .3); pointer-events: none; }
+  body.mobile .tip { font-size: 10.5px; padding: 3px 6px; max-width: 130px; }
+  /* 영업 종료: 매출 − 운영비 = 순이익 */
+  .end-net { font-size: 15px; margin: 8px 0 2px; color: #2f7a3a; }
+  .end-net.loss { color: var(--red); }
+  .end-net small { font-size: 11px; opacity: .7; color: var(--ink); }
+  #endGoal { max-width: 360px; margin: 10px auto 0; text-align: left; }
+  .ledger { max-width: 300px; margin: 6px auto; text-align: left; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .ledger-row { display: flex; justify-content: space-between; padding: 1px 0; }
+  .ledger-row.net { border-top: 2px solid var(--ink); margin-top: 3px; padding-top: 3px; font-size: 16px; color: #2f7a3a; }
+  .ledger-row.loss { color: var(--red); }
+  body.mobile .ledger { font-size: 12.5px; }
+  body.mobile .ledger-row.net { font-size: 14px; }
+  .goal { margin: 0 0 8px; font-size: 13px; }
+  .upg small.upkeep { color: var(--red); opacity: 1; }
+  #startExpand .shop-grid, #endExpand .shop-grid { grid-template-columns: 1fr 1fr; }
+  .goal .track { height: 10px; border-radius: 5px; background: #e3d7c0; overflow: hidden; margin-top: 3px; }
+  .goal .track i { display: block; height: 100%; background: linear-gradient(90deg, #d9a21b, #2f7a3a); }
   /* 시작·영업 종료 화면: 탭으로 넘기는 페이지 (스크롤 없이) */
   .card.paged { display: flex; flex-direction: column; }
   .tabs { display: flex; gap: 5px; margin-bottom: 12px; flex: none; }
@@ -296,6 +331,7 @@
   <div id="barR" class="thumbs"><button id="mServe">🍜 내기</button><button id="mTrash">🗑 버리기</button></div>
 </div>
 
+<div id="coach" hidden><div id="coachTips"></div><button class="btn" id="coachClose">알겠어요</button></div>
 <div id="rotate"><div><span class="ico">📱</span>휴대폰을 <b>가로로</b> 돌려 주세요</div></div>
 
 <div id="start" class="overlay">
@@ -307,17 +343,17 @@
       <div class="day-box" id="dayInfo"></div>
     </section>
     <section class="pg" data-tab="조작">
-      <h3>👆 조작 (탭 · 클릭)</h3>
-      <ul>
-        <li><b>그릇 더미</b>를 탭해서 그릇 놓기</li>
-        <li>↻ <b>뒤돌기</b> → <b>면 바구니 번호</b>를 눌러 면 삶기 · <b>육수 냄비</b>를 탭해서 육수 뜨기</li>
-        <li>순서는 꼭 <b>육수 → 면 → 챠슈·토핑</b></li>
-        <li>아래 <b>재료 버튼</b>: 토핑은 탭, <b>🔥 챠슈</b>는 누르고 있다가 초록에서 떼기</li>
-        <li>그릇이 <b>✅ 완성</b>되면 <b>🍜 내기</b> · <b>↶</b> 방금 넣은 것 빼기 · <b>🗑</b> 손에 든 것 버리기</li>
-      </ul>
+      <button class="btn coach-open" id="coachBtn">👀 게임 화면에서 조작 보기</button>
+      <p class="coach-hint">실제 화면 위에 어디를 누르는지 하나씩 짚어 줘요.</p>
+      <ol class="flow">
+        <li><b>그릇</b> 놓기</li><li>↻ 뒤돌아 <b>면</b> 삶기</li><li><b>육수</b> 붓기</li><li>면 넣기</li><li>🔥 <b>챠슈</b> · 토핑</li><li>✅ 완성 → 🍜 <b>내기</b></li>
+      </ol>
     </section>
     <section class="pg" data-tab="업그레이드">
       <div class="shop" id="startShop"></div>
+    </section>
+    <section class="pg" data-tab="확장">
+      <div class="shop" id="startExpand"></div>
     </section>
     <div class="foot">
       <button class="btn sub" id="resetBtn">처음부터</button>
@@ -346,8 +382,13 @@
         <div>😐 보통<b id="endNormal">0</b></div>
         <div>😠 화남<b id="endAngry">0</b></div>
       </div>
-      <p id="endMoney"></p>
+      <p id="endNet" class="end-net"></p>
       <p id="endComment" style="font-weight:700"></p>
+    </section>
+    <section class="pg" data-tab="장부">
+      <h3>💰 오늘 장부</h3>
+      <div id="endMoney"></div>
+      <div class="goal-wrap" id="endGoal"></div>
     </section>
     <section class="pg" data-tab="평판·내일">
       <div class="day-box" id="endRep"></div>
@@ -356,6 +397,9 @@
     </section>
     <section class="pg" data-tab="업그레이드">
       <div class="shop" id="endShop"></div>
+    </section>
+    <section class="pg" data-tab="확장">
+      <div class="shop" id="endExpand"></div>
     </section>
     <div class="foot">
       <button class="btn sub" id="againBtn">오늘 다시</button>
@@ -466,6 +510,15 @@ const UPGRADES = {
     names: ['기본 그릇', '고급 그릇 (검은 칠·금테)', '명품 그릇 (청해파 무늬)', '금박 그릇'], desc: v => `만족한 손님 팁 ¥${v}` },
   decor:   { name: '가게 꾸미기', icon: '🪴', values: [0, 1, 2, 3, 4], prices: [3000, 6000, 10000, 15000],
     names: ['꾸밈 없음', '화분', '+ 마네키네코', '+ 족자·풍경', '+ 등불 줄'], desc: v => (v ? `분위기 좋아서 매일 평판 +${(v * 0.05).toFixed(2)}` : '꾸밈 없음') },
+  // ---- 가게 확장 (group: 'expand') — 비싸지만 가게가 커짐. rent·wage = 단계별 매일 나가는 돈 ----
+  seats:   { group: 'expand', name: '좌석 확장', icon: '🪑', values: [6, 8], prices: [30000], rent: [0, 600],
+    names: ['6자리', '8자리'], desc: v => `카운터 ${v}자리` },
+  staff:   { group: 'expand', name: '주방 보조', icon: '🧑‍🍳', values: [0, 1], prices: [25000], wage: [0, 1200],
+    names: ['혼자', '보조 1명'], desc: v => (v ? '그릇 놓기 · 주문에 맞는 육수 붓기를 도와줘요' : '혼자 일해요') },
+  evening: { group: 'expand', name: '저녁 영업', icon: '🌙', values: [210, 270], prices: [45000], rent: [0, 800],
+    names: ['점심 영업', '점심 + 저녁'], desc: v => (v > 210 ? '영업 시간이 길어져 손님이 더 와요' : '점심만 영업해요') },
+  branch:  { group: 'expand', name: '2호점', icon: '🏯', values: [0, 5000], prices: [150000],
+    names: ['없음', '2호점 개업'], desc: v => (v ? `매일 2호점 수익 +¥${v.toLocaleString()}` : '최종 목표!') },
 };
 const store = {
   get(k, def) { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch (e) { return def; } },
@@ -488,6 +541,12 @@ const stockMax = () => upgValue('bigTray');
 const slotCount = () => upgValue('slot4');
 const tipAmount = () => upgValue('fineBowl');
 const patienceMax = () => CFG.patience * upgValue('noren');
+// 운영비: 재료비(그릇마다) + 월세 · 급여(하루마다)
+const INGREDIENT_RATE = 0.35, GYOZA_COST = 120, WASTE_COST = 300, KAEDAMA_COST = 60, RENT_BASE = 1500;
+const costOf = (k, key) => (UPGRADES[k][key]?.[levelOf(k)] ?? 0);
+const rentToday = () => RENT_BASE + Object.keys(UPGRADES).reduce((s, k) => s + costOf(k, 'rent'), 0);
+const wageToday = () => Object.keys(UPGRADES).reduce((s, k) => s + costOf(k, 'wage'), 0);
+const dayLen = () => upgValue('evening'); // 영업 시간(초)
 function buyUpgrade(k) {
   const u = UPGRADES[k], lv = levelOf(k), price = u.prices[lv];
   if (price == null || bank < price) return false;
@@ -500,7 +559,7 @@ const FIRM_ALL = { raw: '덜 익음', katame: '카타메', futsu: '보통', yawa
 const FIRM_COLOR = { raw: 0xece6d0, katame: 0xf5dc7a, futsu: 0xe9b544, yawa: 0xd68f2a, nobi: 0x9a6a3a };
 const FIRM_IDX = { raw: -1, katame: 0, futsu: 1, yawa: 2, nobi: 3 };
 const TOPPINGS = { negi: '파', kikurage: '목이버섯', nori: '김', ajitama: '아지타마고', menma: '멘마', corn: '콘', minchi: '다진고기' };
-const SEAT_X = [-1.5, -0.9, -0.3, 0.3, 0.9, 1.5];
+const SEAT_X = [-1.5, -0.9, -0.3, 0.3, 0.9, 1.5]; // seatLayout()이 좌석 수에 맞춰 다시 채움
 const SEAT_Z = -2.12, AISLE_Z = -2.72;
 const DOOR = new THREE.Vector3(2.25, 0, -3.1);       // 입구 안쪽
 const OUTSIDE = new THREE.Vector3(2.25, 0, -5.0);   // 가게 밖 (여기서 들어오고 나감)
@@ -1073,11 +1132,19 @@ box(3.6, 0.03, 0.2, wood, 0, 1.16, -1.38);
 // 손님 카운터
 box(3.8, 0.05, 0.42, woodLight, 0, 1.0, -1.66);
 box(3.8, 1.0, 0.06, woodDark, 0, 0.5, -1.47);
-// 의자
-for (const x of SEAT_X) {
-  cyl(0.17, 0.17, 0.06, 12, mat(0x8a2a1e), x, 0.72, SEAT_Z);
-  cyl(0.03, 0.03, 0.7, 6, steelDark, x, 0.35, SEAT_Z);
+// 의자: '좌석 확장'하면 6 → 8자리 (간격을 좁혀서 같은 카운터에)
+const stools = new THREE.Group(); scene.add(stools);
+function seatLayout() {
+  const n = upgValue('seats'), gap = n === 8 ? 0.45 : 0.6;
+  SEAT_X.length = 0;
+  for (let i = 0; i < n; i++) SEAT_X.push((i - (n - 1) / 2) * gap);
+  stools.clear();
+  for (const x of SEAT_X) {
+    cyl(0.17, 0.17, 0.06, 12, mat(0x8a2a1e), x, 0.72, SEAT_Z, stools);
+    cyl(0.03, 0.03, 0.7, 6, steelDark, x, 0.35, SEAT_Z, stools);
+  }
 }
+seatLayout();
 
 // 그릇 더미
 const bowlStack = new THREE.Group(); bowlStack.position.set(-1.0, 0.95, -0.8); scene.add(bowlStack);
@@ -2066,6 +2133,7 @@ function newGame() {
     G.seats.forEach(s => s.bowl && scene.remove(s.bowl.group));
     G.customers.forEach(c => c.ticket?.remove());
   }
+  seatLayout(); staffLayout(); // 좌석 확장 · 주방 보조
   G = {
     running: false, paused: false, ended: false, time: 0, money: 0,
     results: { happy: 0, normal: 0, angry: 0 }, scores: [],
@@ -2077,6 +2145,7 @@ function newGame() {
     customers: [], queue: [], nextSpawn: 3, nextId: 1, recentRamen: [],
     event: 'normal', repBonus: 0, criticCame: false, // 오늘의 행사 · 평론가 등으로 오늘 바뀐 평판
     refill: {}, pop: {}, lastAdd: null, // 보충 중인 토핑(남은 초) · 그릇 위 "+파" 표시 · 되돌릴 수 있는 방금 넣은 것
+    costIngr: 0, staffT: 2, // 오늘 쓴 재료비 · 보조가 다음에 움직일 때까지
     gyozaPan: { t: null }, gyozaPlates: 0, // 교자 굽는 시간 (null = 비어 있음) · 옆에 빼놓은 접시 수
     day, stock: Object.fromEntries(Object.keys(TOPPINGS).map(k => [k, stockMax()])),
   };
@@ -2224,6 +2293,42 @@ function orderHtml(o) {
   if (o.gyoza) lines.push('<span class="add">🥟 교자 1접시</span>');
   return lines.map(l => `<div class="line">${l}</div>`).join('');
 }
+// ---------- 주방 보조 (가게 확장): 2.5초마다 기다리는 주문을 보고 그릇을 놓고 맞는 육수를 미리 부어 줌 ----------
+let helper = null;
+function staffLayout() {
+  if (!helper) {
+    helper = makePerson({ kind: 'man', female: false, skin: 0xe8b890, hair: 0x1a1a1a, hairStyle: 'short', top: 0xf3ead8, bottom: 0x2b2b33,
+      shoes: 0x2a2a2a, cap: 0x1f2b4a, scale: 0.97 });
+    helper.position.set(-2.3, 0, -0.75); helper.rotation.y = Math.PI / 2; scene.add(helper); // 조리대 왼쪽 끝에서 그릇 쪽을 봄
+  }
+  helper.visible = !!upgValue('staff');
+}
+function tickStaff(dt) {
+  if (!upgValue('staff') || G.tut) return;
+  if ((G.staffT -= dt) > 0) return;
+  G.staffT = 2.5;
+  // 주문마다 필요한 바탕(육수 + 미소). 이미 그런 그릇이 있으면 그 주문은 준비된 걸로 봄
+  const waiting = G.customers.filter(c => c.state === 'waiting').sort((a, b) => a.patience - b.patience);
+  const ready = G.bowls.filter(b => b && b.broth != null).map(b => ({ broth: b.broth, miso: b.miso, used: false }));
+  const needs = [];
+  for (const c of waiting) {
+    const n = { broth: brothOf(c.order.ramen), miso: !!RAMEN[c.order.ramen].miso };
+    const r = ready.find(x => !x.used && x.broth === n.broth && x.miso === n.miso);
+    if (r) r.used = true; else needs.push(n);
+  }
+  if (!needs.length) return;
+  // 육수 없는 그릇이 있으면 붓고, 없으면 빈 자리에 그릇부터 놓음
+  const i = G.bowls.findIndex(b => b && b.broth == null && (!b.miso || needs.some(n => n.miso)));
+  if (i < 0) {
+    const empty = G.bowls.indexOf(null);
+    if (empty >= 0) { placeBowl(new Bowl(), empty); Sound.place(); popAt(empty, '+그릇 (보조)'); }
+    return;
+  }
+  const b = G.bowls[i], n = b.miso ? needs.find(x => x.miso) : needs[0];
+  b.miso = b.miso || n.miso; b.broth = n.broth; b.temp = 92; b.refresh();
+  Sound.pour(); popAt(i, `+${n.miso ? '미소 ' : ''}${RAMEN[n.broth].name} 육수 (보조)`);
+}
+
 // ---------- Day 1 튜토리얼: 첫 손님 한 그릇을 단계별로 따라 하기 ----------
 const TUT_ORDER = () => ({ ramen: 'tonkotsu', firm: 'futsu', chashu: 1, top: new Set(['negi', 'kikurage', 'nori']), spice: 0, gyoza: false });
 const anyBowl = f => G.bowls.some(b => b && f(b));
@@ -2423,6 +2528,7 @@ function serve(c, bowl) {
   const { res, issues } = evaluate(c, bowl);
   c.result = res; c.state = 'eating'; c.eatT = rand(16, 24);
   c.gotGyoza = bowl.gyoza === 'good';
+  G.costIngr += Math.round(RAMEN[c.order.ramen].price * INGREDIENT_RATE) + (bowl.gyoza ? GYOZA_COST : 0); // 낸 그릇만큼 재료비
   c.ticket?.remove(); c.ticket = null;
   const seat = G.seats[c.seat];
   seat.bowl = bowl;
@@ -2446,6 +2552,7 @@ function deliverKaedama(c, t) {
   c.ticket?.remove(); c.ticket = null;
   c.state = 'eating'; c.eatT = rand(7, 10);
   G.money += CFG.kaedamaPrice;
+  G.costIngr += KAEDAMA_COST;
   const b = G.seats[c.seat].bowl; if (b) { b.parts.noodles.visible = true; }
   if (d === 0) {
     if (c.result === 'normal') c.result = 'happy';
@@ -2719,7 +2826,7 @@ function act(d) {
       const gz = G.gyozaPan;
       if (gz.t == null) { gz.t = 0; Sound.fire(); return; }
       if (gz.t < GYOZA_DONE) return toast(`교자 굽는 중… ${Math.ceil(GYOZA_DONE - gz.t)}초 더`, 'warn');
-      if (gz.t > GYOZA_BURN) { gz.t = null; Sound.trash(); return toast('탄 교자는 버렸어요. 다시 구우세요', 'warn'); }
+      if (gz.t > GYOZA_BURN) { gz.t = null; G.costIngr += GYOZA_COST; Sound.trash(); return toast(`탄 교자는 버렸어요 (재료비 ¥${GYOZA_COST})`, 'warn'); }
       if (G.gyozaPlates >= GYOZA_HOLD) return toast(`옆에 빼놓을 자리가 없어요 (${GYOZA_HOLD}접시까지)`, 'warn');
       G.gyozaPlates++; gz.t = null; Sound.place();
       return toast(`🥟 교자를 옆에 빼놨어요 (${G.gyozaPlates}접시) — 🍽 곁들이기로 그릇에`, 'good');
@@ -2845,7 +2952,7 @@ function tickRefill(dt) {
 }
 function discard() {
   if (!G.hand) return;
-  if (G.hand.type === 'bowl') setHeldMesh(null);
+  if (G.hand.type === 'bowl') { setHeldMesh(null); if (G.hand.bowl.broth != null || G.hand.bowl.noodles != null) { G.costIngr += WASTE_COST; toast(`그릇을 버렸어요 (재료비 ¥${WASTE_COST})`, 'warn'); } }
   setHand(null); Sound.trash();
 }
 function grillStart() { G.grill.holding = true; G.grill.t = 0; grillMeat.visible = true; Sound.setSizzle(true); }
@@ -2951,22 +3058,35 @@ function startInfoHtml() {
   for (let d = seen + 1; d < Math.min(day, LEVELS.length + 1); d++) if (/개시|입고|재고/.test(LEVELS[d - 1].title)) missed.push(`<b>🆕 ${LEVELS[d - 1].title}</b> — ${LEVELS[d - 1].note}`);
   return dayInfoHtml(day) + `<br><small>${repText()}</small>` + (missed.length ? '<hr style="border:0;border-top:1px dashed #d9b54a;margin:8px 0">' + missed.join('<br>') : '');
 }
-// 업그레이드 상점 (시작 화면·영업 종료 화면): 단계 점(●○), 지금 효과 → 다음 단계 효과
-function renderShop(id) {
-  const el = document.getElementById(id);
-  el.innerHTML = `<h3>🏪 가게 업그레이드 <span>금고 ¥${bank.toLocaleString()}</span></h3><div class="shop-grid">` +
-    Object.entries(UPGRADES).map(([k, u]) => {
-      const lv = levelOf(k), max = u.prices.length, price = u.prices[lv], done = lv >= max, can = !done && bank >= price;
-      const pips = '●'.repeat(lv) + '○'.repeat(max - lv);
-      const now = `<small>지금: ${u.names[lv]} — ${u.desc(u.values[lv])}</small>`;
-      const next = done ? '' : `<small class="next">다음: ${u.names[lv + 1]} — ${u.desc(u.values[lv + 1])}</small>`;
-      return `<button class="upg${done ? ' owned' : ''}" data-k="${k}" ${!can ? 'disabled' : ''}>
-        <b>${u.icon} ${u.name} <span class="pips">${pips}</span></b>${now}${next}
-        <span class="price">${done ? '✓ 최고 단계' : `¥${price.toLocaleString()}${can ? '' : ' (돈 부족)'}`}</span></button>`;
-    }).join('') + '</div>';
-  el.querySelectorAll('.upg').forEach(b => b.onclick = () => {
-    if (buyUpgrade(b.dataset.k)) { Sound.init(); Sound.happy(); renderShop(id); }
-  });
+// 상점 (시작 화면·영업 종료 화면): 업그레이드 / 가게 확장 탭. 단계 점(●○), 지금 효과 → 다음 단계 효과
+// prefix = 'start' | 'end' → #startShop · #startExpand 등을 함께 다시 그림 (금고가 같이 바뀌므로)
+function renderShop(prefix) {
+  for (const [id, group] of [[prefix + 'Shop', undefined], [prefix + 'Expand', 'expand']]) {
+    const el = document.getElementById(id);
+    const title = group ? '🏗 가게 확장' : '🏪 가게 업그레이드';
+    el.innerHTML = `<h3>${title} <span>금고 ¥${bank.toLocaleString()}</span></h3>` + (group ? goalHtml() : '') + '<div class="shop-grid">' +
+      Object.entries(UPGRADES).filter(([, u]) => u.group === group).map(([k, u]) => {
+        const lv = levelOf(k), max = u.prices.length, price = u.prices[lv], done = lv >= max, can = !done && bank >= price;
+        const pips = '●'.repeat(lv) + '○'.repeat(max - lv);
+        const now = `<small>지금: ${u.names[lv]} — ${u.desc(u.values[lv])}</small>`;
+        const next = done ? '' : `<small class="next">다음: ${u.names[lv + 1]} — ${u.desc(u.values[lv + 1])}</small>`;
+        const upkeep = done ? 0 : (u.rent?.[lv + 1] ?? 0) - (u.rent?.[lv] ?? 0) + (u.wage?.[lv + 1] ?? 0) - (u.wage?.[lv] ?? 0);
+        return `<button class="upg${done ? ' owned' : ''}" data-k="${k}" ${!can ? 'disabled' : ''}>
+          <b>${u.icon} ${u.name} <span class="pips">${pips}</span></b>${now}${next}${upkeep ? `<small class="upkeep">매일 −¥${upkeep.toLocaleString()}</small>` : ''}
+          <span class="price">${done ? '✓ 최고 단계' : `¥${price.toLocaleString()}${can ? '' : ' (돈 부족)'}`}</span></button>`;
+      }).join('') + '</div>';
+    el.querySelectorAll('.upg').forEach(b => b.onclick = () => {
+      if (buyUpgrade(b.dataset.k)) { Sound.init(); Sound.happy(); renderShop(prefix); }
+    });
+  }
+}
+// 다음 확장 목표까지 진행 막대 (아직 안 산 확장 중 가장 싼 것)
+function goalHtml() {
+  const next = Object.entries(UPGRADES).filter(([k, u]) => u.group === 'expand' && levelOf(k) < u.prices.length)
+    .map(([k, u]) => ({ u, price: u.prices[levelOf(k)] })).sort((a, b) => a.price - b.price)[0];
+  if (!next) return '<div class="goal">🏆 모든 확장을 끝냈어요! 최고의 라멘집이에요.</div>';
+  const pct = Math.max(0, Math.min(100, bank / next.price * 100));
+  return `<div class="goal">🎯 다음 목표: <b>${next.u.icon} ${next.u.name}</b> ¥${next.price.toLocaleString()} — ${pct >= 100 ? '살 수 있어요!' : `¥${(next.price - bank).toLocaleString()} 남음`}<div class="track"><i style="width:${pct}%"></i></div></div>`;
 }
 // ---------- 가게 평판 · 홍보 미니게임 ----------
 function setRep(v) { rep = clamp(v, 1, 5); store.set('ramen-rep', rep); }
@@ -3073,8 +3193,50 @@ function setupPager(card) {
 }
 const startPage = setupPager(document.querySelector('#start .card'));
 const endPage = setupPager(document.querySelector('#end .card'));
+// ---------- 조작 안내: 시작 화면을 잠깐 내리고 실제 게임 화면의 버튼·물건 위에 말풍선 ----------
+// side: 말풍선이 대상의 어느 쪽에 붙는지 (above · below · left · right)
+const COACH_TIPS = [
+  { world: [-1.0, 1.12, -0.8], text: '그릇 더미<br>탭해서 그릇 놓기', side: 'above' },
+  { world: [0.2, 1.06, BOWL_Z], text: '그릇 자리 — 탭하면 선택<br>(노란 고리)', side: 'above' },
+  { world: [1.1, 1.75, SEAT_Z], text: '손님 — 주문서는<br>왼쪽에 쌓여요', side: 'above' },
+  { el: '#kit', text: '재료 버튼 — 토핑은 탭<br>🔥챠슈는 꾹 눌렀다 초록에서 떼기', side: 'above' },
+  { el: '#mTurn', text: '↻ 뒤돌아서<br>면 삶기 · 육수', side: 'right' },
+  { el: '#mUndo', text: '↶ 방금 넣은 것 빼기', side: 'right' },
+  { el: '#mServe', text: '🍜 ✅완성된 그릇 내기', side: 'left' },
+  { el: '#mTrash', text: '🗑 손에 든 것 버리기', side: 'left' },
+];
+function showCoach() {
+  document.getElementById('start').classList.add('hidden');
+  const box = document.getElementById('coachTips'); box.innerHTML = '';
+  document.getElementById('coach').hidden = false;
+  const v = new THREE.Vector3();
+  for (const t of COACH_TIPS) {
+    let r;
+    if (t.el) {
+      r = document.querySelector(t.el)?.getBoundingClientRect();
+      if (!r || !r.width) continue;
+      box.insertAdjacentHTML('beforeend', `<div class="tip-ring" style="left:${r.left - 4}px;top:${r.top - 4}px;width:${r.width + 8}px;height:${r.height + 8}px"></div>`);
+    } else {
+      v.set(...t.world).project(camera);
+      const x = (v.x + 1) / 2 * innerWidth, y = (1 - v.y) / 2 * innerHeight;
+      r = { left: x, right: x, top: y, bottom: y, width: 0, height: 0 };
+    }
+    const pos = { above: [r.left + r.width / 2, r.top - 8], below: [r.left + r.width / 2, r.bottom + 8],
+      left: [r.left - 10, r.top + r.height / 2], right: [r.right + 10, r.top + r.height / 2] }[t.side];
+    box.insertAdjacentHTML('beforeend', `<div class="tip ${t.side}">${t.text}</div>`);
+    const tip = box.lastElementChild;
+    let [x, y] = pos;
+    if (t.side === 'above' || t.side === 'below') { const w = tip.offsetWidth / 2; x = Math.max(w + 4, Math.min(innerWidth - w - 4, x)); }
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  }
+}
+document.getElementById('coachBtn').onclick = showCoach;
+document.getElementById('coachClose').onclick = () => {
+  document.getElementById('coach').hidden = true;
+  document.getElementById('start').classList.remove('hidden');
+};
 document.getElementById('dayInfo').innerHTML = startInfoHtml();
-renderShop('startShop');
+renderShop('start');
 document.getElementById('startBtn').textContent = day > 1 ? `Day ${day} 영업 시작` : '영업 시작';
 document.getElementById('startBtn').onclick = () => { goFullscreen(); startDay(); };
 document.getElementById('resetBtn').style.display = day > 1 ? '' : 'none';
@@ -3320,12 +3482,13 @@ function update(dt) {
   G.time += dt;
   tickRefill(dt); tickTutorial();
   if (G.gyozaPan.t != null) G.gyozaPan.t += dt;
+  tickStaff(dt);
   // 손님 도착
-  if (!G.tut && G.time >= G.nextSpawn && G.time < CFG.dayLength - 25) { // 튜토리얼 중엔 연습 손님만
+  if (!G.tut && G.time >= G.nextSpawn && G.time < dayLen() - 25) { // 튜토리얼 중엔 연습 손님만
     spawnCustomer();
     const t = G.time;
     // 날짜·평판·행사로 빨라지는 건 곱해지지만, 가장 바쁠 때도 약 15초에 한 명보다 빨리 오진 않게
-    const crowd = Math.max(0.62, levelCfg().spawn * repSpawn() * (ev().spawn ?? 1));
+    const crowd = Math.max(0.62, levelCfg().spawn * repSpawn() * (ev().spawn ?? 1)) * (SEAT_X.length > 6 ? 0.85 : 1); // 8자리면 조금 더 자주
     G.nextSpawn = t + (t < 60 ? rand(40, 46) : t < 150 ? rand(24, 30) : rand(30, 36)) * crowd;
   }
   tryAssignSeats();
@@ -3345,9 +3508,9 @@ function update(dt) {
   const cooking = baskets.filter(b => b.cooking).length;
   Sound.setBoil(0.25 + cooking * 0.35 + (br.fire ? 0.35 : 0));
   // 영업 종료
-  if (!G.tut && G.time >= CFG.dayLength) {
+  if (!G.tut && G.time >= dayLen()) {
     for (const c of G.queue.splice(0)) { G.results.angry++; G.scores.push(1); scene.remove(c.mesh); G.customers.splice(G.customers.indexOf(c), 1); }
-    if (!G.customers.length || G.time > CFG.dayLength + 90) endDay();
+    if (!G.customers.length || G.time > dayLen() + 90) endDay();
   }
 }
 function visuals(dt, t) {
@@ -3469,10 +3632,9 @@ function updateHud() {
   const txt = last ? `↶ ${last.name} 빼기` : '↶ 빼기';
   if (ub.textContent !== txt) ub.textContent = txt;
   updateKit();
-  const t = Math.min(G.time, CFG.dayLength) / CFG.dayLength;
-  const mins = Math.floor(11 * 60 + t * 180);
+  const mins = Math.floor(11 * 60 + Math.min(G.time, dayLen()) * 180 / 210); // 점심 210초 = 3시간, 저녁 영업이면 더 늦게까지
   const clk = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
-  document.getElementById('clock').textContent = `Day ${G.day} · ${ev().icon} · ` + (G.tut ? '🎓 연습 중' : G.time >= CFG.dayLength ? `${clk} · 마지막 손님 마무리` : `🕐 ${clk}`);
+  document.getElementById('clock').textContent = `Day ${G.day} · ${ev().icon} · ` + (G.tut ? '🎓 연습 중' : G.time >= dayLen() ? `${clk} · 마지막 손님 마무리` : `🕐 ${clk}`);
   document.getElementById('money').textContent = `¥${G.money.toLocaleString()}`;
   const avg = G.scores.length ? G.scores.reduce((a, b) => a + b, 0) / G.scores.length : null;
   document.getElementById('rating').textContent = `오늘 ${avg ? '★' + avg.toFixed(1) : '—'} · 평판 ★${rep.toFixed(1)}`;
@@ -3492,9 +3654,17 @@ function endDay() {
   document.getElementById('endHappy').textContent = G.results.happy;
   document.getElementById('endNormal').textContent = G.results.normal;
   document.getElementById('endAngry').textContent = G.results.angry;
-  bank += G.money; store.set('ramen-bank', bank); // 오늘 번 돈은 금고로
-  document.getElementById('endMoney').textContent = `오늘 매출 ¥${G.money.toLocaleString()} → 금고에 넣었어요`;
-  renderShop('endShop');
+  // 순이익 = 매출 − 재료비 − 월세 − 급여 + 2호점 수익 → 금고로 (적자면 금고가 줄어듦)
+  const rent = rentToday(), wage = wageToday(), branch = upgValue('branch');
+  const net = G.money - G.costIngr - rent - wage + branch;
+  bank += net; store.set('ramen-bank', bank);
+  const row = (label, v, cls = '') => `<div class="ledger-row ${cls}"><span>${label}</span><b>${v < 0 ? '−' : ''}¥${Math.abs(v).toLocaleString()}</b></div>`;
+  document.getElementById('endMoney').innerHTML = `<div class="ledger">${row('매출', G.money)}${row('재료비', -G.costIngr)}${row('월세', -rent)}${wage ? row('직원 급여', -wage) : ''}${branch ? row('2호점 수익', branch) : ''}`
+    + `${row(net >= 0 ? '순이익' : '적자', net, net >= 0 ? 'net' : 'net loss')}</div>`;
+  document.getElementById('endNet').innerHTML = net >= 0 ? `💰 순이익 <b>¥${net.toLocaleString()}</b> <small>(장부 탭에서 자세히)</small>` : `📉 적자 <b>¥${(-net).toLocaleString()}</b> <small>(장부 탭에서 자세히)</small>`;
+  document.getElementById('endNet').classList.toggle('loss', net < 0);
+  document.getElementById('endGoal').innerHTML = goalHtml();
+  renderShop('end');
   document.getElementById('endComment').textContent =
     avg >= 4.3 ? '줄 서는 라멘집이 될 것 같아요! 🎉' :
     avg >= 3.3 ? '좋은 하루였어요. 조금만 더 빠르게!' :
