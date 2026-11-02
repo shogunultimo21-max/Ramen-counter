@@ -64,6 +64,14 @@
   .wl.pop { font-size: 14px; font-weight: 800; color: #fff; }
   .wl.pop.in { background: #2f7a3a; }
   .wl.pop.out { background: #b8322a; }
+  #tut { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: min(520px, 60vw); pointer-events: auto;
+    background: #fff3d1; color: var(--ink); border: 3px solid var(--yellow); border-radius: 10px; padding: 10px 14px; font-size: 15px; line-height: 1.55;
+    box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+  #tut:empty { display: none; }
+  #tut .tut-head { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 4px; color: #8a5a00; }
+  #tut .tut-head b { margin-right: auto; }
+  #tut button { border: 0; border-radius: 6px; background: #e3d7c0; padding: 3px 8px; font: inherit; font-size: 12px; cursor: pointer; }
+  #tut kbd { background: #2b211b; color: #ffe9c4; border-radius: 4px; padding: 0 6px; font-family: inherit; font-weight: 800; }
   #street { position: relative; height: 230px; margin: 10px 0; border-radius: 8px; overflow: hidden; user-select: none;
     background: linear-gradient(#cfe3f2 0 35%, #e9dcc4 35% 38%, #b9b0a2 38% 100%); }
   #street .shop { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); font-size: 13px; font-weight: 800; background: #8a1f1a; color: #fff; padding: 4px 10px; border-radius: 4px; }
@@ -174,6 +182,7 @@
   <button id="undoBtn" disabled>↶ 되돌리기 (U)</button>
   <div id="toast"></div>
   <div id="guide"></div>
+  <div id="tut"></div>
   <div id="potPanel"></div>
   <button id="turnBtn">↻ 뒤돌기 — 면 솥·육수 (Space)</button>
   <div id="help">
@@ -1891,6 +1900,57 @@ function orderHtml(o) {
   if (removed.length) lines.push('빼기: ' + removed.join(' · '));
   return lines.map(l => `<div class="line">${l}</div>`).join('');
 }
+// ---------- Day 1 튜토리얼: 첫 손님 한 그릇을 단계별로 따라 하기 ----------
+const TUT_ORDER = () => ({ ramen: 'tonkotsu', firm: 'futsu', chashu: 1, top: new Set(['negi', 'kikurage', 'nori']) });
+const anyBowl = f => G.bowls.some(b => b && f(b));
+const TUT = [
+  { text: '<kbd>E</kbd>를 누르거나 <b>그릇 더미</b>를 클릭해서 그릇을 놓아요.', done: () => anyBowl(() => true) },
+  { text: '<kbd>Space</kbd>를 눌러 뒤돌아요. 면 솥과 육수 냄비가 있어요.', done: () => facingBack },
+  { text: '<kbd>Z</kbd>를 누르거나 <b>면 바구니</b>를 클릭해서 면을 삶기 시작해요.', done: () => baskets.some(b => b.cooking) || G.hand?.type === 'noodles' || anyBowl(b => b.noodles != null) },
+  { text: '<kbd>T</kbd>를 누르거나 <b>돈코츠 육수 냄비</b>를 클릭해서 육수를 떠요.', done: () => G.hand?.type === 'broth' || anyBowl(b => b.broth) },
+  { text: '<kbd>Space</kbd>로 앞으로 돌아서 <kbd>1</kbd>을 누르거나 <b>그릇</b>을 클릭해 육수를 부어요.', done: () => anyBowl(b => b.broth) },
+  { text: '<kbd>R</kbd>을 누르고 있거나 <b>그릴</b>을 누르고 있다가, 게이지가 <b style="color:#2f7a3a">초록</b>일 때 떼요. 챠슈가 그릇에 올라가요.', done: () => anyBowl(b => b.chashu.length > 0) },
+  { text: '<kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>를 눌러 <b>파 · 목이버섯 · 김</b>을 올려요. (토핑 통을 클릭해도 돼요)', done: () => anyBowl(b => ['negi', 'kikurage', 'nori'].every(k => b.top.has(k))) },
+  { text: '면이 <b>보통</b>(진한 노랑)이 되면 <kbd>Space</kbd>로 뒤돌아 <kbd>Z</kbd>로 건져요. 오른쪽 위 면 솥 칸에서 익힘을 볼 수 있어요.', done: () => G.hand?.type === 'noodles' || anyBowl(b => b.noodles != null) },
+  { text: '<kbd>Space</kbd>로 앞으로 돌아 <kbd>1</kbd>로 그릇에 면을 넣어요.', done: () => anyBowl(b => b.noodles != null) },
+  { text: '<kbd>1</kbd>을 한 번 더 눌러 그릇을 들고, 손님 자리 번호(<kbd>1</kbd>~<kbd>6</kbd>)를 누르거나 <b>손님</b>을 클릭해서 내요!', done: () => G.tutCustomer && G.tutCustomer.state !== 'waiting' && G.tutCustomer.state !== 'walking' && G.tutCustomer.state !== 'queue' },
+];
+const tutDone = () => store.get('ramen-tut-done', false);
+function startTutorial() {
+  G.tut = { i: 0 };
+  G.tutCustomer = null;
+  setTimeout(() => { // 문 열고 들어오도록 살짝 뒤에
+    if (!G.tut) return;
+    spawnCustomer({ order: TUT_ORDER(), special: { type: 'tutorial', tag: '🎓 연습 손님 (천천히 해도 돼요)', patMul: 50, tipMul: 1 } });
+    G.tutCustomer = G.customers[G.customers.length - 1];
+  }, 600);
+  renderTut();
+}
+function renderTut() {
+  const el = document.getElementById('tut');
+  if (!G.tut) { el.innerHTML = ''; return; }
+  const s = TUT[G.tut.i];
+  el.innerHTML = `<div class="tut-head">🎓 따라 해 보기 <b>${G.tut.i + 1} / ${TUT.length}</b><button id="tutSkip">건너뛰기</button></div><div>${s.text}</div>`;
+  document.getElementById('tutSkip').onclick = e => { e.currentTarget.blur(); finishTutorial(true); };
+}
+function tickTutorial() {
+  if (!G.tut || !G.tutCustomer) return;
+  let moved = false;
+  while (G.tut && G.tut.i < TUT.length && TUT[G.tut.i].done()) { G.tut.i++; moved = true; }
+  if (G.tut.i >= TUT.length) return finishTutorial(false);
+  if (moved) { Sound.pick(); renderTut(); }
+}
+function finishTutorial(skipped) {
+  if (!G.tut) return;
+  G.tut = null; store.set('ramen-tut-done', true);
+  renderTut();
+  // 영업 시계는 지금부터 다시 시작
+  G.time = 0; G.nextSpawn = 4; G.pop = {};
+  for (const c of G.customers) if (c.speech) c.speech.until = 3;
+  toast(skipped ? '튜토리얼을 건너뛰었어요. 이제 손님이 와요!' : '🎉 잘했어요! 이제 진짜 영업 시작 — 손님이 한 명씩 와요.', 'good');
+  Sound.happy();
+}
+
 // ---------- 오늘의 날씨·행사 (Day 4부터 무작위) ----------
 const EVENTS = {
   normal:   { icon: '🌤', name: '평범한 날', note: '평소처럼 영업해요.' },
@@ -1943,9 +2003,9 @@ function criticVerdict(c) {
   G.repBonus += d;
   toast(d > 0 ? '📰 평론가: "훌륭한 한 그릇이군요." 평판 +0.3!' : d < 0 ? '📰 평론가가 실망한 얼굴로 수첩에 뭔가 적었어요… 평판 −0.3' : '📰 평론가: "음… 평범하군요."', d > 0 ? 'good' : d < 0 ? 'bad' : 'warn');
 }
-function spawnCustomer() {
-  const special = makeSpecial();
-  let look, order;
+function spawnCustomer(forced = null) { // forced: { order, special } — 튜토리얼처럼 정해진 손님
+  const special = forced ? forced.special : makeSpecial();
+  let look, order = forced?.order;
   if (special?.type === 'regular') ({ look, order } = regularOf(special.name));
   else if (special?.type === 'critic') look = { ...randomLook(), kind: 'salaryman', female: false, skirt: false, suit: true, tie: 0x2a2a2a, top: 0x1a1a1a, hairStyle: 'neat', glasses: 0x1a1a1a, bag: true, cap: false };
   else look = randomLook();
@@ -2488,6 +2548,7 @@ function startDay() {
   store.set('ramen-seen', Math.max(day, store.get('ramen-seen', 0)));
   const lv = levelCfg();
   G.event = pickEvent(day);
+  if (day === 1 && !tutDone()) startTutorial();
   const e = ev();
   toast(`📅 <b>Day ${day} — ${lv.title}</b><br><small>${lv.note}</small>` + (G.event !== 'normal' ? `<br><b>${e.icon} 오늘은 ${e.name}!</b> <small>${e.note}</small>` : ''), 'warn');
 }
@@ -2595,7 +2656,7 @@ document.getElementById('startBtn').textContent = day > 1 ? `Day ${day} 영업 �
 document.getElementById('startBtn').onclick = startDay;
 document.getElementById('resetBtn').style.display = day > 1 ? '' : 'none';
 document.getElementById('resetBtn').onclick = () => { // 금고·업그레이드까지 처음부터
-  day = 1; saveDay(); bank = 0; for (const k in upgLv) delete upgLv[k]; store.set('ramen-bank', 0); store.set('ramen-upg', []); store.set('ramen-upg2', {}); store.set('ramen-seen', 1); setRep(3); startDay();
+  day = 1; saveDay(); bank = 0; for (const k in upgLv) delete upgLv[k]; store.set('ramen-bank', 0); store.set('ramen-upg', []); store.set('ramen-upg2', {}); store.set('ramen-seen', 1); store.set('ramen-tut-done', false); setRep(3); startDay();
 };
 document.getElementById('resumeBtn').onclick = () => { pause(false); lockPointer(); };
 document.getElementById('turnBtn').onclick = e => { e.currentTarget.blur(); if (G.running && !G.paused) turnAround(); };
@@ -2698,9 +2759,9 @@ const clock = new THREE.Clock();
 let hudTimer = 0;
 function update(dt) {
   G.time += dt;
-  tickRefill(dt);
+  tickRefill(dt); tickTutorial();
   // 손님 도착
-  if (G.time >= G.nextSpawn && G.time < CFG.dayLength - 25) {
+  if (!G.tut && G.time >= G.nextSpawn && G.time < CFG.dayLength - 25) { // 튜토리얼 중엔 연습 손님만
     spawnCustomer();
     const t = G.time;
     G.nextSpawn = t + (t < 60 ? rand(40, 46) : t < 150 ? rand(24, 30) : rand(30, 36)) * levelCfg().spawn * repSpawn() * (ev().spawn ?? 1);
@@ -2722,7 +2783,7 @@ function update(dt) {
   const cooking = baskets.filter(b => b.cooking).length;
   Sound.setBoil(0.25 + cooking * 0.35 + (br.fire ? 0.35 : 0));
   // 영업 종료
-  if (G.time >= CFG.dayLength) {
+  if (!G.tut && G.time >= CFG.dayLength) {
     for (const c of G.queue.splice(0)) { G.results.angry++; G.scores.push(1); scene.remove(c.mesh); G.customers.splice(G.customers.indexOf(c), 1); }
     if (!G.customers.length || G.time > CFG.dayLength + 90) endDay();
   }
@@ -2829,7 +2890,7 @@ function nextStep() {
   return turn('front', '그릇을 클릭해서 들고 → 손님 클릭');
 }
 function updateHud() {
-  document.getElementById('guide').textContent = G.running && !G.paused ? '👉 ' + nextStep() : '';
+  document.getElementById('guide').textContent = G.running && !G.paused && !G.tut ? '👉 ' + nextStep() : '';
   // 되돌리기 버튼: 방금 넣은 것을 뺄 수 있을 때만 보임
   const ub = document.getElementById('undoBtn'), last = G.running && !G.paused && lastUndoable();
   ub.disabled = !last;
@@ -2837,7 +2898,7 @@ function updateHud() {
   const t = Math.min(G.time, CFG.dayLength) / CFG.dayLength;
   const mins = Math.floor(11 * 60 + t * 180);
   const clk = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
-  document.getElementById('clock').textContent = `Day ${G.day} · ${ev().icon} · ` + (G.time >= CFG.dayLength ? `${clk} · 마지막 손님 마무리` : `🕐 ${clk}`);
+  document.getElementById('clock').textContent = `Day ${G.day} · ${ev().icon} · ` + (G.tut ? '🎓 연습 중' : G.time >= CFG.dayLength ? `${clk} · 마지막 손님 마무리` : `🕐 ${clk}`);
   document.getElementById('money').textContent = `¥${G.money.toLocaleString()}`;
   const avg = G.scores.length ? G.scores.reduce((a, b) => a + b, 0) / G.scores.length : null;
   document.getElementById('rating').textContent = `오늘 ${avg ? '★' + avg.toFixed(1) : '—'} · 평판 ★${rep.toFixed(1)}`;
