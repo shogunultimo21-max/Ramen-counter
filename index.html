@@ -177,7 +177,7 @@
   <button id="turnBtn">↻ 뒤돌기 — 면 솥·육수 (Space)</button>
   <div id="help">
     <b>E</b> 그릇 · <b>1-4</b> 그릇 선택/넣기 · 그릇 든 채 <b>1-6</b> 손님<br>
-    <b>ZXCV</b> 면 바구니 · <b>T</b>/<b>Y</b> 육수 · <b>M</b> 미소 · <b>R</b> 챠슈<br>
+    <b>ZXCV(BN)</b> 면 바구니 · <b>T</b>/<b>Y</b> 육수 · <b>M</b> 미소 · <b>R</b> 챠슈<br>
     <b>ASDFGH</b> 토핑 (<b>⇧</b> 통 채우기) · <b>K</b> 카에다마 · <b>U</b> 되돌리기<br>
     <b>Space</b> 뒤돌기 · <b>Q</b> 버리기 · <b>Esc</b> 일시정지
   </div>
@@ -208,7 +208,7 @@
     <div class="keys">
       <kbd>E</kbd><span>새 그릇 놓기</span>
       <kbd>1 2 3 4</kbd><span>그릇 자리 선택 · 손에 든 걸 그 그릇에 넣기 (그릇을 들고 있으면 → <b>1~6번 손님</b>에게 내기)</span>
-      <kbd>Z X C V</kbd><span>면 바구니 1~4 (삶기 시작 / 건지기)</span>
+      <kbd>Z X C V</kbd><span>면 바구니 (삶기 시작 / 건지기) · 업그레이드하면 <kbd>B</kbd> <kbd>N</kbd>까지</span>
       <kbd>T</kbd><span>돈코츠 육수 뜨기 · <kbd>Y</kbd> 쇼유 육수 · <kbd>M</kbd> 미소 넣기</span>
       <kbd>R</kbd><span>누르고 있기: 챠슈 굽기</span>
       <kbd>A S D F G H</kbd><span>토핑 (파·목이버섯·김·아지타마고·멘마·콘) · 통이 비면 누르기만 해도 냉장고에서 채워요</span>
@@ -317,14 +317,18 @@ const baseOf = r => RAMEN[r].base.filter(k => toppingsOn().includes(k)); // 아�
 // ---------- 가게 금고 · 업그레이드 (날이 바뀌어도 저장) ----------
 // 단계형: values[단계] = 그 단계의 효과, prices[i] = i단계 → i+1단계 가격
 const UPGRADES = {
-  bigTray: { name: '토핑 통', icon: '🥡', values: [6, 8, 10, 14], prices: [2000, 3500, 6000],
-    names: ['기본 통', '큰 통', '더 큰 통', '대형 통'], desc: v => `토핑 통 하나에 ${v}그릇 분량` },
-  noren:   { name: '노렌·간판', icon: '🏮', values: [1, 1.15, 1.3, 1.5], prices: [2500, 4500, 8000],
-    names: ['기본', '새 노렌', '나무 간판', '등불 간판'], desc: v => (v > 1 ? `손님 인내심 +${Math.round((v - 1) * 100)}%` : '손님 인내심 보통') },
-  slot4:   { name: '그릇 자리', icon: '🍜', values: [3, 4], prices: [4500],
+  bigTray: { name: '토핑 통', icon: '🥡', values: [6, 8, 10, 14, 18], prices: [2500, 5000, 9000, 14000],
+    names: ['기본 통', '큰 통', '더 큰 통', '대형 통', '특대 통'], desc: v => `토핑 통 하나에 ${v}그릇 분량` },
+  noren:   { name: '노렌·간판', icon: '🏮', values: [1, 1.15, 1.3, 1.5, 1.7], prices: [3000, 6000, 11000, 16000],
+    names: ['낡은 노렌', '새 노렌', '나무 간판', '등불 간판', '빛나는 간판'], desc: v => (v > 1 ? `손님 인내심 +${Math.round((v - 1) * 100)}%` : '손님 인내심 보통') },
+  slot4:   { name: '그릇 자리', icon: '🍜', values: [3, 4], prices: [6000],
     names: ['3자리', '4자리'], desc: v => `그릇을 ${v}개까지 놓을 수 있어요` },
-  fineBowl:{ name: '그릇', icon: '✨', values: [300, 500, 800], prices: [5000, 9000],
-    names: ['기본 그릇', '고급 그릇 (검은 칠·금테)', '명품 그릇 (청해파 무늬)'], desc: v => `만족한 손님 팁 ¥${v}` },
+  baskets: { name: '면 솥', icon: '♨️', values: [4, 6], prices: [9000],
+    names: ['바구니 4개', '바구니 6개'], desc: v => `면을 ${v}개까지 한꺼번에 삶아요` },
+  fineBowl:{ name: '그릇', icon: '✨', values: [300, 500, 800, 1200], prices: [6000, 12000, 20000],
+    names: ['기본 그릇', '고급 그릇 (검은 칠·금테)', '명품 그릇 (청해파 무늬)', '금박 그릇'], desc: v => `만족한 손님 팁 ¥${v}` },
+  decor:   { name: '가게 꾸미기', icon: '🪴', values: [0, 1, 2, 3, 4], prices: [3000, 6000, 10000, 15000],
+    names: ['꾸밈 없음', '화분', '+ 마네키네코', '+ 족자·풍경', '+ 등불 줄'], desc: v => (v ? `분위기 좋아서 매일 평판 +${(v * 0.05).toFixed(2)}` : '꾸밈 없음') },
 };
 const store = {
   get(k, def) { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch (e) { return def; } },
@@ -685,23 +689,60 @@ const slideDoor = new THREE.Group(); scene.add(slideDoor);
 const DOOR_CLOSED_X = (DOOR_X0 + DOOR_X1) / 2, DOOR_OPEN_X = DOOR_CLOSED_X - (DOOR_X1 - DOOR_X0) + 0.05;
 slideDoor.position.set(DOOR_CLOSED_X, 0, FRONT_Z + 0.12);
 let doorOpen = false;
-// 노렌 (입구 안쪽 위)
-{
+// 노렌 (입구 안쪽 위) — '노렌·간판' 업그레이드 0단계는 빛바랜 노렌, 1단계부터 새 노렌
+function norenTex(bg, fg) {
   const c = document.createElement('canvas'); c.width = 512; c.height = 256;
   const g = c.getContext('2d');
-  g.fillStyle = '#1f2b4a'; g.fillRect(0, 0, 512, 256);
-  g.fillStyle = '#f3ead8'; g.font = 'bold 120px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = bg; g.fillRect(0, 0, 512, 256);
+  g.fillStyle = fg; g.font = 'bold 120px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillText('らーめん', 256, 120);
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const NOREN_TEX = { old: norenTex('#55586a', '#cfc6b4'), fresh: norenTex('#1f2b4a', '#f3ead8') };
+const norenPanels = [];
+{
   const pw = (DOOR_X1 - DOOR_X0) / 3;
   for (let i = 0; i < 3; i++) {
     const geo = new THREE.PlaneGeometry(pw - 0.02, 0.6);
     const uv = geo.attributes.uv;
     for (let k = 0; k < uv.count; k++) uv.setX(k, (uv.getX(k) + i) / 3);
-    const p = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 1 }));
+    const p = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: NOREN_TEX.fresh, side: THREE.DoubleSide, roughness: 1 }));
     p.position.set(DOOR_X0 + pw / 2 + i * pw, DOOR_H - 0.3, FRONT_Z + 0.2); scene.add(p);
+    norenPanels.push(p);
   }
   cyl(0.012, 0.012, DOOR_X1 - DOOR_X0 + 0.1, 6, woodDark, (DOOR_X0 + DOOR_X1) / 2, DOOR_H, FRONT_Z + 0.2).rotation.z = Math.PI / 2;
+}
+// 창문 위 나무 간판 (2단계~), 창문 양옆 등불 (3단계~), 간판에 불 (4단계)
+const signBoard = new THREE.Group(); scene.add(signBoard);
+const signMat = (() => {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 200;
+  const g = c.getContext('2d');
+  g.fillStyle = '#7a4a26'; g.fillRect(0, 0, 1024, 200);
+  for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(60,30,10,${0.15 + Math.random() * 0.2})`; g.beginPath(); g.moveTo(0, Math.random() * 200); g.lineTo(1024, Math.random() * 200); g.stroke(); }
+  g.fillStyle = '#f6e3b8'; g.font = 'bold 130px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('らーめん 一番', 512, 104);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, emissive: 0xffc070, emissiveMap: tex, emissiveIntensity: 0 });
+})();
+{
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.43), signMat); board.position.set(-0.6, 2.47, FRONT_Z + 0.07); signBoard.add(board);
+  box(2.3, 0.04, 0.06, woodDark, -0.6, 2.7, FRONT_Z + 0.08, signBoard); box(2.3, 0.04, 0.06, woodDark, -0.6, 2.24, FRONT_Z + 0.08, signBoard);
+}
+const signLight = new THREE.PointLight(0xffb060, 0, 3, 1.5); signLight.position.set(-0.6, 2.4, FRONT_Z + 0.5); scene.add(signLight);
+const signLanterns = new THREE.Group(); scene.add(signLanterns);
+for (const x of [-2.15, 0.95]) {
+  const l = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 10), new THREE.MeshStandardMaterial({ color: 0xf3ead8, emissive: 0xffc070, emissiveIntensity: 0.7 }));
+  l.scale.y = 1.4; l.position.set(x, 2.05, FRONT_Z + 0.3); signLanterns.add(l);
+  cyl(0.07, 0.07, 0.025, 10, mat(0x1a1a1a), x, 2.22, FRONT_Z + 0.3, signLanterns);
+  cyl(0.07, 0.07, 0.025, 10, mat(0x1a1a1a), x, 1.88, FRONT_Z + 0.3, signLanterns);
+  cyl(0.004, 0.004, 0.4, 4, mat(0x1a1a1a), x, 2.43, FRONT_Z + 0.3, signLanterns);
+}
+function norenLayout() {
+  const lv = levelOf('noren');
+  for (const p of norenPanels) p.material.map = lv >= 1 ? NOREN_TEX.fresh : NOREN_TEX.old;
+  signBoard.visible = lv >= 2; signLanterns.visible = lv >= 3;
+  signMat.emissiveIntensity = lv >= 4 ? 0.55 : 0; signLight.intensity = lv >= 4 ? 2.2 : 0;
 }
 // 입구 옆 빨간 등 (초칭)
 {
@@ -739,6 +780,84 @@ let doorOpen = false;
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const p = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.45), new THREE.MeshStandardMaterial({ map: tex }));
   p.position.set(-2.84, 1.9, -1.4); p.rotation.y = Math.PI / 2; scene.add(p);
+}
+
+// ---------- 가게 꾸미기 (업그레이드 단계마다 하나씩 늘어남) ----------
+const softMat = (c, o = {}) => mat(c, { flatShading: false, roughness: 0.5, ...o }); // 매끈한 재질 (smat은 아래에서 정의됨)
+const decor = { plant: new THREE.Group(), cat: new THREE.Group(), scroll: new THREE.Group(), lanterns: new THREE.Group() };
+Object.values(decor).forEach(g => scene.add(g));
+// 1단계: 왼쪽 구석 큰 화분 + 패스 선반 위 작은 분재
+{
+  const g = decor.plant, leaf = mat(0x3f7a3a), leaf2 = mat(0x5a9a46);
+  cyl(0.17, 0.13, 0.34, 14, mat(0x8a5a34), -2.5, 0.17, -3.25, g);
+  cyl(0.02, 0.03, 1.1, 6, mat(0x5a3a20), -2.5, 0.85, -3.25, g);
+  for (let i = 0; i < 11; i++) {
+    const l = new THREE.Mesh(new THREE.SphereGeometry(0.14 + Math.random() * 0.07, 8, 6), i % 2 ? leaf : leaf2);
+    l.position.set(-2.5 + (Math.random() - 0.5) * 0.45, 1.15 + Math.random() * 0.6, -3.25 + (Math.random() - 0.5) * 0.35); l.scale.y = 0.75; g.add(l);
+  }
+  box(0.18, 0.05, 0.11, mat(0x2a4a6a), -1.62, 1.2, -1.38, g);
+  const trunk = cyl(0.008, 0.014, 0.12, 5, mat(0x5a3a20), -1.62, 1.28, -1.38, g); trunk.rotation.z = 0.3;
+  for (const [dx, dy] of [[-0.05, 0.36 - 0.02], [0.02, 0.37], [0.06, 0.33]]) {
+    const l = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), leaf); l.scale.y = 0.55; l.position.set(-1.62 + dx, 1.0 + dy, -1.38); g.add(l);
+  }
+}
+// 2단계: 패스 선반 위 마네키네코 (손을 까딱까딱)
+const catPaw = new THREE.Group();
+{
+  const g = decor.cat, white = softMat(0xfaf7f0, { roughness: 0.4 }), red = softMat(0xc8281e), gold = softMat(0xe0b040, { metalness: 0.7, roughness: 0.3 });
+  g.position.set(1.62, 1.175, -1.38);
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 10), white); body.scale.set(1, 1.1, 0.85); body.position.y = 0.06; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.05, 14, 10), white); head.position.y = 0.15; g.add(head);
+  for (const s of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.035, 6), white); ear.position.set(s * 0.03, 0.195, 0); ear.rotation.z = -s * 0.3; g.add(ear);
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.006, 6, 4), softMat(0x1a1a1a)); eye.position.set(s * 0.018, 0.155, -0.046); g.add(eye);
+  }
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.007, 6, 16), red); collar.rotation.x = Math.PI / 2; collar.position.y = 0.11; g.add(collar);
+  const bell = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 6), gold); bell.position.set(0, 0.1, -0.042); g.add(bell);
+  const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.004, 12), gold); coin.rotation.x = Math.PI / 2 - 0.3; coin.position.set(0.02, 0.05, -0.052); g.add(coin);
+  catPaw.position.set(-0.045, 0.12, -0.01); g.add(catPaw);
+  const paw = new THREE.Mesh(new THREE.CapsuleGeometry(0.014, 0.04, 4, 8), white); paw.position.y = 0.03; catPaw.add(paw);
+  g.rotation.y = Math.PI; // 손님 쪽을 보게
+}
+// 3단계: 왼쪽 벽 족자 + 입구 풍경
+const chime = new THREE.Group();
+{
+  const g = decor.scroll;
+  const c = document.createElement('canvas'); c.width = 160; c.height = 420;
+  const x = c.getContext('2d');
+  x.fillStyle = '#3a5a4a'; x.fillRect(0, 0, 160, 420); x.fillStyle = '#f2ead6'; x.fillRect(16, 30, 128, 360);
+  x.fillStyle = '#1a1a1a'; x.font = 'bold 66px serif'; x.textAlign = 'center';
+  '一杯入魂'.split('').forEach((ch, i) => x.fillText(ch, 80, 100 + i * 80));
+  x.fillStyle = '#c8281e'; x.fillRect(96, 350, 26, 26);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.9), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
+  p.position.set(-2.81, 1.75, -2.55); p.rotation.y = Math.PI / 2; g.add(p);
+  cyl(0.012, 0.012, 0.4, 6, woodDark, -2.8, 2.21, -2.55, g).rotation.x = Math.PI / 2;
+  chime.position.set(DOOR_X0 + 0.15, 2.0, FRONT_Z + 0.35); g.add(chime);
+  const glass = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xbfe0f0, transparent: true, opacity: 0.6, roughness: 0.05, side: THREE.DoubleSide }));
+  chime.add(glass);
+  const strip = new THREE.Mesh(new THREE.PlaneGeometry(0.04, 0.16), new THREE.MeshStandardMaterial({ color: 0xd8382a, side: THREE.DoubleSide })); strip.position.y = -0.1; chime.add(strip);
+}
+// 4단계: 손님석 위로 이어진 작은 등불 줄
+const lanternBalls = [];
+{
+  const g = decor.lanterns;
+  const line = cyl(0.004, 0.004, 5.4, 4, mat(0x1a1a1a), 0, 2.42, -2.45, g); line.rotation.z = Math.PI / 2;
+  for (let i = 0; i < 11; i++) {
+    const x = -2.5 + i * 0.5;
+    const l = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 8), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xd8382a : 0xf3ead8, emissive: i % 2 ? 0xff4a2a : 0xffc070, emissiveIntensity: 0.8 }));
+    l.scale.y = 1.3; l.position.set(x, 2.28, -2.45); g.add(l); lanternBalls.push(l);
+  }
+  const pl = new THREE.PointLight(0xffa060, 1.6, 4, 1.5); pl.position.set(0, 2.2, -2.45); g.add(pl);
+}
+function decorLayout() {
+  const lv = levelOf('decor');
+  decor.plant.visible = lv >= 1; decor.cat.visible = lv >= 2; decor.scroll.visible = lv >= 3; decor.lanterns.visible = lv >= 4;
+}
+function animateDecor(t) {
+  if (decor.cat.visible) catPaw.rotation.x = -0.4 + Math.sin(t * 3) * 0.45;
+  if (decor.scroll.visible) chime.rotation.z = Math.sin(t * 1.7) * 0.12;
+  if (decor.lanterns.visible) lanternBalls.forEach((l, i) => { l.rotation.z = Math.sin(t * 1.2 + i) * 0.08; });
 }
 
 // ---------- 앞 벤치 (조리대) ----------
@@ -979,6 +1098,7 @@ const BOWL_STYLES = [
   { outer: { map: raimonTex, roughness: 0.35 }, inner: 0xf1e9da },
   { outer: { color: 0x141012, roughness: 0.12, metalness: 0.1 }, inner: 0xb8281e, rim: 0xd4ab4a }, // 검은 칠 + 붉은 안쪽 + 금테
   { outer: { map: seigaihaTex, roughness: 0.25 }, inner: 0xf6f1e6, rim: 0xd4ab4a },              // 청해파 + 금테
+  { outer: { color: 0xc99a3a, roughness: 0.22, metalness: 0.75 }, inner: 0x161214, rim: 0xf0d27a }, // 금박 + 검은 안쪽
 ];
 // 그릴
 const grill = new THREE.Group(); grill.position.set(0.78, 0.95, -0.9); scene.add(grill);
@@ -1119,7 +1239,9 @@ const noodlePot = new THREE.Group(); noodlePot.position.set(-0.45, 0.96, 1.2); s
   water.castShadow = false;
 }
 // 셰프가 뒤돌아 봤을 때 1 2 (안쪽) / 3 4 (바깥쪽) 순서
-const BASKET_POS = [[0.15, 0.15], [-0.15, 0.15], [0.15, -0.15], [-0.15, -0.15]];
+// 면 바구니: 기본 4개(네모 배치), 업그레이드하면 6개(둥글게 배치)
+const BASKET_LETTERS = 'ZXCVBN';
+const BASKET_POS = [[0.15, 0.15], [-0.15, 0.15], [0.15, -0.15], [-0.15, -0.15], [0, 0], [0, 0]];
 const baskets = BASKET_POS.map(([dx, dz], i) => {
   const g = new THREE.Group(); g.position.set(dx, 0.2, dz); noodlePot.add(g);
   const net = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.2, 12, 1, true),
@@ -1130,10 +1252,19 @@ const baskets = BASKET_POS.map(([dx, dz], i) => {
   const handle = cyl(0.008, 0.008, 0.3, 5, mat(0x5a3a24), 0, 0.17, -0.15, arm); handle.rotation.x = -0.9;
   const noodles = cyl(0.075, 0.068, 0.1, 12, mat(0xf2d27a), 0, 0.06, 0, g);
   noodles.visible = false;
-  const num = textSprite('ZXCV'[i], { scale: 0.32 }); num.position.set(0, 0.16, 0); g.add(num);
+  const num = textSprite(BASKET_LETTERS[i], { scale: 0.32 }); num.position.set(0, 0.16, 0); g.add(num);
   interact(g, { kind: 'basket', i, lift: 0.1 });
-  return { group: g, noodles, num, cooking: false, t: 0 };
+  return { group: g, arm, noodles, num, cooking: false, t: 0 };
 });
+function basketLayout() {
+  const n = upgValue('baskets');
+  baskets.forEach((b, i) => {
+    b.group.visible = i < n;
+    if (n === 6) { const a = Math.PI / 6 + i * Math.PI / 3; b.group.position.set(Math.cos(a) * 0.25, 0.2, Math.sin(a) * 0.25); }
+    else if (i < 4) b.group.position.set(BASKET_POS[i][0], 0.2, BASKET_POS[i][1]);
+    b.arm.rotation.y = Math.atan2(-b.group.position.x, -b.group.position.z);
+  });
+}
 label('면 솥', -0.45, 1.62, 1.2);
 // 육수 냄비
 const brothPot = new THREE.Group(); brothPot.position.set(0.4, 0.96, 1.2); scene.add(brothPot);
@@ -1625,9 +1756,10 @@ function newGame() {
   const lv = levelCfg();
   shoyuPot.visible = shoyuLabel.visible = lv.menu.includes('shoyu');
   for (const [k, f] of Object.entries(fridges)) f.tag.visible = lv.stock && toppingsOn().includes(k);
-  trayLayout(); slotLayout(); restackBowls(); misoJar.visible = misoLabel.visible = lv.menu.includes('miso');
+  trayLayout(); slotLayout(); restackBowls(); norenLayout(); decorLayout(); misoJar.visible = misoLabel.visible = lv.menu.includes('miso');
   Object.keys(TOPPINGS).forEach(updateTray);
   baskets.forEach(b => { b.cooking = false; b.t = 0; b.noodles.visible = false; });
+  basketLayout();
   setHand(null);
   document.getElementById('tickets').innerHTML = '';
   document.getElementById('labels').innerHTML = '';
@@ -1636,7 +1768,7 @@ function newGame() {
 
 // ---------- 시점 ----------
 let yaw = 0, pitch = -0.36, turnTarget = null, pitchTarget = null, facingBack = false;
-const VIEW = { front: { yaw: 0, pitch: -0.36 }, back: { yaw: Math.PI + 0.15, pitch: -0.55 } };
+const VIEW = { front: { yaw: 0, pitch: -0.36 }, back: { yaw: Math.PI - 0.1, pitch: -0.58 } }; // 뒤: 면 솥이 주문서 오른쪽 가운데 오게
 const keys = {};
 // 앞(조리대·손님) / 뒤(면 솥·육수) 두 시점 사이를 오간다
 function turnAround() {
@@ -2231,7 +2363,7 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'KeyR') grillEnd(); });
 // 단축키: 그 물건을 클릭한 것과 똑같이 동작 (어느 쪽을 보고 있어도 됨)
 const findDesc = pred => [...interactDescs].find(d => pred(d) && isShown(d.anchor));
-const BASKET_KEYS = { KeyZ: 0, KeyX: 1, KeyC: 2, KeyV: 3 };
+const BASKET_KEYS = { KeyZ: 0, KeyX: 1, KeyC: 2, KeyV: 3, KeyB: 4, KeyN: 5 };
 function shortcut(e) {
   const h = G.hand, code = e.code;
   const num = /^Digit([1-6])$/.exec(code)?.[1];
@@ -2437,8 +2569,8 @@ function updateLabels() {
     // 안쪽 줄(1·2)은 더 높이 띄워서 바깥쪽 줄(3·4) 라벨과 겹치지 않게
     b.group.getWorldPosition(wp); wp.y += i < 2 ? 0.34 : 0.18;
     const pct = Math.min(1, b.t / 33) * 100;
-    worldLabel('basket' + i, wp, `<b>${'ZXCV'[i]}</b> ${FIRM_ALL[f]}`, `wl firm-${f}`);
-    panel.push(`<div class="row firm-${f}"><b>${'ZXCV'[i]}</b><span>${FIRM_ALL[f]}</span><div class="doneness"><b style="left:${pct}%"></b></div></div>`);
+    worldLabel('basket' + i, wp, `<b>${BASKET_LETTERS[i]}</b> ${FIRM_ALL[f]}`, `wl firm-${f}`);
+    panel.push(`<div class="row firm-${f}"><b>${BASKET_LETTERS[i]}</b><span>${FIRM_ALL[f]}</span><div class="doneness"><b style="left:${pct}%"></b></div></div>`);
   });
   const pp = document.getElementById('potPanel');
   const html = panel.length ? '<h5>🍜 면 솥</h5>' + panel.join('') : '';
@@ -2531,6 +2663,7 @@ function update(dt) {
   }
 }
 function visuals(dt, t) {
+  animateDecor(t);
   // 시점
   if (turnTarget != null) {
     const d = turnTarget - yaw;
@@ -2668,8 +2801,8 @@ function endDay() {
     avg >= 2.3 ? '바쁜 하루였네요. 주문서와 면 익힘을 신경 써 봐요.' :
     '오늘은 힘들었어요… 내일은 더 잘할 수 있어요!';
   // 내일 열리는 요소 미리 보기
-  // 가게 평판: 오늘 평점이 40% 반영
-  if (G.scores.length) { const before = rep; setRep(rep * 0.6 + avg * 0.4); G.repBefore = before; }
+  // 가게 평판: 오늘 평점이 40% 반영 + 가게 꾸미기 보너스
+  if (G.scores.length) { const before = rep; setRep(rep * 0.6 + avg * 0.4 + upgValue('decor') * 0.05); G.repBefore = before; }
   showRep();
   const next = day + 1;
   document.getElementById('endNext').innerHTML = '내일은… ' + dayInfoHtml(next);
