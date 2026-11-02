@@ -1290,53 +1290,66 @@ for (const [key, x] of Object.entries(FRIDGE_X)) {
 }
 
 // ---------- 뒤 벤치 (면 솥 / 육수) ----------
-// 왼쪽(버리는 통)·오른쪽(싱크대)은 스테인리스 작업대, 가운데는 가스 화구
-const RANGE_X0 = -1.0, RANGE_X1 = 1.25, RANGE_CX = (RANGE_X0 + RANGE_X1) / 2, RANGE_W = RANGE_X1 - RANGE_X0;
+// 왼쪽(버리는 통)·오른쪽(싱크대)은 스테인리스 작업대
+// 가운데 왼쪽: 면 솥 전용 화구 / 가운데 오른쪽: 낮은 육수 전용 화구(큰 육수통)
+const RANGE_X0 = -1.0, RANGE_X1 = 0.05, RANGE_CX = (RANGE_X0 + RANGE_X1) / 2, RANGE_W = RANGE_X1 - RANGE_X0;
+const STOCK_X0 = 0.12, STOCK_X1 = 1.27, STOCK_CX = (STOCK_X0 + STOCK_X1) / 2, STOCK_W = STOCK_X1 - STOCK_X0, STOCK_TOP = 0.42;
 box(RANGE_X0 + 1.8, 0.04, 0.7, steel, (-1.8 + RANGE_X0) / 2, 0.88, 1.2);
 box(0.8, 0.86, 0.66, steelDark, (-1.8 + RANGE_X0) / 2, 0.43, 1.2);
-box(1.8 - RANGE_X1, 0.04, 0.7, steel, (RANGE_X1 + 1.8) / 2, 0.88, 1.2);
-box(1.8 - RANGE_X1, 0.86, 0.66, steelDark, (RANGE_X1 + 1.8) / 2, 0.43, 1.2);
-// ---------- 가스 화구 (업소용 렌지) ----------
+box(1.8 - STOCK_X1, 0.04, 0.7, steel, (STOCK_X1 + 1.8) / 2, 0.88, 1.2);
+box(1.8 - STOCK_X1, 0.86, 0.66, steelDark, (STOCK_X1 + 1.8) / 2, 0.43, 1.2);
+// ---------- 가스 화구 ----------
 const castIron = smat(0x1b1c1e, { roughness: 0.75, metalness: 0.3 });
 const flames = [];
+const sidePanel = mat(0x34373c, { metalness: 0.5, roughness: 0.45 });
+function rangeKnob(x, y, z) {
+  const k = cyl(0.035, 0.04, 0.035, 16, smat(0x222222, { roughness: 0.3 }), x, y, z); k.rotation.x = Math.PI / 2;
+  box(0.008, 0.03, 0.01, smat(0xd8382a), x, y + 0.015, z - 0.02);
+  const pilot = new THREE.Mesh(new THREE.CircleGeometry(0.008, 10), new THREE.MeshBasicMaterial({ color: 0x5ab0ff }));
+  pilot.position.set(x + 0.07, y + 0.03, z + 0.003); pilot.rotation.y = Math.PI; scene.add(pilot);
+}
+// 면 솥 화구 (작업대 높이, 불 하나)
 {
-  for (const x of [RANGE_X0 + 0.015, RANGE_X1 - 0.015]) box(0.03, 0.86, 0.66, mat(0x34373c, { metalness: 0.5, roughness: 0.45 }), x, 0.43, 1.2); // 옆판
-  box(RANGE_W, 0.05, 0.7, castIron, RANGE_CX, 0.885, 1.2);                                          // 상판 (주철)
-  box(RANGE_W + 0.02, 0.03, 0.04, steel, RANGE_CX, 0.9, 0.85);                                      // 앞 테두리
-  // 앞 조작 패널 + 손잡이 (화구마다 하나)
+  for (const x of [RANGE_X0 + 0.015, RANGE_X1 - 0.015]) box(0.03, 0.86, 0.66, sidePanel, x, 0.43, 1.2);
+  box(RANGE_W, 0.05, 0.7, castIron, RANGE_CX, 0.885, 1.2);
+  box(RANGE_W + 0.02, 0.03, 0.04, steel, RANGE_CX, 0.9, 0.85);
   box(RANGE_W, 0.16, 0.03, steel, RANGE_CX, 0.76, 0.86);
-  for (const x of [-0.45, 0.4, 0.98]) {
-    const k = cyl(0.035, 0.04, 0.035, 16, smat(0x222222, { roughness: 0.3 }), x, 0.76, 0.84); k.rotation.x = Math.PI / 2;
-    box(0.008, 0.03, 0.01, smat(0xd8382a), x, 0.775, 0.82);
-    const pilot = new THREE.Mesh(new THREE.CircleGeometry(0.008, 10), new THREE.MeshBasicMaterial({ color: 0x5ab0ff }));
-    pilot.position.set(x + 0.07, 0.79, 0.843); pilot.rotation.y = Math.PI; scene.add(pilot);
-  }
-  // 아래칸: 열린 선반에 여분 냄비·가스관
-  box(RANGE_W - 0.08, 0.02, 0.56, steel, RANGE_CX, 0.12, 1.22);
+  rangeKnob(RANGE_CX, 0.76, 0.84);
+  box(RANGE_W - 0.08, 0.02, 0.56, steel, RANGE_CX, 0.12, 1.22);   // 아래 선반
   box(RANGE_W - 0.08, 0.5, 0.02, mat(0x24262a), RANGE_CX, 0.38, 1.5);
-  for (const [x, r, h] of [[-0.7, 0.16, 0.22], [-0.3, 0.13, 0.18], [0.75, 0.15, 0.2]]) {
+  for (const [x, r, h] of [[-0.72, 0.15, 0.22], [-0.3, 0.13, 0.18]]) {
     const p = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.96, h, 20, 1, true), smat(0xa7adb3, { metalness: 0.6, roughness: 0.35, side: THREE.DoubleSide }));
     p.position.set(x, 0.13 + h / 2, 1.22); scene.add(p);
   }
-  const pipe = cyl(0.018, 0.018, RANGE_W, 10, smat(0xc9a23a, { metalness: 0.7, roughness: 0.3 }), RANGE_CX, 0.62, 1.48); pipe.rotation.z = Math.PI / 2;
-
 }
-// 화구 하나: 버너 링 + 주철 받침 + 파란 불꽃
-function burner(x, r, n) {
+// 육수 전용 화구: 무릎 높이의 낮은 주철 받침대 (큰 육수통을 올리기 좋게)
+{
+  for (const x of [STOCK_X0 + 0.02, STOCK_X1 - 0.02]) box(0.04, STOCK_TOP, 0.7, sidePanel, x, STOCK_TOP / 2, 1.2);
+  box(STOCK_W, 0.05, 0.72, castIron, STOCK_CX, STOCK_TOP - 0.025, 1.2);                 // 상판
+  box(STOCK_W, 0.03, 0.04, steel, STOCK_CX, STOCK_TOP, 0.84);                          // 앞 테두리
+  box(STOCK_W - 0.08, 0.2, 0.03, steel, STOCK_CX, 0.24, 0.86);                         // 앞 패널
+  rangeKnob(0.47, 0.25, 0.84); rangeKnob(1.03, 0.25, 0.84);
+  box(STOCK_W - 0.08, 0.04, 0.6, mat(0x24262a), STOCK_CX, 0.03, 1.2);                   // 바닥
+  const pipe = cyl(0.018, 0.018, STOCK_W, 10, smat(0xc9a23a, { metalness: 0.7, roughness: 0.3 }), STOCK_CX, 0.1, 1.5); pipe.rotation.z = Math.PI / 2; // 가스관
+}
+// 화구 하나: 버너 링 + 주철 받침 + 파란 불꽃 (top = 상판 높이)
+function burner(x, r, n, top = 0.885) {
+  const y = top + 0.03;
   const ring = new THREE.Mesh(new THREE.TorusGeometry(r * 0.55, 0.018, 8, 28), castIron);
-  ring.rotation.x = Math.PI / 2; ring.position.set(x, 0.915, 1.2); scene.add(ring);
+  ring.rotation.x = Math.PI / 2; ring.position.set(x, y, 1.2); scene.add(ring);
   for (let i = 0; i < 4; i++) { // 냄비 받침 (+자 모양 주철 바)
-    const bar = box(r * 2.1, 0.025, 0.03, castIron, x, 0.935, 1.2); bar.rotation.y = i * Math.PI / 4;
+    const bar = box(r * 2.1, 0.025, 0.03, castIron, x, y + 0.02, 1.2); bar.rotation.y = i * Math.PI / 4;
   }
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
     const f = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.06, 6),
       new THREE.MeshBasicMaterial({ color: i % 3 ? 0x3a8aff : 0xffa040, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
-    f.position.set(x + Math.cos(a) * r * 0.55, 0.94, 1.2 + Math.sin(a) * r * 0.55); scene.add(f); flames.push(f);
+    f.position.set(x + Math.cos(a) * r * 0.55, y + 0.025, 1.2 + Math.sin(a) * r * 0.55); scene.add(f); flames.push(f);
   }
-  const l = new THREE.PointLight(0x5a9aff, 0.8, 0.9, 2); l.position.set(x, 0.95, 0.95); scene.add(l);
+  const l = new THREE.PointLight(0x5a9aff, 0.8, 0.9, 2); l.position.set(x, y + 0.04, 0.95); scene.add(l);
 }
-burner(-0.45, 0.4, 22); burner(0.4, 0.27, 16); burner(0.98, 0.2, 12);
+burner(-0.45, 0.4, 22);
+burner(0.47, 0.34, 20, STOCK_TOP); burner(1.03, 0.22, 14, STOCK_TOP);
 // 면 솥
 const noodlePot = new THREE.Group(); noodlePot.position.set(-0.45, 0.96, 1.2); scene.add(noodlePot);
 {
@@ -1398,7 +1411,7 @@ function basketLayout() {
   });
 }
 label('면 솥', -0.45, 1.45, 1.2);
-// 육수 냄비 (낮고 넓게 — 뒤돌았을 때 화면에 다 들어오게)
+// 육수 냄비: 낮은 육수 화구 위의 큰 통 (돈코츠는 아주 큰 들통)
 const potMat = new THREE.MeshStandardMaterial({ color: 0xa4abb2, metalness: 0.65, roughness: 0.3, side: THREE.DoubleSide });
 function stockPot(group, r, h, surfaceMat) {
   const pot = new THREE.Mesh(new THREE.CylinderGeometry(r, r - 0.01, h, 28, 1, true), potMat); pot.position.y = 0.03 + h / 2; group.add(pot);
@@ -1410,17 +1423,18 @@ function stockPot(group, r, h, surfaceMat) {
   const cup = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), steel); cup.position.y = -0.06; ladle.add(cup);
   return cyl(r - 0.012, r - 0.012, 0.01, 28, surfaceMat, 0, 0.03 + h - 0.03, 0, group);
 }
-const brothPot = new THREE.Group(); brothPot.position.set(0.4, 0.96, 1.2); scene.add(brothPot);
-const BROTH_POT_H = 0.3;
-const brothSurface = stockPot(brothPot, 0.28, BROTH_POT_H, mat(0xe2c896, { roughness: 0.5 }));
+const POT_BASE_Y = STOCK_TOP + 0.045; // 육수 화구 받침 위
+const brothPot = new THREE.Group(); brothPot.position.set(0.47, POT_BASE_Y, 1.2); scene.add(brothPot);
+const BROTH_POT_H = 0.55;
+const brothSurface = stockPot(brothPot, 0.33, BROTH_POT_H, mat(0xe2c896, { roughness: 0.5 }));
 const fireLight = new THREE.PointLight(0xff7a2a, 0, 1.4, 2); fireLight.position.set(0, 0.05, -0.3); brothPot.add(fireLight);
 interact(brothPot, { kind: 'brothPot', ramen: 'tonkotsu' });
-label('돈코츠 육수', 0.4, 1.45, 1.2);
+label('돈코츠 육수', 0.47, 1.25, 1.2);
 // 쇼유 육수 냄비 (Day 3부터): 맑은 갈색 국물
-const shoyuPot = new THREE.Group(); shoyuPot.position.set(0.98, 0.96, 1.2); scene.add(shoyuPot);
-stockPot(shoyuPot, 0.2, 0.24, smat(0x7a3c12, { roughness: 0.15 }));
+const shoyuPot = new THREE.Group(); shoyuPot.position.set(1.03, POT_BASE_Y, 1.2); scene.add(shoyuPot);
+stockPot(shoyuPot, 0.22, 0.42, smat(0x7a3c12, { roughness: 0.15 }));
 interact(shoyuPot, { kind: 'brothPot', ramen: 'shoyu' });
-const shoyuLabel = label('쇼유 육수', 0.98, 1.38, 1.2);
+const shoyuLabel = label('쇼유 육수', 1.03, 1.1, 1.2);
 // 불 조절 손잡이 (벤치 앞면)
 const knob = new THREE.Group(); knob.position.set(0.55, 0.72, 0.85); scene.add(knob);
 const knobBody = cyl(0.05, 0.05, 0.04, 12, mat(0xb8322a), 0, 0, 0, knob); knobBody.rotation.x = Math.PI / 2;
@@ -3091,8 +3105,8 @@ function visuals(dt, t) {
   if (G.grill.holding) gg.querySelector('.marker').style.left = Math.min(100, gt / 1.0 * 100) + '%';
   // 김
   if (Math.random() < dt * 30) emitSteam(new THREE.Vector3(-0.45, 1.18, 1.2), 0.65, 1);
-  if (G.broth.temp > 70 && Math.random() < dt * (G.broth.temp - 60) * 0.5) emitSteam(new THREE.Vector3(0.4, 1.02 + (BROTH_POT_H - 0.06) * G.broth.level, 1.2), 0.4, 1);
-  if (shoyuPot.visible && Math.random() < dt * 12) emitSteam(new THREE.Vector3(0.98, 1.23, 1.2), 0.3, 0.8);
+  if (G.broth.temp > 70 && Math.random() < dt * (G.broth.temp - 60) * 0.5) emitSteam(new THREE.Vector3(0.47, POT_BASE_Y + 0.06 + (BROTH_POT_H - 0.06) * G.broth.level, 1.2), 0.45, 1);
+  if (shoyuPot.visible && Math.random() < dt * 12) emitSteam(new THREE.Vector3(1.03, POT_BASE_Y + 0.43, 1.2), 0.3, 0.8);
   G.bowls.forEach((b, i) => { if (b && b.broth != null && b.temp > 70 && Math.random() < dt * 6) emitSteam(new THREE.Vector3(BOWL_SLOTS[i], 1.04, BOWL_Z), 0.12, 0.6); });
   G.seats.forEach(s => { if (s.bowl && s.c && s.c.state !== 'leaving' && Math.random() < dt * 3) emitSteam(new THREE.Vector3(s.x, 1.1, -1.62), 0.1, 0.5); });
   if (G.grill.holding && Math.random() < dt * 25) emitSteam(new THREE.Vector3(0.78, 1.1, -0.9), 0.12, 0.8);
