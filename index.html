@@ -78,6 +78,20 @@
   .kit-btn.in::after { content: '✓'; position: absolute; top: 2px; left: 5px; color: #2f7a3a; font-size: 13px; }
   .kit-btn.grill { background: #ffd2b8; }
   .kit-btn.off { opacity: .45; }
+  /* 시작·영업 종료 화면: 탭으로 넘기는 페이지 (스크롤 없이) */
+  .card.paged { display: flex; flex-direction: column; }
+  .tabs { display: flex; gap: 5px; margin-bottom: 12px; flex: none; }
+  .tabs button { flex: 1; border: 0; border-radius: 8px; padding: 8px 4px; background: #e3d7c0; color: var(--ink); font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; }
+  .tabs button.on { background: var(--red); color: #fff; }
+  .card.paged .pg { flex: 1; min-height: 0; overflow-y: auto; }
+  .card.paged .pg > :first-child { margin-top: 0; }
+  .foot { flex: none; display: flex; gap: 8px; margin-top: 12px; }
+  .foot .btn { margin-top: 0; }
+  .foot .btn.sub { flex: 0 0 auto; width: auto; padding-inline: 16px; }
+  body.mobile .card.paged { height: calc(100vh - 16px); max-height: none; }
+  body.mobile .tabs { margin-bottom: 8px; }
+  body.mobile .tabs button { padding: 6px 4px; font-size: 13px; }
+  body.mobile .foot { margin-top: 8px; }
   /* 뒤돌았을 때 아래 가운데: 면 바구니 버튼판 (솥 안 자리와 같은 배치) */
   #basketPad { position: absolute; bottom: calc(8px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: grid; gap: 5px;
     pointer-events: auto; background: rgba(30, 22, 16, .62); padding: 5px; border-radius: 14px; }
@@ -229,7 +243,12 @@
   body.mobile .card p, body.mobile .card li { font-size: 13px; line-height: 1.5; }
   body.mobile .btn { padding: 12px; font-size: 16px; margin-top: 12px; }
   body.mobile .shop-grid { grid-template-columns: 1fr 1fr 1fr; }
-  body.mobile .upg small { font-size: 11px; }
+  body.mobile .upg { padding: 5px 8px; }
+  body.mobile .upg b { font-size: 12.5px; }
+  body.mobile .upg small { font-size: 10.5px; line-height: 1.3; margin: 1px 0 2px; }
+  body.mobile .upg small:not(.next) { display: none; } /* 휴대폰은 다음 단계만 (스크롤 없이 한눈에) */
+  body.mobile .upg.owned small:not(.next) { display: block; }
+  body.mobile .shop h3 { margin-bottom: 5px; }
   body.mobile #street { height: 170px; }
   body.mobile #street .walker { font-size: 44px; }
   @media (orientation: portrait) {
@@ -270,23 +289,30 @@
 <div id="rotate"><div><span class="ico">📱</span>휴대폰을 <b>가로로</b> 돌려 주세요</div></div>
 
 <div id="start" class="overlay">
-  <div class="card">
-    <h1>라멘 <span>카운터</span></h1>
-    <p>카운터석 6자리짜리 작은 돈코츠 라멘집. 오늘 점심 영업은 당신 혼자 주방을 맡습니다. 손님이 자리에 앉으면 직접 주문해요.</p>
-    <div>
+  <div class="card paged">
+    <div class="tabs"></div>
+    <section class="pg" data-tab="오늘">
+      <h1>라멘 <span>카운터</span></h1>
+      <p>카운터석 6자리짜리 작은 라멘집. 오늘 점심 영업은 당신 혼자 주방을 맡습니다. 손님이 자리에 앉으면 직접 주문해요.</p>
+      <div class="day-box" id="dayInfo"></div>
+    </section>
+    <section class="pg" data-tab="조작">
       <h3>👆 조작 (탭 · 클릭)</h3>
       <ul>
-        <li><b>물건을 탭</b>하면 집기 · 넣기 (그릇 더미, 면 바구니, 육수 냄비, 토핑 통)</li>
-        <li><b>그릴은 누르고 있다가</b> 초록일 때 손가락을 떼요</li>
-        <li><b>그릇을 탭</b>하면 선택 (노란 고리) — 토핑·챠슈가 그 그릇에 들어가요</li>
-        <li><b>🍜 내기</b> 버튼: 선택한 그릇을 주문이 맞는 손님에게 바로 내요</li>
-        <li><b>↻</b> 버튼: 뒤돌기 (면 솥·육수) · <b>↶</b> 방금 넣은 것 빼기 · <b>🗑</b> 손에 든 것 버리기</li>
+        <li><b>그릇 더미</b>를 탭해서 그릇 놓기</li>
+        <li>↻ <b>뒤돌기</b> → <b>면 바구니 번호</b>를 눌러 면 삶기 · <b>육수 냄비</b>를 탭해서 육수 뜨기</li>
+        <li>순서는 꼭 <b>육수 → 면 → 챠슈·토핑</b></li>
+        <li>아래 <b>재료 버튼</b>: 토핑은 탭, <b>🔥 챠슈</b>는 누르고 있다가 초록에서 떼기</li>
+        <li>그릇이 <b>✅ 완성</b>되면 <b>🍜 내기</b> · <b>↶</b> 방금 넣은 것 빼기 · <b>🗑</b> 손에 든 것 버리기</li>
       </ul>
+    </section>
+    <section class="pg" data-tab="업그레이드">
+      <div class="shop" id="startShop"></div>
+    </section>
+    <div class="foot">
+      <button class="btn sub" id="resetBtn">처음부터</button>
+      <button class="btn" id="startBtn">영업 시작</button>
     </div>
-    <div class="day-box" id="dayInfo"></div>
-    <div class="shop" id="startShop"></div>
-    <button class="btn" id="startBtn">영업 시작</button>
-    <button class="btn sub" id="resetBtn">처음부터 (Day 1)</button>
   </div>
 </div>
 
@@ -299,23 +325,32 @@
 </div>
 
 <div id="end" class="overlay hidden">
-  <div class="card" style="text-align:center">
-    <h1>영업 종료</h1>
-    <div class="stars" id="endStars"></div>
-    <p id="endRating"></p>
-    <div class="result-grid">
-      <div>😊 만족<b id="endHappy">0</b></div>
-      <div>😐 보통<b id="endNormal">0</b></div>
-      <div>😠 화남<b id="endAngry">0</b></div>
+  <div class="card paged" style="text-align:center">
+    <div class="tabs"></div>
+    <section class="pg" data-tab="결과">
+      <h1>영업 종료</h1>
+      <div class="stars" id="endStars"></div>
+      <p id="endRating"></p>
+      <div class="result-grid">
+        <div>😊 만족<b id="endHappy">0</b></div>
+        <div>😐 보통<b id="endNormal">0</b></div>
+        <div>😠 화남<b id="endAngry">0</b></div>
+      </div>
+      <p id="endMoney"></p>
+      <p id="endComment" style="font-weight:700"></p>
+    </section>
+    <section class="pg" data-tab="평판·내일">
+      <div class="day-box" id="endRep"></div>
+      <button class="btn sub" id="promoBtn">📣 전단지 돌리기 — 평판 올리기 (하루 한 번)</button>
+      <div class="day-box" id="endNext"></div>
+    </section>
+    <section class="pg" data-tab="업그레이드">
+      <div class="shop" id="endShop"></div>
+    </section>
+    <div class="foot">
+      <button class="btn sub" id="againBtn">오늘 다시</button>
+      <button class="btn" id="nextBtn">다음 날 영업 시작</button>
     </div>
-    <p id="endMoney"></p>
-    <p id="endComment" style="font-weight:700"></p>
-    <div class="day-box" id="endRep"></div>
-    <button class="btn sub" id="promoBtn">📣 전단지 돌리기 — 평판 올리기 (하루 한 번)</button>
-    <div class="shop" id="endShop"></div>
-    <div class="day-box" id="endNext"></div>
-    <button class="btn" id="nextBtn">다음 날 영업 시작</button>
-    <button class="btn sub" id="againBtn">오늘 다시 하기</button>
   </div>
 </div>
 
@@ -1349,25 +1384,26 @@ function burner(x, r, n, top = 0.885) {
   }
   const l = new THREE.PointLight(0x5a9aff, 0.8, 0.9, 2); l.position.set(x, y + 0.04, 0.95); scene.add(l);
 }
-burner(-0.45, 0.4, 22);
+burner(-0.45, 0.34, 20);
 burner(0.47, 0.34, 20, STOCK_TOP); burner(1.03, 0.22, 14, STOCK_TOP);
 // 면 솥
+const NOODLE_POT_R = 0.33; // 화구(깊이 0.7) 안에 쏙 들어가게
 const noodlePot = new THREE.Group(); noodlePot.position.set(-0.45, 0.96, 1.2); scene.add(noodlePot);
 {
   // 업소용 면 솥: 깊은 스테인리스 통 + 양옆 고리 손잡이, 안에 원통 철망 바구니들
-  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.41, 0.3, 36, 1, true),
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(NOODLE_POT_R, NOODLE_POT_R - 0.01, 0.3, 36, 1, true),
     new THREE.MeshStandardMaterial({ color: 0xc2c7cc, metalness: 0.7, roughness: 0.25, side: THREE.DoubleSide }));
   pot.position.y = 0.15; noodlePot.add(pot);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.014, 8, 48), steel);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(NOODLE_POT_R, 0.014, 8, 48), steel);
   rim.rotation.x = Math.PI / 2; rim.position.y = 0.3; noodlePot.add(rim);
   for (const s of [-1, 1]) { // 옆 고리 손잡이
     const loop = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.007, 6, 16, Math.PI), steel);
-    loop.position.set(s * 0.43, 0.25, 0); loop.rotation.set(Math.PI / 2, 0, s > 0 ? -Math.PI / 2 : Math.PI / 2); noodlePot.add(loop);
+    loop.position.set(s * (NOODLE_POT_R + 0.01), 0.25, 0); loop.rotation.set(Math.PI / 2, 0, s > 0 ? -Math.PI / 2 : Math.PI / 2); noodlePot.add(loop);
   }
-  const water = cyl(0.41, 0.41, 0.01, 36, new THREE.MeshStandardMaterial({ color: 0xd8e2df, roughness: 0.15, transparent: true, opacity: 0.8 }), 0, 0.235, 0, noodlePot);
+  const water = cyl(NOODLE_POT_R - 0.01, NOODLE_POT_R - 0.01, 0.01, 36, new THREE.MeshStandardMaterial({ color: 0xd8e2df, roughness: 0.15, transparent: true, opacity: 0.8 }), 0, 0.235, 0, noodlePot);
   water.castShadow = false;
   for (let i = 0; i < 26; i++) { // 끓는 물방울
-    const a = Math.random() * Math.PI * 2, r = Math.random() * 0.38;
+    const a = Math.random() * Math.PI * 2, r = Math.random() * (NOODLE_POT_R - 0.04);
     const bub = new THREE.Mesh(new THREE.SphereGeometry(0.008 + Math.random() * 0.01, 6, 4), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 0.1 }));
     bub.scale.y = 0.4; bub.position.set(Math.cos(a) * r, 0.242, Math.sin(a) * r); noodlePot.add(bub);
   }
@@ -1406,7 +1442,7 @@ const baskets = BASKET_POS.map(([dx, dz], i) => {
 // (뒤돌면 화면 오른쪽 = 월드 -x, 위쪽(먼 쪽) = +z)
 const BASKET_GRID = {
   4: { cols: 2, xs: [0.15, -0.15], zs: [0.15, -0.15] },
-  6: { cols: 3, xs: [0.22, 0, -0.22], zs: [0.14, -0.14] },
+  6: { cols: 3, xs: [0.19, 0, -0.19], zs: [0.12, -0.12] },
 };
 const basketHolder = new THREE.Group(); noodlePot.add(basketHolder); // 칸막이 철망 (자리를 눈으로 보이게)
 function basketLayout() {
@@ -1420,8 +1456,8 @@ function basketLayout() {
   });
   basketHolder.clear();
   const bar = (w, d, x, z) => box(w, 0.012, d, basketMetal, x, 0.25, z, basketHolder);
-  bar(0.78, 0.012, 0, 0);                                                     // 앞줄·뒷줄 사이
-  for (let c = 0; c < grid.cols - 1; c++) bar(0.012, 0.66, (grid.xs[c] + grid.xs[c + 1]) / 2, 0); // 칸 사이
+  bar(NOODLE_POT_R * 2 - 0.04, 0.012, 0, 0);                                                   // 앞줄·뒷줄 사이
+  for (let c = 0; c < grid.cols - 1; c++) bar(0.012, NOODLE_POT_R * 1.6, (grid.xs[c] + grid.xs[c + 1]) / 2, 0); // 칸 사이
 }
 label('면 솥', -0.45, 1.45, 1.2);
 // 육수 냄비: 낮은 육수 화구 위의 큰 통 (돈코츠는 아주 큰 들통)
@@ -1719,7 +1755,12 @@ function makePerson(look) {
   }
   if (L.earrings) for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.01, 6, 5), mat(0xe8c050, { metalness: 0.7 })); e.position.set(s * 0.12, -0.04, 0.01); head.add(e); }
   g.scale.setScalar(L.scale);
-  g.userData = { torso, head, mouth };
+  // 젓가락 (먹을 때만 보임): 끝에 면 가닥 + 젓가락을 쥔 손
+  const sticks = new THREE.Group(); sticks.visible = false; g.add(sticks);
+  for (const dx of [-0.008, 0.008]) { const st = cyl(0.0035, 0.0025, 0.22, 5, mat(0xd8b27a, { flatShading: false }), dx, 0.1, 0.035, sticks); st.rotation.x = 0.35; }
+  cyl(0.013, 0.011, 0.09, 6, mat(0xf2d27a, { flatShading: false }), 0, -0.035, 0, sticks); // 집어 올린 면
+  box(0.05, 0.05, 0.06, skin, 0, 0.19, 0.07, sticks);
+  g.userData = { torso, head, mouth, sticks };
   return g;
 }
 
@@ -2323,7 +2364,7 @@ function updateCustomers(dt) {
       if (moveAlong(m, c.path, 1.6, dt)) { scene.remove(m); G.customers.splice(G.customers.indexOf(c), 1); }
     } else {
       m.position.y = 0;
-      m.userData.head.rotation.x = 0;
+      m.userData.head.rotation.x = 0; m.userData.sticks.visible = false;
       if (c.state === 'waiting') {
         c.patience -= dt;
         if (!c.warned && c.patience < c.maxPatience * 0.3) { c.warned = true; customerSay(c, pick(['😕 아직인가요…?', '😕 배고파요…']), 'normal'); }
@@ -2333,6 +2374,8 @@ function updateCustomers(dt) {
         }
       } else if (c.state === 'eating') {
         m.userData.head.rotation.x = 0.25 + Math.sin(c.bob * 6) * 0.15; // 후루룩
+        const lift = (Math.sin(c.bob * 6) + 1) / 2; // 0 = 그릇, 1 = 입
+        m.userData.sticks.visible = true; m.userData.sticks.position.set(0.05, 1.07 + lift * 0.22, 0.42 - lift * 0.26);
         c.eatT -= dt;
         if (c.kaedamaAt > 0 && c.eatT <= c.kaedamaAt) {
           c.kaedamaAt = -1;
@@ -2836,6 +2879,28 @@ musicBtn.onclick = e => {
   musicBtn.classList.toggle('off', !musicOn);
   Sound.music(musicOn);
 };
+// 시작·영업 종료 화면: 위 탭이나 좌우로 밀어서 페이지 넘기기
+function setupPager(card) {
+  const pages = [...card.querySelectorAll('.pg')], tabs = card.querySelector('.tabs');
+  tabs.innerHTML = pages.map((p, i) => `<button data-i="${i}">${p.dataset.tab}</button>`).join('');
+  const show = n => {
+    const i = clamp(n, 0, pages.length - 1); card.pageIndex = i;
+    pages.forEach((p, k) => { p.hidden = k !== i; });
+    tabs.querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === i));
+  };
+  tabs.querySelectorAll('button').forEach(b => b.addEventListener('click', () => show(+b.dataset.i)));
+  let sx = null, sy = 0;
+  card.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
+  card.addEventListener('pointerup', e => {
+    if (sx == null) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) show(card.pageIndex + (dx < 0 ? 1 : -1));
+  });
+  show(0);
+  return show;
+}
+const startPage = setupPager(document.querySelector('#start .card'));
+const endPage = setupPager(document.querySelector('#end .card'));
 document.getElementById('dayInfo').innerHTML = startInfoHtml();
 renderShop('startShop');
 document.getElementById('startBtn').textContent = day > 1 ? `Day ${day} 영업 시작` : '영업 시작';
@@ -3231,6 +3296,7 @@ function endDay() {
   document.getElementById('endNext').innerHTML = '내일은… ' + dayInfoHtml(next);
   document.getElementById('nextBtn').textContent = `Day ${next} 영업 시작 →`;
   document.querySelector('#end h1').textContent = `Day ${day} 영업 종료`;
+  endPage(0); // 결과 페이지부터
   document.getElementById('end').classList.remove('hidden');
 }
 function frame() {
