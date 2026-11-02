@@ -64,6 +64,16 @@
   .wl.pop { font-size: 14px; font-weight: 800; color: #fff; }
   .wl.pop.in { background: #2f7a3a; }
   .wl.pop.out { background: #b8322a; }
+  #street { position: relative; height: 230px; margin: 10px 0; border-radius: 8px; overflow: hidden; user-select: none;
+    background: linear-gradient(#cfe3f2 0 35%, #e9dcc4 35% 38%, #b9b0a2 38% 100%); }
+  #street .shop { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); font-size: 13px; font-weight: 800; background: #8a1f1a; color: #fff; padding: 4px 10px; border-radius: 4px; }
+  #street .walker { position: absolute; font-size: 40px; cursor: pointer; line-height: 1; transition: transform .2s; }
+  #street .walker.got { cursor: default; transform: scale(1.15); }
+  #street .walker.got::after { content: '📄'; position: absolute; font-size: 20px; right: -8px; top: -6px; }
+  #street .walker.flip { transform: scaleX(-1); }
+  #street .walker.flip.got { transform: scale(-1.15, 1.15); }
+  #street .plus { position: absolute; font-weight: 800; color: #2f7a3a; font-size: 16px; pointer-events: none; animation: up .8s forwards; }
+  @keyframes up { to { transform: translateY(-30px); opacity: 0; } }
   #grillGauge { position: absolute; left: 50%; top: calc(50% + 50px); transform: translateX(-50%); width: 240px; display: none; }
   #grillGauge .track { position: relative; height: 14px; border-radius: 7px; overflow: hidden;
     background: linear-gradient(90deg, #e6a7a0 0 50%, #4caf50 50% 72%, #3b2418 72% 100%); box-shadow: 0 0 0 2px rgba(0,0,0,.5); }
@@ -233,10 +243,22 @@
     </div>
     <p id="endMoney"></p>
     <p id="endComment" style="font-weight:700"></p>
+    <div class="day-box" id="endRep"></div>
+    <button class="btn sub" id="promoBtn">📣 전단지 돌리기 — 평판 올리기 (하루 한 번)</button>
     <div class="shop" id="endShop"></div>
     <div class="day-box" id="endNext"></div>
     <button class="btn" id="nextBtn">다음 날 영업 시작</button>
     <button class="btn sub" id="againBtn">오늘 다시 하기</button>
+  </div>
+</div>
+
+<div id="promo" class="overlay hidden">
+  <div class="card" style="text-align:center">
+    <h1>📣 전단지 돌리기</h1>
+    <p>가게 앞을 지나가는 사람을 클릭해서 전단지를 건네세요! <b>15초</b> 동안 많이 건넬수록 평판이 올라요.<br><small>🐈 고양이는 전단지를 안 받아요.</small></p>
+    <div id="street"></div>
+    <p>건넨 전단지 <b id="promoCount">0</b>장 · 남은 시간 <b id="promoTime">15</b>초</p>
+    <button class="btn" id="promoGo">시작!</button>
   </div>
 </div>
 
@@ -309,6 +331,14 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 저장 불가 */ } },
 };
 let bank = store.get('ramen-bank', 0);
+// 가게 평판 (★1~5): 하루 평점이 조금씩 반영되고, 높을수록 손님이 자주 옴
+let rep = store.get('ramen-rep', 3);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const repSpawn = () => clamp(1 + (3 - rep) * 0.2, 0.75, 1.4); // 손님 오는 간격 배수 (작을수록 자주)
+const repText = () => {
+  const pct = Math.round((1 / repSpawn() - 1) * 100);
+  return `🏮 가게 평판 ★${rep.toFixed(1)} — ${pct > 0 ? `손님이 ${pct}% 더 자주 와요` : pct < 0 ? `손님이 ${-pct}% 덜 와요` : '손님이 평소만큼 와요'}`;
+};
 // 예전(한 번만 사는) 업그레이드는 같은 효과의 단계로 옮김
 const upgLv = store.get('ramen-upg2', null) ?? Object.fromEntries(store.get('ramen-upg', []).map(k => [k, { bigTray: 2, noren: 2 }[k] ?? 1]));
 const levelOf = k => upgLv[k] ?? 0;
@@ -2273,7 +2303,7 @@ function startInfoHtml() {
   const seen = store.get('ramen-seen', Math.min(day, 4));
   const missed = [];
   for (let d = seen + 1; d < Math.min(day, LEVELS.length + 1); d++) missed.push(`<b>🆕 ${LEVELS[d - 1].title}</b> — ${LEVELS[d - 1].note}`);
-  return dayInfoHtml(day) + (missed.length ? '<hr style="border:0;border-top:1px dashed #d9b54a;margin:8px 0">' + missed.join('<br>') : '');
+  return dayInfoHtml(day) + `<br><small>${repText()}</small>` + (missed.length ? '<hr style="border:0;border-top:1px dashed #d9b54a;margin:8px 0">' + missed.join('<br>') : '');
 }
 // 업그레이드 상점 (시작 화면·영업 종료 화면): 단계 점(●○), 지금 효과 → 다음 단계 효과
 function renderShop(id) {
@@ -2292,13 +2322,83 @@ function renderShop(id) {
     if (buyUpgrade(b.dataset.k)) { Sound.init(); Sound.happy(); renderShop(id); }
   });
 }
+// ---------- 가게 평판 · 홍보 미니게임 ----------
+function setRep(v) { rep = clamp(v, 1, 5); store.set('ramen-rep', rep); }
+function showRep() {
+  const b = G.repBefore, diff = b != null ? rep - b : 0;
+  const change = b != null ? ` <small>(${b.toFixed(1)} → ${rep.toFixed(1)}${diff >= 0.05 ? ' ▲' : diff <= -0.05 ? ' ▼' : ''})</small>` : '';
+  document.getElementById('endRep').innerHTML = repText() + change;
+  const canPromo = rep < 3.5 && store.get('ramen-promo-day', 0) !== day;
+  document.getElementById('promoBtn').style.display = canPromo ? '' : 'none';
+}
+// 전단지 돌리기: 15초 동안 지나가는 사람을 클릭 (한 장당 평판 +0.04, 최대 +0.8)
+const Promo = (() => {
+  const street = document.getElementById('street');
+  const PEOPLE = ['🚶', '🚶‍♀️', '🧑‍💼', '👩‍💼', '🧓', '👵', '🧑‍🎓', '👨‍🍳', '🏃', '🏃‍♀️'];
+  let walkers = [], hits = 0, timeLeft = 0, raf = 0, last = 0, spawnT = 0, running = false;
+  function reset() {
+    street.innerHTML = '<div class="shop">🍜 라멘 카운터</div>';
+    walkers = []; hits = 0; timeLeft = 15; spawnT = 0;
+    document.getElementById('promoCount').textContent = '0';
+    document.getElementById('promoTime').textContent = '15';
+  }
+  function spawn() {
+    const cat = Math.random() < 0.15, dir = Math.random() < 0.5 ? 1 : -1;
+    const el = document.createElement('div');
+    el.className = 'walker' + (dir > 0 ? ' flip' : ''); // 걷는 이모지는 왼쪽을 봄
+    el.textContent = cat ? '🐈' : PEOPLE[Math.floor(Math.random() * PEOPLE.length)];
+    const w = { el, x: dir > 0 ? -50 : street.clientWidth + 10, y: 95 + Math.random() * 90, v: dir * (70 + Math.random() * 110), cat, got: false };
+    el.style.top = w.y + 'px';
+    el.onpointerdown = e => {
+      e.preventDefault();
+      if (!running || w.got) return;
+      if (w.cat) { Sound.normal(); return; }
+      w.got = true; el.classList.add('got'); hits++; Sound.pick();
+      document.getElementById('promoCount').textContent = hits;
+      const p = document.createElement('div'); p.className = 'plus'; p.textContent = '+1';
+      p.style.left = (w.x + 10) + 'px'; p.style.top = (w.y - 20) + 'px'; street.appendChild(p);
+      setTimeout(() => p.remove(), 800);
+    };
+    street.appendChild(el); walkers.push(w);
+  }
+  function tick(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    timeLeft -= dt; spawnT -= dt;
+    if (spawnT <= 0) { spawn(); spawnT = 0.35 + Math.random() * 0.5; }
+    for (const w of walkers) { w.x += w.v * dt * (w.got ? 1.6 : 1); w.el.style.left = w.x + 'px'; }
+    walkers = walkers.filter(w => { const out = w.x < -80 || w.x > street.clientWidth + 80; if (out) w.el.remove(); return !out; });
+    document.getElementById('promoTime').textContent = Math.max(0, Math.ceil(timeLeft));
+    if (timeLeft <= 0) return finish();
+    raf = requestAnimationFrame(tick);
+  }
+  function finish() {
+    running = false; cancelAnimationFrame(raf);
+    const gain = Math.min(0.8, hits * 0.04);
+    const before = rep; setRep(rep + gain); store.set('ramen-promo-day', day);
+    G.repBefore = G.repBefore ?? before;
+    Sound.happy();
+    const go = document.getElementById('promoGo');
+    go.textContent = `전단지 ${hits}장! 평판 +${gain.toFixed(2)} → 돌아가기`; go.disabled = false;
+    go.onclick = () => { document.getElementById('promo').classList.add('hidden'); showRep(); };
+  }
+  return {
+    open() {
+      reset();
+      const go = document.getElementById('promoGo');
+      go.textContent = '시작!'; go.disabled = false;
+      go.onclick = () => { go.disabled = true; go.textContent = '전단지 돌리는 중…'; running = true; last = performance.now(); raf = requestAnimationFrame(tick); };
+      document.getElementById('promo').classList.remove('hidden');
+    },
+  };
+})();
+document.getElementById('promoBtn').onclick = () => { Sound.init(); Promo.open(); };
 document.getElementById('dayInfo').innerHTML = startInfoHtml();
 renderShop('startShop');
 document.getElementById('startBtn').textContent = day > 1 ? `Day ${day} 영업 시작` : '영업 시작';
 document.getElementById('startBtn').onclick = startDay;
 document.getElementById('resetBtn').style.display = day > 1 ? '' : 'none';
 document.getElementById('resetBtn').onclick = () => { // 금고·업그레이드까지 처음부터
-  day = 1; saveDay(); bank = 0; for (const k in upgLv) delete upgLv[k]; store.set('ramen-bank', 0); store.set('ramen-upg', []); store.set('ramen-upg2', {}); store.set('ramen-seen', 1); startDay();
+  day = 1; saveDay(); bank = 0; for (const k in upgLv) delete upgLv[k]; store.set('ramen-bank', 0); store.set('ramen-upg', []); store.set('ramen-upg2', {}); store.set('ramen-seen', 1); setRep(3); startDay();
 };
 document.getElementById('resumeBtn').onclick = () => { pause(false); lockPointer(); };
 document.getElementById('turnBtn').onclick = e => { e.currentTarget.blur(); if (G.running && !G.paused) turnAround(); };
@@ -2406,7 +2506,7 @@ function update(dt) {
   if (G.time >= G.nextSpawn && G.time < CFG.dayLength - 25) {
     spawnCustomer();
     const t = G.time;
-    G.nextSpawn = t + (t < 60 ? rand(40, 46) : t < 150 ? rand(24, 30) : rand(30, 36)) * levelCfg().spawn;
+    G.nextSpawn = t + (t < 60 ? rand(40, 46) : t < 150 ? rand(24, 30) : rand(30, 36)) * levelCfg().spawn * repSpawn();
   }
   tryAssignSeats();
   // 면 솥
@@ -2542,7 +2642,7 @@ function updateHud() {
   document.getElementById('clock').textContent = `Day ${G.day} · ` + (G.time >= CFG.dayLength ? `${clk} · 마지막 손님 마무리` : `🕐 ${clk}`);
   document.getElementById('money').textContent = `¥${G.money.toLocaleString()}`;
   const avg = G.scores.length ? G.scores.reduce((a, b) => a + b, 0) / G.scores.length : null;
-  document.getElementById('rating').textContent = avg ? `평점 ★${avg.toFixed(1)}` : '평점 —';
+  document.getElementById('rating').textContent = `오늘 ${avg ? '★' + avg.toFixed(1) : '—'} · 평판 ★${rep.toFixed(1)}`;
   const qc = document.getElementById('queueChip');
   qc.style.display = G.queue.length ? '' : 'none';
   qc.textContent = `🚶 대기 ${G.queue.length}명`;
@@ -2568,6 +2668,9 @@ function endDay() {
     avg >= 2.3 ? '바쁜 하루였네요. 주문서와 면 익힘을 신경 써 봐요.' :
     '오늘은 힘들었어요… 내일은 더 잘할 수 있어요!';
   // 내일 열리는 요소 미리 보기
+  // 가게 평판: 오늘 평점이 40% 반영
+  if (G.scores.length) { const before = rep; setRep(rep * 0.6 + avg * 0.4); G.repBefore = before; }
+  showRep();
   const next = day + 1;
   document.getElementById('endNext').innerHTML = '내일은… ' + dayInfoHtml(next);
   document.getElementById('nextBtn').textContent = `Day ${next} 영업 시작 →`;
