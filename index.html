@@ -431,7 +431,7 @@ const LEVELS = [
   { title: '주말 러시', menu: ['tonkotsu', 'shoyu', 'miso', 'shio', 'tantan'], stock: true, spawn: 0.6, tops: ['menma', 'corn', 'minchi'],
     note: '주말이라 손님이 몰려와요!' },
   { title: '교자 개시', menu: ['tonkotsu', 'shoyu', 'miso', 'shio', 'tantan'], stock: true, spawn: 0.66, tops: ['menma', 'corn', 'minchi'], gyoza: true,
-    note: '사이드 <b>교자</b>! 주문서에 🥟가 있으면 <b>🥟 교자</b> 버튼으로 굽기 시작 → <b>완성</b>이 뜨면 한 번 더 눌러 그릇 옆에 곁들여요. 너무 오래 두면 타요.' },
+    note: '사이드 <b>교자</b>! <b>🥟 교자 굽기</b>로 굽고, <b>빼기!</b>가 뜨면 한 번 더 눌러 옆 접시에 빼놔요 (3접시까지). 주문서에 🥟가 있으면 <b>🍽 곁들이기</b>로 그릇 앞에. 타 버리면 굽기 버튼으로 버려요.' },
   { title: '평일 영업', menu: ['tonkotsu', 'shoyu', 'miso', 'shio', 'tantan'], stock: true, spawn: 0.64, tops: ['menma', 'corn', 'minchi'], gyoza: true,
     note: '교자를 굽는 동안 라멘도 같이 만들어 보세요.' },
   { title: '점심 러시', menu: ['tonkotsu', 'shoyu', 'miso', 'shio', 'tantan'], stock: true, spawn: 0.6, tops: ['menma', 'corn', 'minchi'], gyoza: true,
@@ -554,6 +554,26 @@ const Sound = (() => {
       nextBeat += EIGHTH; beat++;
     }
   }
+  // 아이폰은 무음 스위치가 켜져 있으면 웹 오디오를 꺼 버림 →
+  // 소리 없는 오디오를 계속 틀어 '미디어 재생'으로 바꿔서 무음 스위치와 상관없이 들리게 (iOS 17+는 audioSession도)
+  let mobileUnlocked = false;
+  function silentWavUrl() {
+    const n = 800, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const str = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
+    v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true);
+    v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, n * 2, true);
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+  function unlockMobileAudio() {
+    if (mobileUnlocked) return;
+    mobileUnlocked = true;
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* 미지원 */ }
+    try {
+      const a = new Audio(silentWavUrl()); a.loop = true; a.setAttribute('playsinline', '');
+      a.play().catch(() => { mobileUnlocked = false; }); // 막히면 다음 탭에서 다시 시도
+    } catch (e) { mobileUnlocked = false; }
+  }
   function tone(freq, dur, { type = 'sine', vol = 0.15, slide = 0, delay = 0 } = {}) {
     if (!ctx) return;
     const t = ctx.currentTime + delay;
@@ -577,7 +597,8 @@ const Sound = (() => {
   }
   return {
     init() {
-      if (ctx) { ctx.resume(); return; }
+      unlockMobileAudio();
+      if (ctx) { if (ctx.state !== 'running') ctx.resume(); return; }
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       master = ctx.createGain(); master.gain.value = 0.7; master.connect(ctx.destination);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
@@ -588,6 +609,8 @@ const Sound = (() => {
       loopNoise('lowpass', 240, 0.7).gain.value = 0.025; // 가게 웅성거림
     },
     suspend() { ctx?.suspend(); },
+    // 휴대폰이 소리를 멈춰 뒀으면 다시 켬 (화면 탭 · 앱으로 돌아올 때)
+    wake() { if (ctx && ctx.state !== 'running' && !(G?.paused)) ctx.resume(); },
     // 비 오는 날 빗소리
     setRain(on) { if (!ctx) return; rainGain ??= loopNoise('highpass', 900, 0.4); rainGain.gain.setTargetAtTime(on ? 0.05 : 0, ctx.currentTime, 0.5); },
     // 배경 음악: 일본 음계(요나누키)로 코토처럼 뜯는 멜로디 + 부드러운 화음 + 베이스를 그 자리에서 만들어 연주
@@ -2054,7 +2077,7 @@ function newGame() {
     customers: [], queue: [], nextSpawn: 3, nextId: 1, recentRamen: [],
     event: 'normal', repBonus: 0, criticCame: false, // 오늘의 행사 · 평론가 등으로 오늘 바뀐 평판
     refill: {}, pop: {}, lastAdd: null, // 보충 중인 토핑(남은 초) · 그릇 위 "+파" 표시 · 되돌릴 수 있는 방금 넣은 것
-    gyozaPan: { t: null }, // 교자 굽는 시간 (null = 비어 있음)
+    gyozaPan: { t: null }, gyozaPlates: 0, // 교자 굽는 시간 (null = 비어 있음) · 옆에 빼놓은 접시 수
     day, stock: Object.fromEntries(Object.keys(TOPPINGS).map(k => [k, stockMax()])),
   };
   // 오늘 열린 요소만 보이게
@@ -2692,14 +2715,21 @@ function act(d) {
       b.spice++; b.refresh(); Sound.pour(); addTo(b, 'spice', '라유');
       return;
     }
-    case 'gyoza': { // 🥟 교자: 한 번 누르면 굽기 시작, 다 구워지면 한 번 더 눌러 그릇 옆에
+    case 'gyoza': { // 🥟 굽기: 빈 팬이면 굽기 시작 · 다 익으면 옆 접시로 빼놓기 · 타면 버리기
       const gz = G.gyozaPan;
       if (gz.t == null) { gz.t = 0; Sound.fire(); return; }
       if (gz.t < GYOZA_DONE) return toast(`교자 굽는 중… ${Math.ceil(GYOZA_DONE - gz.t)}초 더`, 'warn');
+      if (gz.t > GYOZA_BURN) { gz.t = null; Sound.trash(); return toast('탄 교자는 버렸어요. 다시 구우세요', 'warn'); }
+      if (G.gyozaPlates >= GYOZA_HOLD) return toast(`옆에 빼놓을 자리가 없어요 (${GYOZA_HOLD}접시까지)`, 'warn');
+      G.gyozaPlates++; gz.t = null; Sound.place();
+      return toast(`🥟 교자를 옆에 빼놨어요 (${G.gyozaPlates}접시) — 🍽 곁들이기로 그릇에`, 'good');
+    }
+    case 'gyozaServe': { // 🍽 곁들이기: 빼놓은 교자 한 접시를 그릇 앞에
+      if (G.gyozaPlates <= 0) return toast('빼놓은 교자가 없어요 — 🥟 굽기 먼저', 'warn');
       const b = toppingTarget() ?? activeBowl();
       if (!b) return toast('교자를 곁들일 그릇이 없어요', 'warn');
       if (b.gyoza) return toast('이 그릇엔 이미 교자가 있어요', 'warn');
-      b.gyoza = gz.t > GYOZA_BURN ? 'burnt' : 'good'; gz.t = null;
+      G.gyozaPlates--; b.gyoza = 'good';
       G.active = G.bowls.indexOf(b);
       b.refresh(); Sound.place(); addTo(b, 'gyoza', '교자');
       return;
@@ -2793,13 +2823,13 @@ function undoBowl() {
   if (e.type === 'chashu') b.chashu.pop();
   if (e.type === 'miso') b.miso = false;
   if (e.type === 'spice') b.spice--;
-  if (e.type === 'gyoza') b.gyoza = null; // 뺀 교자는 버림
+  if (e.type === 'gyoza') { b.gyoza = null; G.gyozaPlates++; } // 뺀 교자는 옆 접시로 돌아감
   b.refresh(); Sound.trash(); popAt(G.bowls.indexOf(b), `−${e.name}`, 'out');
 }
 // 토핑 보충: 냉장고에서 꺼내 통을 채우는 데 2초 (그동안 다른 일 해도 됨)
 const REFILL_SEC = 2;
 // 교자: 8초면 다 구워지고, 18초가 넘으면 탐 · 한 접시 ¥400
-const GYOZA_DONE = 8, GYOZA_BURN = 18, GYOZA_PRICE = 400;
+const GYOZA_DONE = 8, GYOZA_BURN = 18, GYOZA_PRICE = 400, GYOZA_HOLD = 3; // 옆에 빼놓을 수 있는 접시 수
 function startRefill(key) {
   if (!levelCfg().stock) return;
   if (G.refill[key] != null) return;
@@ -3008,6 +3038,9 @@ const Promo = (() => {
   };
 })();
 document.getElementById('promoBtn').onclick = () => { Sound.init(); Promo.open(); };
+// 휴대폰: 화면을 누를 때마다, 앱으로 돌아올 때 소리가 멈춰 있으면 다시 켬
+document.addEventListener('pointerdown', () => { if (G?.running && !G.paused) Sound.init(); }, true);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) Sound.wake(); });
 // 배경 음악 켜기/끄기 (저장)
 let musicOn = store.get('ramen-music', true);
 const musicBtn = document.getElementById('musicBtn');
@@ -3066,6 +3099,7 @@ const KIT_ICON = (() => {
     minchi: draw(g => { for (let i = 0; i < 40; i++) { const x = 12 + Math.random() * 40, y = 16 + Math.random() * 34; g.fillStyle = i % 3 ? '#7a4a2a' : '#9a6038'; g.beginPath(); g.arc(x, y, 3 + Math.random() * 3, 0, Math.PI * 2); g.fill(); } }),
     rayu: draw(g => { g.fillStyle = '#d82a1a'; g.beginPath(); g.roundRect(20, 18, 24, 38, 6); g.fill(); g.fillStyle = '#f2e6d0'; g.fillRect(24, 10, 16, 10); g.fillStyle = '#a81a10'; g.fillRect(24, 30, 16, 12); g.fillStyle = '#ffd36a'; g.font = 'bold 12px sans-serif'; g.textAlign = 'center'; g.fillText('辣', 32, 40); }),
     gyoza: draw(g => { for (const [x, y] of [[20, 36], [34, 30], [48, 36]]) { g.fillStyle = '#e8c48a'; g.beginPath(); g.ellipse(x, y, 12, 9, 0, Math.PI, 0); g.closePath(); g.fill(); g.fillStyle = '#b07a3a'; g.fillRect(x - 12, y - 1, 24, 3); g.strokeStyle = '#c99a5a'; g.lineWidth = 1.5; for (let k = -6; k <= 6; k += 4) { g.beginPath(); g.moveTo(x + k, y - 8); g.lineTo(x + k + 2, y - 3); g.stroke(); } } }),
+    gyozaServe: draw(g => { g.fillStyle = '#f3efe6'; g.beginPath(); g.ellipse(32, 40, 26, 12, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#c9c0ae'; g.lineWidth = 2; g.stroke(); for (const [x, y] of [[22, 38], [34, 34], [46, 38]]) { g.fillStyle = '#e8c48a'; g.beginPath(); g.ellipse(x, y, 9, 7, 0, Math.PI, 0); g.closePath(); g.fill(); g.fillStyle = '#b07a3a'; g.fillRect(x - 9, y - 1, 18, 2.5); } }),
   };
 })();
 // 면 바구니 버튼판: 뒤돌았을 때 재료 버튼 대신 아래에 보임. 솥 안 배치와 같은 격자
@@ -3107,7 +3141,7 @@ function buildKit() {
   const items = [
     ...(levelCfg().menu.includes('miso') ? [{ k: 'miso', name: '미소' }] : []),
     ...(levelCfg().menu.includes('tantan') ? [{ k: 'rayu', name: '라유' }] : []),
-    ...(levelCfg().gyoza ? [{ k: 'gyoza', name: '교자', cls: 'grill' }] : []),
+    ...(levelCfg().gyoza ? [{ k: 'gyoza', name: '교자 굽기', cls: 'grill' }, { k: 'gyozaServe', name: '곁들이기' }] : []),
     ...toppingsOn().map(k => ({ k, name: TRAY_NAME[k] })),
     { k: 'chashu', name: '챠슈', cls: 'grill' }, // 오른쪽 끝 (오른손 엄지 가까이)
   ];
@@ -3137,16 +3171,17 @@ function updateKit() {
   for (const el of document.querySelectorAll('#kit .kit-btn')) {
     const k = el.dataset.k, cnt = el.querySelector('.cnt');
     const inBowl = k === 'miso' ? !!a?.miso : k === 'chashu' ? (b?.chashu.length ?? 0) > 0 : k === 'rayu' ? (b?.spice ?? 0) > 0
-      : k === 'gyoza' ? !!(b ?? a)?.gyoza : !!b?.top.has(k);
-    el.classList.toggle('off', k !== 'miso' && k !== 'gyoza' && !b); // 육수·면이 든 그릇이 없으면 흐리게
+      : k === 'gyozaServe' ? !!(b ?? a)?.gyoza : k === 'gyoza' ? false : !!b?.top.has(k);
+    el.classList.toggle('off', k === 'gyozaServe' ? G.gyozaPlates <= 0 : k !== 'miso' && k !== 'gyoza' && !b); // 할 수 없을 땐 흐리게
     el.classList.toggle('in', inBowl);
     let txt = '', cls = 'cnt';
     if (k === 'chashu' && b?.chashu.length) txt = `${b.chashu.length}장`;
     if (k === 'rayu' && b?.spice) txt = '🌶'.repeat(b.spice);
+    if (k === 'gyozaServe' && G.gyozaPlates > 0) txt = `${G.gyozaPlates}접시`;
     if (k === 'gyoza' && G.gyozaPan.t != null) { // 굽는 중 남은 초 · 완성 · 탐
       const t = G.gyozaPan.t;
       if (t < GYOZA_DONE) txt = `${Math.ceil(GYOZA_DONE - t)}초`;
-      else if (t <= GYOZA_BURN) { txt = '완성!'; cls += ' fill'; } else { txt = '탐'; cls += ' empty'; }
+      else if (t <= GYOZA_BURN) { txt = '빼기!'; cls += ' fill'; } else { txt = '버리기'; cls += ' empty'; }
     }
     if (TOPPINGS[k] && stockOn) {
       if (G.refill[k] != null) { txt = '채우는 중'; cls += ' fill'; }
@@ -3410,7 +3445,11 @@ function nextStep() {
   }
   if (want) {
     if ((want.spice || 0) > b.spice) return turn('front', `🌶 라유 버튼 ${want.spice - b.spice}번 더 (맵기 ${want.spice})`);
-    if (want.gyoza && !b.gyoza) { const t = G.gyozaPan.t; return turn('front', t == null ? '🥟 교자 버튼 눌러서 굽기 시작' : t < GYOZA_DONE ? '🥟 교자 굽는 중… 다른 일 먼저' : '🥟 교자 버튼 눌러서 곁들이기'); }
+    if (want.gyoza && !b.gyoza) {
+      const t = G.gyozaPan.t;
+      return turn('front', G.gyozaPlates > 0 ? '🍽 곁들이기 버튼으로 교자 올리기' : t == null ? '🥟 교자 굽기 버튼으로 굽기 시작' : t < GYOZA_DONE ? '🥟 교자 굽는 중… 다른 일 먼저'
+        : t <= GYOZA_BURN ? '🥟 교자 굽기 버튼으로 옆에 빼놓기' : '🥟 탄 교자예요 — 굽기 버튼으로 버리고 다시');
+    }
     if (b.chashu.length < want.chashu) return turn('front', `🔥 챠슈 버튼을 누르고 있다가 초록에서 떼기 (${want.chashu}장)`);
     const empty = [...want.top].find(k => !b.top.has(k) && levelCfg().stock && G.stock[k] <= 0);
     if (empty) return turn('front', G.refill[empty] != null ? `${TOPPINGS[empty]} 채우는 중… 잠깐만요` : `${TOPPINGS[empty]}가 떨어졌어요 → ${TOPPINGS[empty]} 버튼을 눌러 채우기`);
