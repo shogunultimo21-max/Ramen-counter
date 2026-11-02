@@ -93,7 +93,7 @@
   body.mobile .tabs button { padding: 6px 4px; font-size: 13px; }
   body.mobile .foot { margin-top: 8px; }
   /* 뒤돌았을 때 아래 가운데: 면 바구니 버튼판 (솥 안 자리와 같은 배치) */
-  #basketPad { position: absolute; bottom: calc(8px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: grid; gap: 5px;
+  #basketPad { position: absolute; left: 50%; top: 60%; transform: translateX(-50%); display: grid; gap: 5px; /* 위치는 면 솥 바로 아래로 (placeBasketPad) */
     pointer-events: auto; background: rgba(30, 22, 16, .62); padding: 5px; border-radius: 14px; }
   #basketPad[hidden] { display: none; }
   .bk-btn { width: 92px; height: 40px; border: 0; border-radius: 10px; font: inherit; font-weight: 800; font-size: 13px; background: var(--paper); color: var(--ink);
@@ -1755,11 +1755,10 @@ function makePerson(look) {
   }
   if (L.earrings) for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.01, 6, 5), mat(0xe8c050, { metalness: 0.7 })); e.position.set(s * 0.12, -0.04, 0.01); head.add(e); }
   g.scale.setScalar(L.scale);
-  // 젓가락 (먹을 때만 보임): 끝에 면 가닥 + 젓가락을 쥔 손
+  // 젓가락 (먹을 때만 보임): 끝에 집어 올린 면 가닥
   const sticks = new THREE.Group(); sticks.visible = false; g.add(sticks);
   for (const dx of [-0.008, 0.008]) { const st = cyl(0.0035, 0.0025, 0.22, 5, mat(0xd8b27a, { flatShading: false }), dx, 0.1, 0.035, sticks); st.rotation.x = 0.35; }
   cyl(0.013, 0.011, 0.09, 6, mat(0xf2d27a, { flatShading: false }), 0, -0.035, 0, sticks); // 집어 올린 면
-  box(0.05, 0.05, 0.06, skin, 0, 0.19, 0.07, sticks);
   g.userData = { torso, head, mouth, sticks };
   return g;
 }
@@ -2375,7 +2374,7 @@ function updateCustomers(dt) {
       } else if (c.state === 'eating') {
         m.userData.head.rotation.x = 0.25 + Math.sin(c.bob * 6) * 0.15; // 후루룩
         const lift = (Math.sin(c.bob * 6) + 1) / 2; // 0 = 그릇, 1 = 입
-        m.userData.sticks.visible = true; m.userData.sticks.position.set(0.05, 1.07 + lift * 0.22, 0.42 - lift * 0.26);
+        m.userData.sticks.visible = true; m.userData.sticks.position.set(0.04, 1.07 + lift * 0.18, 0.4); // 그릇 위에서 위아래로만
         c.eatT -= dt;
         if (c.kaedamaAt > 0 && c.eatT <= c.kaedamaAt) {
           c.kaedamaAt = -1;
@@ -2927,11 +2926,23 @@ const KIT_ICON = (() => {
   };
 })();
 // 면 바구니 버튼판: 뒤돌았을 때 재료 버튼 대신 아래에 보임. 솥 안 배치와 같은 격자
+// 버튼판을 화면 속 면 솥 바로 아래(화구 앞판 위)에 붙임 — 화면 크기가 달라도 솥을 따라감
+const padAnchor = new THREE.Vector3();
+function placeBasketPad(pad) {
+  padAnchor.set(noodlePot.position.x, 0.86, 0.86).project(camera); // 면 솥 화구의 앞쪽 위 모서리
+  const w = pad.offsetWidth, h = pad.offsetHeight, margin = 8;
+  let x = (padAnchor.x + 1) / 2 * innerWidth, y = (1 - padAnchor.y) / 2 * innerHeight + 6;
+  const right = document.getElementById('barR').getBoundingClientRect().left - margin; // 오른쪽 버튼과 겹치지 않게
+  x = clamp(x, w / 2 + margin, right - w / 2);
+  y = clamp(y, margin, innerHeight - h - margin);
+  pad.style.left = x + 'px'; pad.style.top = y + 'px';
+}
 function updateBasketPad() {
   const pad = document.getElementById('basketPad'), kit = document.getElementById('kit');
   const show = G.running && facingBack;
   pad.hidden = !show; kit.hidden = show;
   if (!show) return;
+  placeBasketPad(pad);
   const n = upgValue('baskets');
   if (pad.childElementCount !== n) {
     pad.style.gridTemplateColumns = `repeat(${BASKET_GRID[n].cols}, auto)`;
