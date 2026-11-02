@@ -216,8 +216,7 @@
   body.mobile .ticket .line { line-height: 1.3; }
   body.mobile .ticket .tag { font-size: 9.5px; }
   body.mobile #hand { font-size: 11px; bottom: 70px; padding: 3px 10px; }
-  body.mobile #potPanel { top: 34px; right: calc(6px + env(safe-area-inset-right)); width: 128px; padding: 4px 6px; }
-  body.mobile #potPanel .row { font-size: 11px; grid-template-columns: 18px 58px 1fr; }
+  body.mobile #potPanel { display: none; } /* 솥을 가려서 숨김 — 바구니 위 익힘 이름표로 충분 */
   body.mobile .wl { font-size: 10px; padding: 2px 5px; }
   body.mobile .wl.tray, body.mobile .wl.tray small { font-size: 9px; }
   body.mobile .wl.say, body.mobile .wl.bubble { font-size: 11px; }
@@ -1315,21 +1314,23 @@ function rangeKnob(x, y, z) {
   box(RANGE_W + 0.02, 0.03, 0.04, steel, RANGE_CX, 0.9, 0.85);
   box(RANGE_W, 0.16, 0.03, steel, RANGE_CX, 0.76, 0.86);
   rangeKnob(RANGE_CX, 0.76, 0.84);
-  box(RANGE_W - 0.08, 0.02, 0.56, steel, RANGE_CX, 0.12, 1.22);   // 아래 선반
-  box(RANGE_W - 0.08, 0.5, 0.02, mat(0x24262a), RANGE_CX, 0.38, 1.5);
-  for (const [x, r, h] of [[-0.72, 0.15, 0.22], [-0.3, 0.13, 0.18]]) {
-    const p = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.96, h, 20, 1, true), smat(0xa7adb3, { metalness: 0.6, roughness: 0.35, side: THREE.DoubleSide }));
-    p.position.set(x, 0.13 + h / 2, 1.22); scene.add(p);
+  // 아래는 막힌 수납장 (바닥까지): 몸통 + 문 두 짝 + 손잡이 + 바닥 걸레받이
+  box(RANGE_W - 0.04, 0.68, 0.64, steelDark, RANGE_CX, 0.34, 1.2);
+  for (const s of [-1, 1]) {
+    box(RANGE_W / 2 - 0.04, 0.6, 0.02, steel, RANGE_CX + s * RANGE_W / 4, 0.36, 0.865);
+    box(0.012, 0.18, 0.02, steelDark, RANGE_CX + s * 0.05, 0.4, 0.852);
   }
+  box(RANGE_W - 0.02, 0.05, 0.02, mat(0x1d1f22), RANGE_CX, 0.025, 0.87);
 }
 // 육수 전용 화구: 무릎 높이의 낮은 주철 받침대 (큰 육수통을 올리기 좋게)
 {
   for (const x of [STOCK_X0 + 0.02, STOCK_X1 - 0.02]) box(0.04, STOCK_TOP, 0.7, sidePanel, x, STOCK_TOP / 2, 1.2);
   box(STOCK_W, 0.05, 0.72, castIron, STOCK_CX, STOCK_TOP - 0.025, 1.2);                 // 상판
   box(STOCK_W, 0.03, 0.04, steel, STOCK_CX, STOCK_TOP, 0.84);                          // 앞 테두리
-  box(STOCK_W - 0.08, 0.2, 0.03, steel, STOCK_CX, 0.24, 0.86);                         // 앞 패널
+  box(STOCK_W - 0.06, STOCK_TOP - 0.05, 0.64, steelDark, STOCK_CX, (STOCK_TOP - 0.05) / 2, 1.2); // 몸통 (바닥까지 막힘)
+  box(STOCK_W - 0.08, 0.32, 0.03, steel, STOCK_CX, 0.2, 0.86);                         // 앞 패널
+  box(STOCK_W - 0.04, 0.05, 0.02, mat(0x1d1f22), STOCK_CX, 0.025, 0.85);              // 걸레받이
   rangeKnob(0.47, 0.25, 0.84); rangeKnob(1.03, 0.25, 0.84);
-  box(STOCK_W - 0.08, 0.04, 0.6, mat(0x24262a), STOCK_CX, 0.03, 1.2);                   // 바닥
   const pipe = cyl(0.018, 0.018, STOCK_W, 10, smat(0xc9a23a, { metalness: 0.7, roughness: 0.3 }), STOCK_CX, 0.1, 1.5); pipe.rotation.z = Math.PI / 2; // 가스관
 }
 // 화구 하나: 버너 링 + 주철 받침 + 파란 불꽃 (top = 상판 높이)
