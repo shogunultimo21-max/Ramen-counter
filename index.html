@@ -1757,7 +1757,8 @@ function makePerson(look) {
   g.scale.setScalar(L.scale);
   // 젓가락 (먹을 때만 보임): 끝에 집어 올린 면 가닥
   const sticks = new THREE.Group(); sticks.visible = false; g.add(sticks);
-  for (const dx of [-0.008, 0.008]) { const st = cyl(0.0035, 0.0025, 0.22, 5, mat(0xd8b27a, { flatShading: false }), dx, 0.1, 0.035, sticks); st.rotation.x = 0.35; }
+  // 손님 오른쪽(-x)에서 그릇 가운데로 비스듬히 가로질러 놓인 두 짝 (끝 = sticks 기준점)
+  for (const dz of [-0.008, 0.008]) { const st = cyl(0.0035, 0.0025, 0.22, 5, mat(0xd8b27a, { flatShading: false }), -0.103, 0.037, dz, sticks); st.rotation.z = 1.22; }
   cyl(0.013, 0.011, 0.09, 6, mat(0xf2d27a, { flatShading: false }), 0, -0.035, 0, sticks); // 집어 올린 면
   g.userData = { torso, head, mouth, sticks };
   return g;
@@ -2374,7 +2375,7 @@ function updateCustomers(dt) {
       } else if (c.state === 'eating') {
         m.userData.head.rotation.x = 0.25 + Math.sin(c.bob * 6) * 0.15; // 후루룩
         const lift = (Math.sin(c.bob * 6) + 1) / 2; // 0 = 그릇, 1 = 입
-        m.userData.sticks.visible = true; m.userData.sticks.position.set(0.04, 1.07 + lift * 0.18, 0.4); // 그릇 위에서 위아래로만
+        m.userData.sticks.visible = true; m.userData.sticks.position.set(0.02, 1.07 + lift * 0.18, 0.4); // 그릇 위에서 위아래로만
         c.eatT -= dt;
         if (c.kaedamaAt > 0 && c.eatT <= c.kaedamaAt) {
           c.kaedamaAt = -1;
