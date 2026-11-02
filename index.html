@@ -1,0 +1,2634 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>라멘 카운터</title>
+<style>
+  :root {
+    --paper: #f6efe1;
+    --ink: #2b211b;
+    --red: #b8322a;
+    --green: #3f9a4a;
+    --yellow: #e0a72a;
+    --panel: rgba(20, 14, 10, 0.78);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #120d0a; color: #f3e9d8;
+    font-family: "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif; user-select: none; }
+  #app canvas { display: block; }
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+  #topbar { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
+  .chip { background: var(--panel); padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+  #tickets { position: absolute; top: 54px; left: 10px; display: flex; flex-direction: column; gap: 6px; width: 190px; }
+  .ticket { background: var(--paper); color: var(--ink); border-radius: 4px; padding: 6px 9px 7px; font-size: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.4); border-top: 4px solid var(--red); }
+  .ticket.kae { border-top-color: var(--yellow); background: #fff6d6; }
+  .ticket h4 { margin: 0 0 3px; font-size: 13px; display: flex; justify-content: space-between; }
+  .ticket .line { line-height: 1.45; }
+  .ticket .firm { font-weight: 800; color: var(--red); }
+  .ticket .add { color: #1d6b2a; font-weight: 700; }
+  .ticket .del { color: #8a2a2a; font-weight: 700; text-decoration: line-through; }
+  .bar { height: 5px; background: rgba(0,0,0,.15); border-radius: 3px; margin-top: 5px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--green); }
+  #crosshair { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
+    background: rgba(255,255,255,.85); box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
+  #hint { position: absolute; left: 50%; top: calc(50% + 18px); transform: translateX(-50%); background: var(--panel);
+    padding: 4px 10px; border-radius: 6px; font-size: 14px; white-space: nowrap; display: none; }
+  #potPanel { position: absolute; top: 100px; right: 12px; background: var(--panel); border-radius: 8px; padding: 8px 10px; width: 190px; }
+  #potPanel:empty { display: none; }
+  #potPanel h5 { margin: 0 0 6px; font-size: 13px; }
+  #potPanel .row { display: grid; grid-template-columns: 22px 74px 1fr; align-items: center; gap: 4px; font-size: 13px; font-weight: 700;
+    padding: 3px 4px; border-radius: 5px; margin-bottom: 3px; }
+  #potPanel .row > b { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: #fff; color: #2b211b; align-items: center; justify-content: center; }
+  #potPanel .doneness { width: 100%; margin: 0; }
+  .wl.firm-raw, .row.firm-raw { background: #555; color: #fff; }
+  .wl.firm-katame, .row.firm-katame { background: #f5dc7a; color: #2b211b; }
+  .wl.firm-futsu, .row.firm-futsu { background: #e9b544; color: #2b211b; }
+  .wl.firm-yawa, .row.firm-yawa { background: #d68f2a; color: #2b211b; }
+  .wl.firm-nobi, .row.firm-nobi { background: #b8322a; color: #fff; }
+  .wl[class*="firm-"] { font-size: 14px; font-weight: 800; }
+  #guide { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: #ffd23a; color: #2b211b;
+    padding: 8px 16px; border-radius: 8px; font-size: 16px; font-weight: 800; white-space: nowrap; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
+  #guide:empty { display: none; }
+  #turnBtn { position: absolute; right: 16px; bottom: 16px; pointer-events: auto; border: 0; border-radius: 10px; padding: 12px 18px;
+    background: #b8322a; color: #fff; font: 800 16px inherit; font-family: inherit; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
+  #turnBtn:hover { filter: brightness(1.1); }
+  #hand { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--panel);
+    padding: 7px 14px; border-radius: 8px; font-size: 15px; white-space: nowrap; }
+  #hand small { opacity: .65; margin-left: 8px; }
+  #undoBtn { position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); pointer-events: auto; border: 0; border-radius: 8px;
+    padding: 6px 12px; background: rgba(40,30,22,.85); color: #ffe9c4; font: inherit; font-size: 13px; cursor: pointer; }
+  #undoBtn:hover { background: #5a3a22; }
+  #undoBtn:disabled { display: none; }
+  .wl.pop { font-size: 14px; font-weight: 800; color: #fff; }
+  .wl.pop.in { background: #2f7a3a; }
+  .wl.pop.out { background: #b8322a; }
+  #grillGauge { position: absolute; left: 50%; top: calc(50% + 50px); transform: translateX(-50%); width: 240px; display: none; }
+  #grillGauge .track { position: relative; height: 14px; border-radius: 7px; overflow: hidden;
+    background: linear-gradient(90deg, #e6a7a0 0 50%, #4caf50 50% 72%, #3b2418 72% 100%); box-shadow: 0 0 0 2px rgba(0,0,0,.5); }
+  #grillGauge .marker { position: absolute; top: -3px; width: 4px; height: 20px; background: #fff; box-shadow: 0 0 4px #000; }
+  #grillGauge .lbl { text-align: center; font-size: 13px; margin-top: 4px; text-shadow: 0 1px 2px #000; }
+  #labels { position: absolute; inset: 0; }
+  .wl { position: absolute; transform: translate(-50%, -100%); background: var(--panel); border-radius: 6px; padding: 3px 7px;
+    font-size: 12px; white-space: nowrap; text-align: center; }
+  .wl.below { transform: translate(-50%, 0); } /* 기준점 아래로 매달기 */
+  .wl.tray { font-size: 11px; padding: 2px 5px; line-height: 1.25; }
+  .wl.tray .k { display: inline-block; min-width: 14px; border-radius: 3px; background: #ffd23a; color: #2b211b; }
+  .wl.tray small { font-size: 11px; opacity: .85; }
+  .wl .bar { width: 70px; margin: 3px auto 0; background: rgba(255,255,255,.15); }
+  .wl.bubble { background: var(--paper); color: var(--ink); font-weight: 700; font-size: 14px; }
+  .wl.bubble.kae { background: #ffe27a; }
+  /* 손님 얼굴 옆 말풍선 (왼쪽에 꼬리) */
+  .wl.say { transform: translate(10px, -50%); background: #fff; color: var(--ink); font-size: 14px; font-weight: 700;
+    padding: 6px 10px; border-radius: 12px; text-align: left; line-height: 1.35; box-shadow: 0 2px 8px rgba(0,0,0,.35);
+    --bc: #ccc; border: 2px solid var(--bc); animation: pop .2s ease-out; z-index: 2; }
+  .wl.say::before { content: ''; position: absolute; left: -10px; top: 50%; margin-top: -7px;
+    border-style: solid; border-width: 7px 9px 7px 0; border-color: transparent var(--bc) transparent transparent; }
+  .wl.say.happy { --bc: #4caf50; }
+  .wl.say.normal { --bc: #e0a72a; }
+  .wl.say.angry { --bc: #b8322a; background: #fff1ef; }
+  .wl.say.kae { --bc: #c98f2a; background: #ffe27a; }
+  @keyframes pop { from { opacity: 0; transform: translate(4px, -50%) scale(.85); } to { opacity: 1; transform: translate(10px, -50%); } }
+  .doneness { position: relative; width: 90px; height: 8px; border-radius: 4px; margin: 3px auto 0; overflow: hidden;
+    background: linear-gradient(90deg, #777 0 18.2%, #f2d27a 18.2% 45.5%, #e8b84a 45.5% 72.7%, #c98f2a 72.7% 100%); }
+  .doneness b { position: absolute; top: -2px; width: 3px; height: 12px; background: #fff; box-shadow: 0 0 3px #000; }
+  #toast { position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; }
+  .toast { background: var(--panel); padding: 7px 14px; border-radius: 8px; font-size: 14px; animation: fade 3.6s forwards; text-align: center; }
+  .toast.good { border-left: 4px solid var(--green); }
+  .toast.bad { border-left: 4px solid var(--red); }
+  .toast.warn { border-left: 4px solid var(--yellow); }
+  @keyframes fade { 0% { opacity: 0; transform: translateY(6px); } 8% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+  #help { position: absolute; bottom: 72px; right: 16px; background: var(--panel); border-radius: 8px; padding: 8px 12px; font-size: 12px; line-height: 1.6; text-align: right; }
+  #help b { color: #ffd27a; }
+  #queue { position: absolute; top: 54px; right: 12px; transform: translateY(150px); }
+  .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(10,7,5,.82); padding: 16px; }
+  .overlay.hidden { display: none; }
+  .card { background: var(--paper); color: var(--ink); border-radius: 12px; max-width: 620px; width: 100%; padding: 26px 28px; max-height: 92vh; overflow: auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+  .card h1 { margin: 0 0 4px; font-size: 30px; }
+  .card h1 span { color: var(--red); }
+  .card h3 { margin: 18px 0 6px; font-size: 15px; }
+  .card p, .card li { font-size: 14px; line-height: 1.6; margin: 4px 0; }
+  .card ol, .card ul { padding-left: 20px; margin: 4px 0; }
+  .card kbd { background: #e3d7c0; border-radius: 4px; padding: 1px 6px; font-family: inherit; font-weight: 700; }
+  .btn { margin-top: 18px; width: 100%; padding: 14px; border: 0; border-radius: 8px; background: var(--red); color: #fff;
+    font-size: 17px; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .btn:hover { filter: brightness(1.1); }
+  .btn.sub { margin-top: 8px; padding: 10px; background: #e3d7c0; color: var(--ink); font-size: 14px; }
+  .day-box { margin-top: 14px; background: #fff3d1; border-left: 5px solid var(--yellow); border-radius: 6px; padding: 10px 12px; font-size: 14px; line-height: 1.55; text-align: left; }
+  .day-box:empty { display: none; }
+  .ticket.shoyu { border-top-color: #7a4a1a; }
+  .ticket.miso { border-top-color: #c48a3a; }
+  .shop { margin-top: 14px; text-align: left; }
+  .shop h3 { display: flex; justify-content: space-between; margin: 0 0 8px; font-size: 15px; }
+  .shop h3 span { color: #2f7a3a; }
+  .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .upg { border: 2px solid #e3d7c0; border-radius: 8px; padding: 8px 10px; background: #fffaf0; cursor: pointer; font: inherit; text-align: left; color: var(--ink); }
+  .upg b { display: block; font-size: 14px; }
+  .upg small { display: block; font-size: 12px; opacity: .75; line-height: 1.35; margin: 2px 0 4px; }
+  .upg .price { font-weight: 800; color: var(--red); font-size: 13px; }
+  .upg:hover:not(:disabled) { border-color: var(--yellow); }
+  .upg:disabled { cursor: default; opacity: .5; }
+  .upg.owned { opacity: 1; background: #e6f2dc; border-color: #9cc48a; }
+  .upg.owned .price { color: #2f7a3a; }
+  .upg .pips { float: right; color: #d9a21b; letter-spacing: 1px; font-size: 12px; }
+  .upg small.next { color: #1d6b2a; opacity: 1; }
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 13px; margin-top: 6px; }
+  .keys kbd { text-align: center; }
+  .ticket .ramen { font-weight: 800; }
+  .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
+  .result-grid div { background: #ebe1cc; border-radius: 8px; padding: 10px; text-align: center; font-size: 14px; }
+  .result-grid b { display: block; font-size: 26px; }
+  .stars { font-size: 34px; color: #d9a21b; letter-spacing: 2px; }
+  body.drag #crosshair { display: none; }
+  body.drag canvas { cursor: crosshair; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="hud">
+  <div id="topbar">
+    <div class="chip" id="clock">11:00</div>
+    <div class="chip" id="money">¥0</div>
+    <div class="chip" id="rating">평점 —</div>
+    <div class="chip" id="queueChip" style="display:none"></div>
+  </div>
+  <div id="tickets"></div>
+  <div id="labels"></div>
+  <div id="crosshair"></div>
+  <div id="hint"></div>
+  <div id="grillGauge"><div class="track"><div class="marker"></div></div><div class="lbl">초록 구간에서 손을 떼세요!</div></div>
+  <div id="hand">손: 비어 있음</div>
+  <button id="undoBtn" disabled>↶ 되돌리기 (U)</button>
+  <div id="toast"></div>
+  <div id="guide"></div>
+  <div id="potPanel"></div>
+  <button id="turnBtn">↻ 뒤돌기 — 면 솥·육수 (Space)</button>
+  <div id="help">
+    <b>E</b> 그릇 · <b>1-4</b> 그릇 선택/넣기 · 그릇 든 채 <b>1-6</b> 손님<br>
+    <b>ZXCV</b> 면 바구니 · <b>T</b>/<b>Y</b> 육수 · <b>M</b> 미소 · <b>R</b> 챠슈<br>
+    <b>ASDFGH</b> 토핑 (<b>⇧</b> 통 채우기) · <b>K</b> 카에다마 · <b>U</b> 되돌리기<br>
+    <b>Space</b> 뒤돌기 · <b>Q</b> 버리기 · <b>Esc</b> 일시정지
+  </div>
+</div>
+
+<div id="start" class="overlay">
+  <div class="card">
+    <h1>라멘 <span>카운터</span></h1>
+    <p>카운터석 6자리짜리 작은 돈코츠 라멘집. 오늘 점심 영업은 당신 혼자 주방을 맡습니다. 손님이 자리에 앉으면 직접 주문해요.</p>
+    <h3>🍜 돈코츠 라멘 만드는 법</h3>
+    <ol>
+      <li><b>그릇 더미</b>를 클릭해 그릇 놓기 (타레는 자동으로 들어가요)</li>
+      <li><kbd>Space</kbd>로 뒤돌아 <b>면 솥</b> 바구니를 클릭해 면 삶기 시작</li>
+      <li><b>육수 냄비</b>를 클릭해 육수를 뜨고, 앞으로 돌아 그릇에 붓기</li>
+      <li>면이 알맞게 익으면 건져서 그릇에 넣기 <br><small>카타메 6~15초 · 보통 15~24초 · 야와라카메 24~33초</small></li>
+      <li><b>그릴</b>을 누르고 있다가 초록 구간에서 떼기 → 챠슈가 그릇에 바로 올라가요</li>
+      <li>토핑 통을 한 번씩 클릭 → 그릇에 바로 올라가요</li>
+      <li>그릇을 한 번 더 클릭해 들고, <b>손님</b>을 클릭해서 내기</li>
+    </ol>
+    <h3>🔥 알아 두기</h3>
+    <ul>
+      <li>토핑과 챠슈는 <b>노란 테두리의 선택한 그릇</b>에 들어가요. 다른 그릇을 클릭하면 선택이 바뀌어요.</li>
+      <li>조준이 조금 빗나가도 가장 가까운 물건이 노란 상자로 표시되고 그걸 클릭해요.</li>
+      <li>먹던 손님이 <b>"카에다마!"</b>를 외치면 면만 삶아서 손님을 클릭해 넣어 주세요.</li>
+      <li>빠르고 정확할수록 😊 만족, 늦거나 틀리면 😐 보통 / 😠 화남.</li>
+    </ul>
+    <h3>⌨️ 단축키 (마우스 대신 써도 돼요)</h3>
+    <div class="keys">
+      <kbd>E</kbd><span>새 그릇 놓기</span>
+      <kbd>1 2 3 4</kbd><span>그릇 자리 선택 · 손에 든 걸 그 그릇에 넣기 (그릇을 들고 있으면 → <b>1~6번 손님</b>에게 내기)</span>
+      <kbd>Z X C V</kbd><span>면 바구니 1~4 (삶기 시작 / 건지기)</span>
+      <kbd>T</kbd><span>돈코츠 육수 뜨기 · <kbd>Y</kbd> 쇼유 육수 · <kbd>M</kbd> 미소 넣기</span>
+      <kbd>R</kbd><span>누르고 있기: 챠슈 굽기</span>
+      <kbd>A S D F G H</kbd><span>토핑 (파·목이버섯·김·아지타마고·멘마·콘) · 통이 비면 누르기만 해도 냉장고에서 채워요</span>
+      <kbd>U</kbd><span>되돌리기: 방금 넣은 것 하나만 빼기 (토핑·챠슈·미소 — 육수·면은 안 돼요)</span>
+      <kbd>K</kbd><span>카에다마 면을 손님에게 주기</span>
+      <kbd>Space</kbd><span>뒤돌기 · <kbd>Q</kbd> 버리기 · <kbd>Esc</kbd> 일시정지</span>
+    </div>
+    <div class="day-box" id="dayInfo"></div>
+    <div class="shop" id="startShop"></div>
+    <button class="btn" id="startBtn">영업 시작</button>
+    <button class="btn sub" id="resetBtn">처음부터 (Day 1)</button>
+  </div>
+</div>
+
+<div id="pause" class="overlay hidden">
+  <div class="card" style="max-width:380px;text-align:center">
+    <h1>일시정지</h1>
+    <p>주방은 잠시 멈춰 있어요.</p>
+    <button class="btn" id="resumeBtn">계속하기</button>
+  </div>
+</div>
+
+<div id="end" class="overlay hidden">
+  <div class="card" style="text-align:center">
+    <h1>영업 종료</h1>
+    <div class="stars" id="endStars"></div>
+    <p id="endRating"></p>
+    <div class="result-grid">
+      <div>😊 만족<b id="endHappy">0</b></div>
+      <div>😐 보통<b id="endNormal">0</b></div>
+      <div>😠 화남<b id="endAngry">0</b></div>
+    </div>
+    <p id="endMoney"></p>
+    <p id="endComment" style="font-weight:700"></p>
+    <div class="shop" id="endShop"></div>
+    <div class="day-box" id="endNext"></div>
+    <button class="btn" id="nextBtn">다음 날 영업 시작</button>
+    <button class="btn sub" id="againBtn">오늘 다시 하기</button>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+// ================= 설정 =================
+const CFG = {
+  dayLength: 210,                       // 영업 시간(초) — 11:00~14:00
+  noodle: { katame: [6, 15], futsu: [15, 24], yawa: [24, 33] }, // 익힘 구간(초)
+  patience: 170,                        // 주문 후 손님이 기다리는 시간
+  kaedamaPatience: 45,
+  queuePatience: 40,
+  tip: 300, kaedamaPrice: 150,
+};
+// 메뉴: 라멘마다 가격·기본 토핑이 다름
+const RAMEN = {
+  tonkotsu: { name: '돈코츠', price: 1000, base: ['negi', 'kikurage', 'nori'] },
+  shoyu: { name: '쇼유', price: 900, base: ['negi', 'nori', 'menma'] },
+  // 미소 = 돈코츠 육수 + 미소(된장) 한 숟갈
+  miso: { name: '미소', price: 1100, base: ['negi', 'menma', 'corn'], broth: 'tonkotsu', miso: true },
+};
+const brothOf = r => RAMEN[r].broth ?? r;
+// 날짜(레벨): 하루를 마치면 다음 날로 넘어가고, 날마다 새 요소가 열림
+const LEVELS = [
+  { title: '첫 영업', menu: ['tonkotsu'], stock: false, spawn: 1.0,
+    note: '돈코츠 라멘 한 가지로 시작해요.' },
+  { title: '토핑 재고', menu: ['tonkotsu'], stock: true, spawn: 0.95,
+    note: '오늘부터 토핑이 떨어져요! 토핑 통이 비면 <b>조리대 아래 냉장고</b>를 클릭해 꺼낸 뒤, 토핑 통을 클릭해 보충하세요.' },
+  { title: '쇼유 라멘 개시', menu: ['tonkotsu', 'shoyu'], stock: true, spawn: 0.9,
+    note: '새 메뉴 <b>쇼유 라멘</b>! 뒤쪽에 쇼유 육수 냄비가 생겼어요. 주문서를 보고 맞는 육수를 담으세요. (쇼유는 목이버섯이 기본으로 안 들어가요)' },
+  { title: '점심 러시', menu: ['tonkotsu', 'shoyu'], stock: true, spawn: 0.75,
+    note: '손님이 더 자주 와요. 면 바구니 4개를 한꺼번에 써 보세요!' },
+  { title: '멘마 입고', menu: ['tonkotsu', 'shoyu'], stock: true, spawn: 0.75, tops: ['menma'],
+    note: '새 토핑 <b>멘마</b>(죽순 절임)! 쇼유 라멘에는 기본으로 올라가고, 돈코츠에 추가하는 손님도 있어요.' },
+  { title: '미소 라멘 개시', menu: ['tonkotsu', 'shoyu', 'miso'], stock: true, spawn: 0.8, tops: ['menma', 'corn'],
+    note: '새 메뉴 <b>미소 라멘</b>! 그릇에 <b>미소 항아리</b>(그릇 더미 뒤)를 클릭해 된장을 넣고, <b>돈코츠 육수</b>를 부어요. 새 토핑 <b>콘</b>도 올려 주세요.' },
+  { title: '주말 러시', menu: ['tonkotsu', 'shoyu', 'miso'], stock: true, spawn: 0.65, tops: ['menma', 'corn'],
+    note: '주말이라 손님이 몰려와요! 업그레이드를 잘 써 보세요.' },
+];
+let day = (() => { try { return Math.max(1, parseInt(localStorage.getItem('ramen-day'), 10) || 1); } catch (e) { return 1; } })();
+function saveDay() { try { localStorage.setItem('ramen-day', String(day)); } catch (e) { /* 저장 불가 */ } }
+// 마지막 레벨 뒤로는 하루마다 손님이 조금씩 더 자주 옴
+const levelCfg = (d = day) => {
+  const last = LEVELS[LEVELS.length - 1];
+  if (d <= LEVELS.length) return LEVELS[d - 1];
+  return { ...last, title: '단골 가게', spawn: Math.max(0.5, last.spawn - (d - LEVELS.length) * 0.02),
+    note: '이제 모든 메뉴가 열렸어요. 날이 갈수록 손님이 조금씩 늘어요!' };
+};
+const toppingsOn = (d = day) => ['negi', 'kikurage', 'nori', 'ajitama', ...(levelCfg(d).tops ?? [])];
+const baseOf = r => RAMEN[r].base.filter(k => toppingsOn().includes(k)); // 아직 안 열린 토핑은 기본에서 빠짐
+
+// ---------- 가게 금고 · 업그레이드 (날이 바뀌어도 저장) ----------
+// 단계형: values[단계] = 그 단계의 효과, prices[i] = i단계 → i+1단계 가격
+const UPGRADES = {
+  bigTray: { name: '토핑 통', icon: '🥡', values: [6, 8, 10, 14], prices: [2000, 3500, 6000],
+    names: ['기본 통', '큰 통', '더 큰 통', '대형 통'], desc: v => `토핑 통 하나에 ${v}그릇 분량` },
+  noren:   { name: '노렌·간판', icon: '🏮', values: [1, 1.15, 1.3, 1.5], prices: [2500, 4500, 8000],
+    names: ['기본', '새 노렌', '나무 간판', '등불 간판'], desc: v => (v > 1 ? `손님 인내심 +${Math.round((v - 1) * 100)}%` : '손님 인내심 보통') },
+  slot4:   { name: '그릇 자리', icon: '🍜', values: [3, 4], prices: [4500],
+    names: ['3자리', '4자리'], desc: v => `그릇을 ${v}개까지 놓을 수 있어요` },
+  fineBowl:{ name: '그릇', icon: '✨', values: [300, 500, 800], prices: [5000, 9000],
+    names: ['기본 그릇', '고급 그릇 (검은 칠·금테)', '명품 그릇 (청해파 무늬)'], desc: v => `만족한 손님 팁 ¥${v}` },
+};
+const store = {
+  get(k, def) { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch (e) { return def; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 저장 불가 */ } },
+};
+let bank = store.get('ramen-bank', 0);
+// 예전(한 번만 사는) 업그레이드는 같은 효과의 단계로 옮김
+const upgLv = store.get('ramen-upg2', null) ?? Object.fromEntries(store.get('ramen-upg', []).map(k => [k, { bigTray: 2, noren: 2 }[k] ?? 1]));
+const levelOf = k => upgLv[k] ?? 0;
+const upgValue = k => UPGRADES[k].values[levelOf(k)];
+const stockMax = () => upgValue('bigTray');
+const slotCount = () => upgValue('slot4');
+const tipAmount = () => upgValue('fineBowl');
+const patienceMax = () => CFG.patience * upgValue('noren');
+function buyUpgrade(k) {
+  const u = UPGRADES[k], lv = levelOf(k), price = u.prices[lv];
+  if (price == null || bank < price) return false;
+  bank -= price; upgLv[k] = lv + 1;
+  store.set('ramen-bank', bank); store.set('ramen-upg2', upgLv);
+  return true;
+}
+const FIRM = { katame: '카타메', futsu: '보통', yawa: '야와라카메' };
+const FIRM_ALL = { raw: '덜 익음', katame: '카타메', futsu: '보통', yawa: '야와라카메', nobi: '불어 버림' };
+const FIRM_COLOR = { raw: 0xece6d0, katame: 0xf5dc7a, futsu: 0xe9b544, yawa: 0xd68f2a, nobi: 0x9a6a3a };
+const FIRM_IDX = { raw: -1, katame: 0, futsu: 1, yawa: 2, nobi: 3 };
+const TOPPINGS = { negi: '파', kikurage: '목이버섯', nori: '김', ajitama: '아지타마고', menma: '멘마', corn: '콘' };
+const SEAT_X = [-1.5, -0.9, -0.3, 0.3, 0.9, 1.5];
+const SEAT_Z = -2.12, AISLE_Z = -2.72;
+const DOOR = new THREE.Vector3(2.25, 0, -3.1);       // 입구 안쪽
+const OUTSIDE = new THREE.Vector3(2.25, 0, -5.0);   // 가게 밖 (여기서 들어오고 나감)
+const BOWL_SLOTS = [-0.6, -0.2, 0.2, 0.6]; // slotLayout()이 그릇 자리 수(3·4)에 맞춰 다시 배치
+const BOWL_Z = -0.8;     // 그릇 자리 (토핑 통은 바로 뒤 TOPPING_Z 줄에)
+const TOPPING_Z = -1.12;
+const params = new URLSearchParams(location.search);
+
+// ================= 사운드 (브라우저에서 직접 합성) =================
+const Sound = (() => {
+  let ctx, master, noiseBuf, boilGain, sizzleGain;
+  let boilTarget = 0, sizzleOn = false;
+  function loopNoise(type, freq, q) {
+    const src = ctx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+    const g = ctx.createGain(); g.gain.value = 0;
+    src.connect(f).connect(g).connect(master); src.start();
+    return g;
+  }
+  function tone(freq, dur, { type = 'sine', vol = 0.15, slide = 0, delay = 0 } = {}) {
+    if (!ctx) return;
+    const t = ctx.currentTime + delay;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function burst(dur, type, freq, vol, delay = 0) {
+    if (!ctx) return;
+    const t = ctx.currentTime + delay;
+    const src = ctx.createBufferSource(); src.buffer = noiseBuf;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(master);
+    src.start(t, Math.random()); src.stop(t + dur + 0.05);
+  }
+  return {
+    init() {
+      if (ctx) { ctx.resume(); return; }
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      master = ctx.createGain(); master.gain.value = 0.7; master.connect(ctx.destination);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      boilGain = loopNoise('bandpass', 380, 0.8);
+      sizzleGain = loopNoise('highpass', 2600, 0.5);
+      loopNoise('lowpass', 240, 0.7).gain.value = 0.025; // 가게 웅성거림
+    },
+    suspend() { ctx?.suspend(); },
+    update(dt) {
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      boilGain.gain.setTargetAtTime(boilTarget * 0.06, now, 0.3);
+      sizzleGain.gain.setTargetAtTime(sizzleOn ? 0.1 * (0.6 + Math.random() * 0.8) : 0, now, 0.03);
+      if (boilTarget > 0 && Math.random() < dt * boilTarget * 8) tone(250 + Math.random() * 450, 0.07, { vol: 0.035, slide: 1.8 });
+      if (sizzleOn && Math.random() < dt * 25) burst(0.02, 'highpass', 4000, 0.09);
+    },
+    setBoil(v) { boilTarget = v; },
+    setSizzle(on) { sizzleOn = on; },
+    pick() { tone(900, 0.06, { type: 'triangle', vol: 0.08 }); },
+    place() { tone(240, 0.12, { vol: 0.14, slide: 0.7 }); burst(0.05, 'lowpass', 1400, 0.08); },
+    pour() { burst(0.45, 'bandpass', 900, 0.14); burst(0.3, 'bandpass', 600, 0.08, 0.1); },
+    ding() { tone(1568, 1.2, { vol: 0.12 }); tone(2093, 1.0, { vol: 0.05, delay: 0.02 }); },
+    happy() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, { type: 'triangle', vol: 0.09, delay: i * 0.08 })); },
+    normal() { tone(523, 0.2, { type: 'triangle', vol: 0.08 }); tone(587, 0.25, { type: 'triangle', vol: 0.08, delay: 0.1 }); },
+    angry() { tone(180, 0.4, { type: 'sawtooth', vol: 0.05, slide: 0.6 }); tone(140, 0.5, { type: 'sawtooth', vol: 0.045, delay: 0.15, slide: 0.6 }); },
+    kaedama() { tone(880, 0.15, { type: 'square', vol: 0.05 }); tone(1175, 0.25, { type: 'square', vol: 0.05, delay: 0.15 }); },
+    trash() { burst(0.2, 'lowpass', 600, 0.16); },
+    knob() { tone(1400, 0.03, { type: 'square', vol: 0.05 }); tone(1000, 0.03, { type: 'square', vol: 0.04, delay: 0.04 }); },
+    fire() { burst(0.4, 'bandpass', 300, 0.16); },
+    splash() { burst(0.25, 'bandpass', 1500, 0.12); },
+    door() { burst(0.35, 'bandpass', 650, 0.07); tone(140, 0.08, { vol: 0.05, delay: 0.3 }); },
+    // who: { voice, pitch, rate } — 손님마다 목소리를 다르게
+    say(text, who = {}) {
+      try {
+        const v = who.voice ?? Voices.best();
+        if (!v) return; // 음성 목록이 아직 없으면 기본(다른 성별) 목소리가 섞이지 않게 건너뜀
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'ja-JP'; u.voice = v;
+        u.pitch = who.pitch ?? 1; u.rate = who.rate ?? 1.05; u.volume = 0.9;
+        speechSynthesis.speak(u);
+      } catch (e) { /* 음성 미지원 브라우저 */ }
+    },
+    // 대사 재생: 음성 파일(VoiceFiles)이 있으면 그걸, 없으면 읽어 주기 음성
+    line(key, text, who = {}) {
+      const buf = ctx && VoiceFiles.get(key, who.gender);
+      if (!buf) return this.say(text, who);
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      src.playbackRate.value = who.fileRate ?? 1; // 재생 속도로 사람마다 목소리 높낮이가 살짝 다르게
+      const g = ctx.createGain(); g.gain.value = 1.3;
+      src.connect(g).connect(master); src.start();
+    },
+    decode: ab => ctx.decodeAudioData(ab),
+    get ready() { return !!ctx; },
+  };
+})();
+
+// 음성 파일 미리 불러오기. 우선순위: 직접 녹음한 voices/<key>.mp3 (README.txt 참고)
+// → 미리 만든 음성 voices/tts/<key>.m4a (셰프) · <key>_m / _f.m4a (손님 성별). 없으면 조용히 건너뜀
+// <audio> 여러 개를 한꺼번에 불러오면 브라우저가 일부를 끝까지 안 불러올 수 있어서, 파일을 내려받아 메모리에 풀어 둔다
+const VOICE_KEYS = ['irasshaimase', 'arigatou', 'itadakimasu', 'umai', 'gochisousama', 'kaedama_katame', 'kaedama_futsu', 'kaedama_yawa'];
+const SHOP_KEYS = ['irasshaimase', 'arigatou'];
+const VoiceFiles = (() => {
+  const raw = {}, ok = {};
+  const load = (id, src) => fetch(src).then(r => (r.ok ? r.arrayBuffer() : null)).then(ab => { if (ab) { raw[id] = ab; decode(); } }).catch(() => {});
+  // 소리 장치는 첫 클릭 뒤에야 생기므로, 그 뒤에 한 번씩 풀어 둔다
+  function decode() {
+    if (!Sound.ready) return;
+    for (const id of Object.keys(raw)) {
+      const ab = raw[id]; delete raw[id];
+      Sound.decode(ab).then(b => { ok[id] = b; }).catch(() => {});
+    }
+  }
+  for (const key of VOICE_KEYS) {
+    load(key, `voices/${key}.mp3`);
+    if (SHOP_KEYS.includes(key)) load('tts/' + key, `voices/tts/${key}.m4a`);
+    else for (const g of ['m', 'f']) load(`tts/${key}_${g}`, `voices/tts/${key}_${g}.m4a`);
+  }
+  return {
+    decode,
+    get: (key, gender) => ok[key] || ok['tts/' + key] || (gender && ok[`tts/${key}_${gender}`]) || null,
+    loaded: () => Object.keys(ok),
+  };
+})();
+
+// 일본어 음성 고르기: 고품질(Premium·Enhanced·Natural) 음성을 우선 사용
+const Voices = (() => {
+  let list = [];
+  const score = v => (/premium|enhanced|natural|neural|siri|프리미엄|고품질/i.test(v.name) ? 10 : 0) + (/online|google/i.test(v.name) ? 5 : 0)
+    + (/^(Kyoko|O-ren|Otoya|Hattori)/i.test(v.name) ? 3 : 0) - (/^(Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley|Bad|Bubbles|Boing|Jester|Organ|Trinoids|Whisper|Zarvox)/i.test(v.name) ? 10 : 0); // 장난감 같은 음성은 제외
+  function load() {
+    try {
+      list = speechSynthesis.getVoices().filter(v => /^ja/i.test(v.lang)).sort((a, b) => score(b) - score(a));
+    } catch (e) { list = []; }
+  }
+  load();
+  try { speechSynthesis.addEventListener('voiceschanged', load); } catch (e) { /* 미지원 */ }
+  return {
+    best: () => list[0] || null,
+    // 품질이 비슷한 상위 음성들 중에서 무작위로 (없으면 가장 좋은 음성)
+    random() {
+      if (!list.length) return null;
+      const top = list.filter(v => score(v) >= score(list[0]) - 1);
+      return top[Math.floor(Math.random() * top.length)];
+    },
+    // 성별에 맞는 음성 (macOS 일본어: Kyoko·O-ren 여성, Otoya·Hattori 남성). 없으면 null
+    byGender(female) {
+      const re = female ? /kyoko|o-ren|female|女/i : /otoya|hattori|male|男/i;
+      const m = list.filter(v => re.test(v.name) && !(female ? /otoya|hattori/i : /kyoko|o-ren|female/i).test(v.name));
+      return m.length ? m[Math.floor(Math.random() * m.length)] : null;
+    },
+    names: () => list.map(v => v.name),
+  };
+})();
+// 가게(셰프) 인사는 항상 같은 목소리 (가장 좋은 음성을 한 번 정하면 계속 사용)
+let shopVoice = null;
+const SHOP_VOICE = {
+  pitch: 1, rate: 1.08, fileRate: 1,
+  get voice() { return shopVoice ??= Voices.best(); },
+};
+
+// ================= 렌더러 / 씬 =================
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.25;
+document.getElementById('app').appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x3a3f78);
+scene.fog = new THREE.Fog(0x6a5a70, 12, 30);
+const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.03, 60);
+camera.rotation.order = 'YXZ';
+const EYE = new THREE.Vector3(0, 1.62, 0.2);
+camera.position.copy(EYE);
+scene.add(camera);
+
+const mat = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.8, flatShading: true, ...o });
+function box(w, h, d, m, x, y, z, parent = scene) {
+  const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+  me.position.set(x, y, z); me.castShadow = me.receiveShadow = true;
+  parent.add(me); return me;
+}
+function cyl(rt, rb, h, seg, m, x, y, z, parent = scene) {
+  const me = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m);
+  me.position.set(x, y, z); me.castShadow = me.receiveShadow = true;
+  parent.add(me); return me;
+}
+function textSprite(text, { bg = 'rgba(25,18,12,0.85)', fg = '#ffe9c4', scale = 0.36 } = {}) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 128;
+  const g = c.getContext('2d');
+  g.font = 'bold 60px "Apple SD Gothic Neo","Noto Sans KR",sans-serif';
+  const w = Math.min(500, g.measureText(text).width + 60);
+  g.fillStyle = bg; g.beginPath(); g.roundRect((512 - w) / 2, 14, w, 100, 30); g.fill();
+  g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 256, 66);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+  s.scale.set(scale, scale / 4, 1);
+  return s;
+}
+function label(text, x, y, z, o) { const s = textSprite(text, o); s.position.set(x, y, z); scene.add(s); return s; }
+
+// 상호작용 등록
+const interactMeshes = [];
+const interactDescs = new Set(); // 조준 보정용 (desc.anchor = 기준 물체)
+function interact(obj, desc) {
+  desc.anchor = obj; interactDescs.add(desc);
+  obj.traverse(o => { if (o.isMesh) { o.userData.desc = desc; interactMeshes.push(o); } });
+  return obj;
+}
+
+// ---------- 조명 (따뜻하고 밝게) ----------
+scene.add(new THREE.HemisphereLight(0xfff0d8, 0x8a6a4a, 1.35));
+const kitchenLight = new THREE.SpotLight(0xfff4e0, 11, 8, Math.PI / 2.4, 0.5, 1.2);
+kitchenLight.position.set(0, 2.55, 0);
+kitchenLight.target.position.set(0, 0.8, 0);
+kitchenLight.castShadow = true; kitchenLight.shadow.mapSize.set(1024, 1024); kitchenLight.shadow.bias = -0.002;
+scene.add(kitchenLight, kitchenLight.target);
+for (const x of [-1.2, 0, 1.2]) {
+  const shade = cyl(0.06, 0.2, 0.16, 12, mat(0xd9b07a, { side: THREE.DoubleSide }), x, 2.2, -1.9);
+  cyl(0.004, 0.004, 0.4, 4, mat(0x111111), x, 2.5, -1.9);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffe2a8 }));
+  bulb.position.set(x, 2.11, -1.9); scene.add(bulb);
+  const pl = new THREE.PointLight(0xffc27a, 6, 6, 1.1); pl.position.set(x, 2.05, -1.9); scene.add(pl);
+  shade.castShadow = false;
+}
+// 홀 천장 조명
+for (const [x, z] of [[-1.6, -2.9], [1.0, -2.9]]) {
+  const pl = new THREE.PointLight(0xffd9a0, 4, 6, 1.1); pl.position.set(x, 2.5, z); scene.add(pl);
+  const panel = box(0.5, 0.03, 0.5, new THREE.MeshBasicMaterial({ color: 0xfff1d6 }), x, 2.72, z); panel.castShadow = false;
+}
+
+// ---------- 나무 질감 (코드로 그린 판자 무늬) ----------
+function woodTexture(base, { planks = 6, vertical = false, grain = 0.18 } = {}) {
+  const c = document.createElement('canvas'); c.width = c.height = 512;
+  const g = c.getContext('2d');
+  const col = new THREE.Color(base);
+  const size = 512 / planks;
+  for (let i = 0; i < planks; i++) {
+    const shade = col.clone().offsetHSL(0, 0, (Math.random() - 0.5) * 0.06);
+    g.fillStyle = '#' + shade.getHexString();
+    if (vertical) g.fillRect(i * size, 0, size, 512); else g.fillRect(0, i * size, 512, size);
+    // 나뭇결
+    g.strokeStyle = `rgba(60,35,15,${grain})`; g.lineWidth = 1.5;
+    for (let k = 0; k < 7; k++) {
+      g.beginPath();
+      const off = i * size + Math.random() * size;
+      for (let t = 0; t <= 512; t += 32) {
+        const w = Math.sin(t / 60 + k) * 3;
+        if (vertical) g.lineTo(off + w, t); else g.lineTo(t, off + w);
+      }
+      g.stroke();
+    }
+    // 판자 사이 틈
+    g.fillStyle = 'rgba(40,22,10,0.55)';
+    if (vertical) g.fillRect(i * size, 0, 2, 512); else g.fillRect(0, i * size, 512, 2);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+function woodMat(base, repeatX, repeatY, opts) {
+  const tex = woodTexture(base, opts); tex.repeat.set(repeatX, repeatY);
+  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.75 });
+}
+
+// ---------- 방 ----------
+const woodDark = mat(0x7a5232), wood = mat(0xb4824f), woodLight = mat(0xe2c08f);
+const steel = mat(0x8d949b, { metalness: 0.6, roughness: 0.4 });
+const steelDark = mat(0x5e6369, { metalness: 0.5, roughness: 0.45 });
+box(6, 0.02, 3.2, mat(0x9a9286), 0, 0, 0);                                     // 주방 바닥 (타일)
+box(6, 0.02, 2.4, woodMat(0xa87443, 6, 3, { planks: 8 }), 0, 0, -2.6);         // 홀 바닥 (나무)
+box(6, 0.02, 7, woodMat(0xc99a66, 4, 6, { planks: 10, vertical: true }), 0, 2.75, -1); // 천장 (나무 판자)
+for (const z of [-3.0, -1.9, -0.8, 0.4]) box(6, 0.12, 0.12, woodDark, 0, 2.68, z);   // 천장 보
+box(6, 2.8, 0.1, mat(0xe2dacb), 0, 1.4, 1.66);                                 // 주방 뒷벽 (흰 타일)
+for (let i = 0; i < 12; i++) box(0.005, 1.0, 0.01, mat(0xcfc8ba), -2.75 + i * 0.5, 1.7, 1.6);
+for (let j = 0; j < 3; j++) box(6, 0.005, 0.01, mat(0xcfc8ba), 0, 1.35 + j * 0.35, 1.6);
+const wallWood = () => woodMat(0xd8b083, 5, 1, { planks: 10, vertical: true, grain: 0.12 });
+box(0.1, 2.8, 7, wallWood(), -2.9, 1.4, -1);    // 왼쪽 벽 (세로 판자)
+box(0.1, 2.8, 7, wallWood(), 2.9, 1.4, -1);     // 오른쪽 벽
+for (const x of [-2.84, 2.84]) {                // 벽 아래 진한 나무 판 + 몰딩
+  box(0.03, 0.9, 7, woodMat(0x8a5a34, 6, 1, { planks: 14, vertical: true }), x, 0.45, -1);
+  box(0.05, 0.05, 7, woodDark, x, 0.92, -1);
+}
+
+// ---------- 가게 앞벽: 창문 + 입구 ----------
+const FRONT_Z = -3.6, DOOR_X0 = 1.75, DOOR_X1 = 2.75, DOOR_H = 2.05;
+const frontWood = () => woodMat(0xd8b083, 4, 1, { planks: 10, vertical: true, grain: 0.12 });
+// 창문 구멍(x -1.9 ~ 0.7, y 1.12 ~ 2.18)과 입구 구멍을 남기고 벽을 조각으로 세움
+box(DOOR_X0 - 0.7, 2.8, 0.1, frontWood(), (0.7 + DOOR_X0) / 2, 1.4, FRONT_Z);          // 창문~입구 사이
+box(-1.9 + 2.9, 2.8, 0.1, frontWood(), (-2.9 - 1.9) / 2, 1.4, FRONT_Z);                // 왼쪽 끝~창문
+box(2.6, 1.12, 0.1, frontWood(), -0.6, 0.56, FRONT_Z);                                  // 창문 아래
+box(2.6, 2.8 - 2.18, 0.1, frontWood(), -0.6, (2.18 + 2.8) / 2, FRONT_Z);                // 창문 위
+box(2.9 - DOOR_X1, 2.8, 0.1, frontWood(), (DOOR_X1 + 2.9) / 2, 1.4, FRONT_Z);           // 입구 오른쪽
+box(DOOR_X1 - DOOR_X0, 2.8 - DOOR_H, 0.1, frontWood(), (DOOR_X0 + DOOR_X1) / 2, (DOOR_H + 2.8) / 2, FRONT_Z); // 입구 위
+box(4.7, 0.9, 0.03, woodMat(0x8a5a34, 6, 1, { planks: 14, vertical: true }), -0.55, 0.45, FRONT_Z + 0.06);
+// 창틀 (격자)
+for (const x of [-1.9, -1.25, -0.6, 0.05, 0.7]) box(0.05, 1.06, 0.06, woodDark, x, 1.65, FRONT_Z);
+for (const y of [1.12, 1.65, 2.18]) box(2.65, 0.05, 0.06, woodDark, -0.6, y, FRONT_Z);
+// 입구 문틀
+box(0.08, DOOR_H, 0.14, woodDark, DOOR_X0 - 0.04, DOOR_H / 2, FRONT_Z);
+box(0.08, DOOR_H, 0.14, woodDark, DOOR_X1 + 0.04, DOOR_H / 2, FRONT_Z);
+box(DOOR_X1 - DOOR_X0 + 0.16, 0.1, 0.16, woodDark, (DOOR_X0 + DOOR_X1) / 2, DOOR_H + 0.05, FRONT_Z);
+box(DOOR_X1 - DOOR_X0, 0.03, 0.4, mat(0x6a4a30), (DOOR_X0 + DOOR_X1) / 2, 0.01, FRONT_Z);   // 문턱
+// 미닫이 문 (손님이 다가오면 열림)
+const slideDoor = new THREE.Group(); scene.add(slideDoor);
+{
+  const w = DOOR_X1 - DOOR_X0;
+  box(w, 0.9, 0.04, woodMat(0xb4824f, 1, 1, { planks: 3, vertical: true }), 0, 0.45, 0, slideDoor); // 아래쪽 나무 판
+  const glass = box(w - 0.1, DOOR_H - 0.95, 0.01, new THREE.MeshStandardMaterial({ color: 0xcfe6f0, transparent: true, opacity: 0.22, roughness: 0.1 }), 0, 0.92 + (DOOR_H - 0.95) / 2, 0, slideDoor);
+  glass.castShadow = false;
+  for (const x of [-w / 2 + 0.03, w / 2 - 0.03, 0]) box(0.04, DOOR_H - 0.05, 0.05, woodDark, x, DOOR_H / 2, 0, slideDoor);
+  for (const y of [0.9, 1.4, DOOR_H - 0.05]) box(w, 0.04, 0.05, woodDark, 0, y, 0, slideDoor);
+}
+const DOOR_CLOSED_X = (DOOR_X0 + DOOR_X1) / 2, DOOR_OPEN_X = DOOR_CLOSED_X - (DOOR_X1 - DOOR_X0) + 0.05;
+slideDoor.position.set(DOOR_CLOSED_X, 0, FRONT_Z + 0.12);
+let doorOpen = false;
+// 노렌 (입구 안쪽 위)
+{
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#1f2b4a'; g.fillRect(0, 0, 512, 256);
+  g.fillStyle = '#f3ead8'; g.font = 'bold 120px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('らーめん', 256, 120);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const pw = (DOOR_X1 - DOOR_X0) / 3;
+  for (let i = 0; i < 3; i++) {
+    const geo = new THREE.PlaneGeometry(pw - 0.02, 0.6);
+    const uv = geo.attributes.uv;
+    for (let k = 0; k < uv.count; k++) uv.setX(k, (uv.getX(k) + i) / 3);
+    const p = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 1 }));
+    p.position.set(DOOR_X0 + pw / 2 + i * pw, DOOR_H - 0.3, FRONT_Z + 0.2); scene.add(p);
+  }
+  cyl(0.012, 0.012, DOOR_X1 - DOOR_X0 + 0.1, 6, woodDark, (DOOR_X0 + DOOR_X1) / 2, DOOR_H, FRONT_Z + 0.2).rotation.z = Math.PI / 2;
+}
+// 입구 옆 빨간 등 (초칭)
+{
+  const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: 0xd8382a, emissive: 0xff5a2a, emissiveIntensity: 0.9 }));
+  lantern.scale.y = 1.35; lantern.position.set(DOOR_X0 - 0.3, 2.35, FRONT_Z + 0.38); scene.add(lantern);
+  cyl(0.09, 0.09, 0.03, 10, mat(0x1a1a1a), DOOR_X0 - 0.3, 2.57, FRONT_Z + 0.38);
+  cyl(0.09, 0.09, 0.03, 10, mat(0x1a1a1a), DOOR_X0 - 0.3, 2.13, FRONT_Z + 0.38);
+  const pl = new THREE.PointLight(0xff7a4a, 1.5, 2.5, 1.5); pl.position.set(DOOR_X0 - 0.3, 2.3, FRONT_Z + 0.55); scene.add(pl);
+}
+// 바깥 거리 (해 질 녘) — 창문과 입구로 보임
+{
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+  const g = c.getContext('2d');
+  const sky = g.createLinearGradient(0, 0, 0, 512);
+  sky.addColorStop(0, '#3a3f78'); sky.addColorStop(0.45, '#c9737a'); sky.addColorStop(0.75, '#f2b27a');
+  g.fillStyle = sky; g.fillRect(0, 0, 1024, 512);
+  for (let i = 0; i < 9; i++) {   // 건너편 가게들
+    const x = i * 120 - 20, h = 180 + Math.random() * 120;
+    g.fillStyle = ['#3b2c2a', '#4a3530', '#2f2a35'][i % 3]; g.fillRect(x, 512 - h, 116, h);
+    for (let k = 0; k < 6; k++) { g.fillStyle = Math.random() < 0.7 ? '#ffd98a' : '#5a4a48'; g.fillRect(x + 12 + (k % 3) * 34, 512 - h + 20 + Math.floor(k / 3) * 50, 22, 28); }
+    g.fillStyle = '#d8382a'; g.beginPath(); g.ellipse(x + 100, 512 - 70, 10, 14, 0, 0, Math.PI * 2); g.fill();
+  }
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const street = new THREE.Mesh(new THREE.PlaneGeometry(12, 4), new THREE.MeshBasicMaterial({ map: tex }));
+  street.position.set(0, 1.6, -6.5); scene.add(street);
+  box(12, 0.02, 3, mat(0x5a524c), 0, -0.01, -5.1); // 바깥 길바닥
+}
+// 벽 메뉴판
+{
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#e8dcc2'; g.fillRect(0, 0, 512, 256);
+  g.fillStyle = '#2b211b'; g.font = 'bold 64px serif'; g.textAlign = 'center';
+  g.fillText('豚骨らーめん', 256, 100); g.font = 'bold 48px sans-serif'; g.fillText('¥1,000 · 替玉 ¥150', 256, 190);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.45), new THREE.MeshStandardMaterial({ map: tex }));
+  p.position.set(-2.84, 1.9, -1.4); p.rotation.y = Math.PI / 2; scene.add(p);
+}
+
+// ---------- 앞 벤치 (조리대) ----------
+box(3.6, 0.04, 0.7, steel, 0, 0.93, -0.95);
+box(3.6, 0.9, 0.66, steelDark, 0, 0.45, -0.95);
+// 패스 선반 (주방과 카운터 사이)
+box(3.6, 0.22, 0.12, woodDark, 0, 1.04, -1.36);
+box(3.6, 0.03, 0.2, wood, 0, 1.16, -1.38);
+// 손님 카운터
+box(3.8, 0.05, 0.42, woodLight, 0, 1.0, -1.66);
+box(3.8, 1.0, 0.06, woodDark, 0, 0.5, -1.47);
+// 의자
+for (const x of SEAT_X) {
+  cyl(0.17, 0.17, 0.06, 12, mat(0x8a2a1e), x, 0.72, SEAT_Z);
+  cyl(0.03, 0.03, 0.7, 6, steelDark, x, 0.35, SEAT_Z);
+}
+
+// 그릇 더미
+const bowlStack = new THREE.Group(); bowlStack.position.set(-1.0, 0.95, -0.8); scene.add(bowlStack);
+// 타레 항아리
+const tareJar = new THREE.Group(); tareJar.position.set(-1.3, 0.95, -1.12); scene.add(tareJar);
+cyl(0.08, 0.07, 0.16, 12, mat(0x3b2a20), 0, 0.08, 0, tareJar);
+cyl(0.07, 0.07, 0.005, 12, mat(0x4a2a14), 0, 0.158, 0, tareJar);
+const tareSpoon = cyl(0.006, 0.006, 0.22, 5, mat(0xc4a27a), 0.03, 0.2, 0, tareJar); tareSpoon.rotation.z = -0.4;
+label('타레 (자동)', -1.3, 1.27, -1.12, { scale: 0.26 });
+label('그릇 [E]', -1.0, 1.22, -0.8);
+// 미소 항아리 (미소 라멘 날부터): 흰 도기 항아리에 된장 + 나무 주걱
+const misoJar = new THREE.Group(); misoJar.position.set(-1.0, 0.95, -1.12); scene.add(misoJar);
+cyl(0.085, 0.075, 0.13, 16, mat(0xe9e2d2, { roughness: 0.35, flatShading: false }), 0, 0.065, 0, misoJar);
+cyl(0.075, 0.075, 0.005, 16, mat(0xb07a3a), 0, 0.126, 0, misoJar);
+{ const sp = box(0.02, 0.2, 0.005, mat(0xc4a27a), 0.03, 0.2, 0, misoJar); sp.rotation.z = -0.35; }
+interact(misoJar, { kind: 'miso' });
+const misoLabel = label('미소 [M]', -1.0, 1.24, -1.12, { scale: 0.26 });
+
+// 그릇 자리 (업그레이드하면 4개)
+const slotPads = BOWL_SLOTS.map((x, i) => {
+  const pad = box(0.3, 0.012, 0.26, mat(0x7c858c, { metalness: 0.4 }), x, 0.956, BOWL_Z);
+  interact(pad, { kind: 'bowlSlot', slot: i });
+  return pad;
+});
+function slotLayout() {
+  const n = slotCount(), xs = n === 4 ? [-0.72, -0.36, 0, 0.36] : [-0.6, -0.2, 0.2];
+  slotPads.forEach((pad, i) => {
+    pad.visible = i < n;
+    if (i < n) { BOWL_SLOTS[i] = xs[i]; pad.position.x = xs[i]; }
+  });
+}
+
+// ================= 음식 모델 (질감은 캔버스로 그림, 매끈한 음영) =================
+const smat = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, ...o });
+function canvasTex(size, draw) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  draw(c.getContext('2d'), size);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+// 챠슈 단면: 돌돌 만 삼겹살 — 살코기 사이로 지방이 소용돌이, 구우면 그릴 자국
+const CHASHU_SIDE = { raw: 0xd98a7e, good: 0x7a3e22, burnt: 0x2a160c };
+const chashuTexCache = {};
+function chashuTexture(q) {
+  if (chashuTexCache[q]) return chashuTexCache[q];
+  const [meat, fat, rim] = { raw: ['#e9a99c', '#f8ebe2', '#d98a7e'], good: ['#c47e5c', '#f1dcc0', '#7a3e22'], burnt: ['#5a3020', '#b8987a', '#24120a'] }[q];
+  return chashuTexCache[q] = canvasTex(256, g => {
+    g.fillStyle = rim; g.beginPath(); g.arc(128, 128, 128, 0, Math.PI * 2); g.fill();
+    g.fillStyle = meat; g.beginPath(); g.arc(128, 128, 114, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = fat; g.lineWidth = 10; g.lineCap = 'round'; g.beginPath();
+    for (let a = 0; a < Math.PI * 6.2; a += 0.08) { const r = 6 + a * 5.4; g.lineTo(128 + Math.cos(a) * r, 128 + Math.sin(a) * r); }
+    g.stroke();
+    for (let i = 0; i < 160; i++) { // 고기 결
+      g.fillStyle = `rgba(120,50,30,${Math.random() * 0.12})`;
+      g.fillRect(Math.random() * 256, Math.random() * 256, 2 + Math.random() * 6, 1);
+    }
+    if (q !== 'raw') {
+      g.strokeStyle = q === 'burnt' ? 'rgba(8,4,0,.75)' : 'rgba(80,32,10,.5)'; g.lineWidth = 11;
+      for (let i = -2; i <= 2; i++) { g.beginPath(); g.moveTo(70 + i * 46, 6); g.lineTo(186 + i * 46, 250); g.stroke(); }
+    }
+  });
+}
+function makeChashu(q = 'good', r = 0.04) {
+  const top = new THREE.MeshStandardMaterial({ map: chashuTexture(q), roughness: 0.5 });
+  const side = smat(CHASHU_SIDE[q], { roughness: 0.75 });
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.96, 0.011, 28), [side, top, top]);
+  m.castShadow = true;
+  return m;
+}
+function setChashuQuality(m, q) {
+  const [side, top] = m.material;
+  if (top.map !== chashuTexture(q)) { top.map = chashuTexture(q); top.needsUpdate = true; }
+  side.color.setHex(CHASHU_SIDE[q]);
+}
+// 파: 송송 썬 링 (초록·연두·흰색)
+const negiMats = [smat(0x5fa832), smat(0x9fd46a), smat(0xe6f0c4)];
+const negiGeo = new THREE.TorusGeometry(0.0062, 0.0021, 6, 14);
+function makeNegi(count, rx, rz = rx) {
+  const g = new THREE.Group();
+  for (let i = 0; i < count; i++) {
+    const m = new THREE.Mesh(negiGeo, negiMats[i % 3]);
+    const a = Math.random() * Math.PI * 2, d = Math.sqrt(Math.random());
+    m.position.set(Math.cos(a) * d * rx, Math.random() * 0.006, Math.sin(a) * d * rz);
+    m.rotation.set(Math.PI / 2 + (Math.random() - 0.5) * 0.8, 0, Math.random() * 3);
+    g.add(m);
+  }
+  return g;
+}
+// 목이버섯: 얇고 구불구불한 검은 띠, 살짝 윤기
+const kikurageMat = smat(0x24150d, { roughness: 0.25, side: THREE.DoubleSide });
+function kikurageGeo() {
+  const geo = new THREE.PlaneGeometry(0.034, 0.007, 8, 1);
+  const p = geo.attributes.position, ph = Math.random() * 6;
+  for (let i = 0; i < p.count; i++) p.setZ(i, Math.sin(p.getX(i) * 260 + ph) * 0.0025);
+  geo.computeVertexNormals();
+  return geo;
+}
+function makeKikurage(count, rx, rz = rx) {
+  const g = new THREE.Group();
+  for (let i = 0; i < count; i++) {
+    const m = new THREE.Mesh(kikurageGeo(), kikurageMat);
+    m.position.set((Math.random() - 0.5) * 2 * rx, Math.random() * 0.006, (Math.random() - 0.5) * 2 * rz);
+    m.rotation.set(-Math.PI / 2 + (Math.random() - 0.5) * 0.5, 0, Math.random() * Math.PI);
+    g.add(m);
+  }
+  return g;
+}
+// 김: 결이 보이는 검푸른 장, 살짝 휘어짐
+const noriTex = canvasTex(128, (g, s) => {
+  g.fillStyle = '#16231a'; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(${40 + Math.random() * 40},${70 + Math.random() * 50},${40 + Math.random() * 30},.35)`; g.fillRect(Math.random() * s, Math.random() * s, 1 + Math.random() * 3, 1); }
+});
+const noriMat = new THREE.MeshStandardMaterial({ map: noriTex, roughness: 0.45, side: THREE.DoubleSide });
+function makeNori(w = 0.075, h = 0.085, bend = 0.012) {
+  const geo = new THREE.PlaneGeometry(w, h, 1, 8);
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) { const y = p.getY(i) / h + 0.5; p.setZ(i, -Math.sin(y * Math.PI) * bend); }
+  geo.computeVertexNormals();
+  return new THREE.Mesh(geo, noriMat);
+}
+// 아지타마고: 반으로 자른 간장 달걀 — 겉은 갈색, 단면은 흰자 + 촉촉한 주황 노른자
+const eggCutTex = canvasTex(256, g => {
+  g.fillStyle = '#c98a4a'; g.beginPath(); g.arc(128, 128, 128, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#faf6ec'; g.beginPath(); g.arc(128, 128, 118, 0, Math.PI * 2); g.fill();
+  const y = g.createRadialGradient(128, 128, 4, 128, 128, 66);
+  y.addColorStop(0, '#e86a10'); y.addColorStop(0.6, '#f39a22'); y.addColorStop(1, '#f6c04a');
+  g.fillStyle = y; g.beginPath(); g.arc(128, 128, 66, 0, Math.PI * 2); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.ellipse(108, 104, 18, 8, -0.6, 0, Math.PI * 2); g.fill();
+});
+const eggShellMat = smat(0xc98a52, { roughness: 0.4 });
+const eggCutMat = new THREE.MeshStandardMaterial({ map: eggCutTex, roughness: 0.35 });
+function makeAjitama(r = 0.024) {
+  const g = new THREE.Group();
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), eggShellMat);
+  const cut = new THREE.Mesh(new THREE.CircleGeometry(r, 28), eggCutMat);
+  cut.rotation.x = -Math.PI / 2;
+  g.add(shell, cut); g.scale.set(1, 1, 1.3);
+  return g;
+}
+// 돈코츠 육수 표면: 뽀얀 국물 + 기름 방울
+const brothTex = canvasTex(256, g => {
+  const b = g.createRadialGradient(128, 128, 10, 128, 128, 128);
+  b.addColorStop(0, '#ecd3a4'); b.addColorStop(1, '#d2b07a');
+  g.fillStyle = b; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 70; i++) {
+    const r = 1 + Math.random() * 5, x = Math.random() * 256, yy = Math.random() * 256;
+    g.fillStyle = 'rgba(232,190,90,.55)'; g.beginPath(); g.arc(x, yy, r, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.6)'; g.beginPath(); g.arc(x - r * 0.3, yy - r * 0.3, r * 0.35, 0, Math.PI * 2); g.fill();
+  }
+});
+// 쇼유 육수 표면: 맑고 진한 간장색 + 투명한 닭기름 방울
+const shoyuTex = canvasTex(256, g => {
+  const b = g.createRadialGradient(128, 128, 10, 128, 128, 128);
+  b.addColorStop(0, '#9a5420'); b.addColorStop(0.7, '#803f14'); b.addColorStop(1, '#5e2c0c');
+  g.fillStyle = b; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 60; i++) {
+    const r = 1.5 + Math.random() * 7, x = Math.random() * 256, yy = Math.random() * 256;
+    g.fillStyle = 'rgba(214,150,50,.32)'; g.beginPath(); g.arc(x, yy, r, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(255,210,120,.45)'; g.lineWidth = 0.8; g.stroke();
+  }
+});
+// 미소 육수 표면: 불투명한 황토색 + 된장 알갱이 + 기름
+const misoTex = canvasTex(256, g => {
+  const b = g.createRadialGradient(128, 128, 10, 128, 128, 128);
+  b.addColorStop(0, '#d39a52'); b.addColorStop(1, '#a8692c');
+  g.fillStyle = b; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(${120 + Math.random() * 40},${70 + Math.random() * 30},30,.35)`; g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
+  for (let i = 0; i < 50; i++) {
+    const r = 1 + Math.random() * 5, x = Math.random() * 256, yy = Math.random() * 256;
+    g.fillStyle = 'rgba(240,170,60,.5)'; g.beginPath(); g.arc(x, yy, r, 0, Math.PI * 2); g.fill();
+  }
+});
+const BROTH_TEX = { tonkotsu: brothTex, shoyu: shoyuTex, miso: misoTex };
+// 멘마: 납작한 갈색 죽순 조각
+const menmaMat = smat(0xc28a3e, { roughness: 0.4 });
+function makeMenma(count, rx, rz = rx) {
+  const g = new THREE.Group();
+  for (let i = 0; i < count; i++) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.034, 0.004, 0.009), menmaMat);
+    m.position.set((Math.random() - 0.5) * 2 * rx, Math.random() * 0.005, (Math.random() - 0.5) * 2 * rz);
+    m.rotation.set(0, Math.random() * Math.PI, (Math.random() - 0.5) * 0.3);
+    g.add(m);
+  }
+  return g;
+}
+// 콘: 노란 옥수수 알갱이
+const cornMat = smat(0xf2c230, { roughness: 0.35 });
+const cornGeo = new THREE.SphereGeometry(0.0045, 6, 5);
+function makeCorn(count, rx, rz = rx) {
+  const g = new THREE.Group();
+  for (let i = 0; i < count; i++) {
+    const m = new THREE.Mesh(cornGeo, cornMat);
+    const a = Math.random() * Math.PI * 2, d = Math.sqrt(Math.random());
+    m.position.set(Math.cos(a) * d * rx, Math.random() * 0.006, Math.sin(a) * d * rz);
+    m.scale.set(1, 0.8, 1.2); g.add(m);
+  }
+  return g;
+}
+const misoPasteMat = smat(0xb07a3a, { roughness: 0.7 });
+const noodleMat = smat(0xf0d27a, { roughness: 0.45 });
+
+// 그릇 겉면 무늬: 0단계 붉은 그릇에 흰 번개무늬(라이몬) 띠, 2단계 남색에 청해파(물결) 무늬
+const raimonTex = canvasTex(256, g => {
+  g.fillStyle = '#8a1f1a'; g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = '#f1e9da'; g.lineWidth = 3;
+  for (let x = 0; x < 255; x += 25.6) { // 입구 쪽 가는 띠에 네모 소용돌이 (캔버스 위 = 그릇 입구)
+    g.beginPath(); g.moveTo(x + 3, 10); g.lineTo(x + 20, 10); g.lineTo(x + 20, 23); g.lineTo(x + 8, 23); g.lineTo(x + 8, 15); g.lineTo(x + 15, 15); g.stroke();
+  }
+  g.fillStyle = '#f1e9da'; g.fillRect(0, 3, 256, 3); g.fillRect(0, 28, 256, 3);
+});
+raimonTex.wrapS = THREE.RepeatWrapping; raimonTex.repeat.set(3, 1);
+const seigaihaTex = canvasTex(256, g => {
+  g.fillStyle = '#1d2d5a'; g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = '#e8eef8'; g.lineWidth = 2.5;
+  for (let row = 0; row < 12; row++) for (let col = -1; col < 9; col++) {
+    const cx = col * 32 + (row % 2) * 16, cy = row * 22 + 10;
+    for (const r of [15, 10, 5]) { g.beginPath(); g.arc(cx, cy, r, Math.PI, 0); g.stroke(); }
+  }
+});
+seigaihaTex.wrapS = THREE.RepeatWrapping; seigaihaTex.repeat.set(3, 1);
+const BOWL_STYLES = [
+  { outer: { map: raimonTex, roughness: 0.35 }, inner: 0xf1e9da },
+  { outer: { color: 0x141012, roughness: 0.12, metalness: 0.1 }, inner: 0xb8281e, rim: 0xd4ab4a }, // 검은 칠 + 붉은 안쪽 + 금테
+  { outer: { map: seigaihaTex, roughness: 0.25 }, inner: 0xf6f1e6, rim: 0xd4ab4a },              // 청해파 + 금테
+];
+// 그릴
+const grill = new THREE.Group(); grill.position.set(0.78, 0.95, -0.9); scene.add(grill);
+box(0.42, 0.1, 0.3, mat(0x2b2b2b, { metalness: 0.4 }), 0, 0.05, 0, grill);
+const grillBars = [];
+for (let i = 0; i < 6; i++) {
+  grillBars.push(box(0.38, 0.012, 0.012, mat(0x333333, { emissive: 0xff4a10, emissiveIntensity: 0 }), 0, 0.105, -0.12 + i * 0.048, grill));
+}
+const grillMeat = makeChashu('raw', 0.06); grillMeat.position.set(0, 0.118, 0); grill.add(grillMeat);
+grillMeat.visible = false;
+const grillLight = new THREE.PointLight(0xff6a20, 0, 1.2, 2); grillLight.position.set(0, 0.25, 0); grill.add(grillLight);
+// 챠슈 덩어리 (그릴 옆): 실로 묶은 삼겹살 말이
+{
+  const roll = new THREE.Group(); roll.position.set(0.3, 0.065, -0.04); roll.rotation.z = Math.PI / 2; grill.add(roll);
+  const body = makeChashu('good', 0.06); body.scale.y = 14; roll.add(body);
+  for (const y of [-0.05, 0, 0.05]) { const s = new THREE.Mesh(new THREE.TorusGeometry(0.061, 0.0025, 6, 24), smat(0xf3ead8)); s.rotation.x = Math.PI / 2; s.position.y = y; roll.add(s); }
+  for (let i = 0; i < 3; i++) { const sl = makeChashu('good', 0.05); sl.position.set(0.18 + i * 0.008, 0.11, -0.05 + i * 0.03); sl.rotation.set(0.2, 0, -1.2); grill.add(sl); }
+}
+interact(grill, { kind: 'grill' });
+label('그릴 (챠슈)', 0.78, 1.3, -0.9);
+
+// 토핑 트레이 (스테인리스 밧드 안에 재료가 소복이)
+const trayFood = {}, trays = {};
+// 토핑 단축키 (통 이름표에도 표시)
+const TOP_KEYS = { negi: 'A', kikurage: 'S', nori: 'D', ajitama: 'F', menma: 'G', corn: 'H' };
+const TRAY_NAME = { ...TOPPINGS, kikurage: '목이', ajitama: '아지타마' }; // 좁은 통 이름표용 짧은 이름
+for (const key of Object.keys(TOPPINGS)) {
+  const x = 0, z = TOPPING_Z; // 실제 자리는 trayLayout()이 그날 열린 토핑 수에 맞춰 정함
+  const g = new THREE.Group(); g.position.set(x, 0.95, z); scene.add(g);
+  box(0.3, 0.05, 0.2, steel, 0, 0.025, 0, g);
+  box(0.27, 0.005, 0.17, mat(0x6e757c, { metalness: 0.5 }), 0, 0.051, 0, g);
+  let food;
+  if (key === 'negi') food = makeNegi(140, 0.12, 0.075);
+  else if (key === 'kikurage') food = makeKikurage(45, 0.11, 0.07);
+  else if (key === 'nori') {
+    food = new THREE.Group();
+    for (let i = 0; i < 5; i++) { const n = makeNori(0.09, 0.1, 0.004); n.rotation.set(-Math.PI / 2, 0, (i - 2) * 0.12); n.position.set((i - 2) * 0.035, 0.002 + i * 0.002, 0); food.add(n); }
+  } else if (key === 'menma') food = makeMenma(40, 0.11, 0.07);
+  else if (key === 'corn') food = makeCorn(260, 0.12, 0.075);
+  else {
+    food = new THREE.Group();
+    [[-0.09, -0.04], [-0.03, 0.04], [0.03, -0.04], [0.09, 0.04]].forEach(([ex, ez]) => { const e = makeAjitama(0.026); e.position.set(ex, 0.002, ez); e.rotation.y = Math.random() * 3; food.add(e); });
+    const whole = new THREE.Mesh(new THREE.SphereGeometry(0.026, 18, 12), eggShellMat); whole.scale.set(1, 0.95, 1.3); whole.position.set(0.1, 0.02, -0.03); food.add(whole);
+  }
+  food.position.y = 0.055; g.add(food);
+  trayFood[key] = food;
+  interact(g, { kind: 'topping', key });
+  trays[key] = { group: g }; // 이름·단축키·재고는 updateLabels()의 화면 이름표로
+}
+// 그날 열린 토핑 통만 그릇 자리 뒤에 한 줄로 (6개면 통을 좁게)
+function trayLayout() {
+  const on = toppingsOn(), n = on.length;
+  const x0 = -0.72, x1 = 0.5, w = Math.min(0.3, (x1 - x0) / n - 0.012), step = (x1 - x0) / n;
+  for (const [key, t] of Object.entries(trays)) {
+    const i = on.indexOf(key), show = i >= 0;
+    t.group.visible = show;
+    if (!show) continue;
+    const x = x0 + step * (i + 0.5);
+    t.group.position.x = x; t.group.scale.x = w / 0.3;
+  }
+}
+// 재고에 맞춰 토핑 통이 비어 보이게
+function updateTray(key) {
+  const kids = trayFood[key].children, ratio = levelCfg().stock ? G.stock[key] / stockMax() : 1;
+  kids.forEach((c, i) => { c.visible = i < Math.ceil(kids.length * ratio); });
+}
+
+// 앞 벤치 아래 냉장 서랍 (셰프 쪽 면) — Day 2부터 토핑 보충용
+const FRIDGE_X = { negi: -1.5, kikurage: -0.9, nori: -0.3, ajitama: 0.3, menma: 0.9, corn: 1.5 };
+const fridges = {};
+for (const [key, x] of Object.entries(FRIDGE_X)) {
+  const d = new THREE.Group(); d.position.set(x, 0, -0.6); scene.add(d);
+  box(0.57, 0.72, 0.02, mat(0xb4bac0, { metalness: 0.5, roughness: 0.35 }), 0, 0.46, 0, d);
+  box(0.36, 0.03, 0.04, steelDark, 0, 0.76, 0.02, d);
+  const tag = textSprite(`❄ ${TOPPINGS[key]} [⇧${TOP_KEYS[key]}]`, { scale: 0.22 }); tag.position.set(0, 0.6, 0.04); d.add(tag);
+  interact(d, { kind: 'fridge', key, lift: 0.5 });
+  fridges[key] = { group: d, tag, openT: 0 };
+}
+
+// ---------- 뒤 벤치 (면 솥 / 육수) ----------
+// 왼쪽(버리는 통)·오른쪽(싱크대)은 스테인리스 작업대, 가운데는 가스 화구
+const RANGE_X0 = -1.0, RANGE_X1 = 1.25, RANGE_CX = (RANGE_X0 + RANGE_X1) / 2, RANGE_W = RANGE_X1 - RANGE_X0;
+box(RANGE_X0 + 1.8, 0.04, 0.7, steel, (-1.8 + RANGE_X0) / 2, 0.88, 1.2);
+box(0.8, 0.86, 0.66, steelDark, (-1.8 + RANGE_X0) / 2, 0.43, 1.2);
+box(1.8 - RANGE_X1, 0.04, 0.7, steel, (RANGE_X1 + 1.8) / 2, 0.88, 1.2);
+box(1.8 - RANGE_X1, 0.86, 0.66, steelDark, (RANGE_X1 + 1.8) / 2, 0.43, 1.2);
+// ---------- 가스 화구 (업소용 렌지) ----------
+const castIron = smat(0x1b1c1e, { roughness: 0.75, metalness: 0.3 });
+const flames = [];
+{
+  for (const x of [RANGE_X0 + 0.015, RANGE_X1 - 0.015]) box(0.03, 0.86, 0.66, mat(0x34373c, { metalness: 0.5, roughness: 0.45 }), x, 0.43, 1.2); // 옆판
+  box(RANGE_W, 0.05, 0.7, castIron, RANGE_CX, 0.885, 1.2);                                          // 상판 (주철)
+  box(RANGE_W + 0.02, 0.03, 0.04, steel, RANGE_CX, 0.9, 0.85);                                      // 앞 테두리
+  // 앞 조작 패널 + 손잡이 (화구마다 하나)
+  box(RANGE_W, 0.16, 0.03, steel, RANGE_CX, 0.76, 0.86);
+  for (const x of [-0.45, 0.4, 0.98]) {
+    const k = cyl(0.035, 0.04, 0.035, 16, smat(0x222222, { roughness: 0.3 }), x, 0.76, 0.84); k.rotation.x = Math.PI / 2;
+    box(0.008, 0.03, 0.01, smat(0xd8382a), x, 0.775, 0.82);
+    const pilot = new THREE.Mesh(new THREE.CircleGeometry(0.008, 10), new THREE.MeshBasicMaterial({ color: 0x5ab0ff }));
+    pilot.position.set(x + 0.07, 0.79, 0.843); pilot.rotation.y = Math.PI; scene.add(pilot);
+  }
+  // 아래칸: 열린 선반에 여분 냄비·가스관
+  box(RANGE_W - 0.08, 0.02, 0.56, steel, RANGE_CX, 0.12, 1.22);
+  box(RANGE_W - 0.08, 0.5, 0.02, mat(0x24262a), RANGE_CX, 0.38, 1.5);
+  for (const [x, r, h] of [[-0.7, 0.16, 0.22], [-0.3, 0.13, 0.18], [0.75, 0.15, 0.2]]) {
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.96, h, 20, 1, true), smat(0xa7adb3, { metalness: 0.6, roughness: 0.35, side: THREE.DoubleSide }));
+    p.position.set(x, 0.13 + h / 2, 1.22); scene.add(p);
+  }
+  const pipe = cyl(0.018, 0.018, RANGE_W, 10, smat(0xc9a23a, { metalness: 0.7, roughness: 0.3 }), RANGE_CX, 0.62, 1.48); pipe.rotation.z = Math.PI / 2;
+
+}
+// 화구 하나: 버너 링 + 주철 받침 + 파란 불꽃
+function burner(x, r, n) {
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r * 0.55, 0.018, 8, 28), castIron);
+  ring.rotation.x = Math.PI / 2; ring.position.set(x, 0.915, 1.2); scene.add(ring);
+  for (let i = 0; i < 4; i++) { // 냄비 받침 (+자 모양 주철 바)
+    const bar = box(r * 2.1, 0.025, 0.03, castIron, x, 0.935, 1.2); bar.rotation.y = i * Math.PI / 4;
+  }
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const f = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.06, 6),
+      new THREE.MeshBasicMaterial({ color: i % 3 ? 0x3a8aff : 0xffa040, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+    f.position.set(x + Math.cos(a) * r * 0.55, 0.94, 1.2 + Math.sin(a) * r * 0.55); scene.add(f); flames.push(f);
+  }
+  const l = new THREE.PointLight(0x5a9aff, 0.8, 0.9, 2); l.position.set(x, 0.95, 0.95); scene.add(l);
+}
+burner(-0.45, 0.4, 22); burner(0.4, 0.27, 16); burner(0.98, 0.2, 12);
+// 면 솥
+const noodlePot = new THREE.Group(); noodlePot.position.set(-0.45, 0.96, 1.2); scene.add(noodlePot);
+{
+  // 둥근 큰 솥 (바구니 4개)
+  const potGeo = new THREE.CylinderGeometry(0.42, 0.4, 0.32, 28, 1, true);
+  const pot = new THREE.Mesh(potGeo, new THREE.MeshStandardMaterial({ color: 0xb0b5ba, metalness: 0.6, roughness: 0.35, side: THREE.DoubleSide }));
+  pot.position.y = 0.16; noodlePot.add(pot);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.015, 6, 28), steel);
+  rim.rotation.x = Math.PI / 2; rim.position.y = 0.32; noodlePot.add(rim);
+  const water = cyl(0.41, 0.41, 0.01, 28, new THREE.MeshStandardMaterial({ color: 0xcfd9d6, roughness: 0.2, transparent: true, opacity: 0.85 }), 0, 0.27, 0, noodlePot);
+  water.castShadow = false;
+}
+// 셰프가 뒤돌아 봤을 때 1 2 (안쪽) / 3 4 (바깥쪽) 순서
+const BASKET_POS = [[0.15, 0.15], [-0.15, 0.15], [0.15, -0.15], [-0.15, -0.15]];
+const baskets = BASKET_POS.map(([dx, dz], i) => {
+  const g = new THREE.Group(); g.position.set(dx, 0.2, dz); noodlePot.add(g);
+  const net = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.2, 12, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0x8c8f93, metalness: 0.5, roughness: 0.5, side: THREE.DoubleSide, transparent: true, opacity: 0.75 }));
+  g.add(net);
+  // 손잡이는 솥 바깥쪽을 향하게
+  const arm = new THREE.Group(); arm.rotation.y = Math.atan2(-dx, -dz); g.add(arm);
+  const handle = cyl(0.008, 0.008, 0.3, 5, mat(0x5a3a24), 0, 0.17, -0.15, arm); handle.rotation.x = -0.9;
+  const noodles = cyl(0.075, 0.068, 0.1, 12, mat(0xf2d27a), 0, 0.06, 0, g);
+  noodles.visible = false;
+  const num = textSprite('ZXCV'[i], { scale: 0.32 }); num.position.set(0, 0.16, 0); g.add(num);
+  interact(g, { kind: 'basket', i, lift: 0.1 });
+  return { group: g, noodles, num, cooking: false, t: 0 };
+});
+label('면 솥', -0.45, 1.62, 1.2);
+// 육수 냄비
+const brothPot = new THREE.Group(); brothPot.position.set(0.4, 0.96, 1.2); scene.add(brothPot);
+{
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.27, 0.48, 20, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0x9fa6ad, metalness: 0.6, roughness: 0.35, side: THREE.DoubleSide }));
+  pot.position.y = 0.27; brothPot.add(pot);
+  cyl(0.27, 0.27, 0.01, 20, steelDark, 0, 0.035, 0, brothPot);
+  const ladle = cyl(0.008, 0.008, 0.5, 5, mat(0xb8bcc0, { metalness: 0.6 }), 0.12, 0.45, -0.08, brothPot);
+  ladle.rotation.z = -0.35; ladle.rotation.x = 0.2;
+}
+const brothSurface = cyl(0.265, 0.265, 0.01, 20, mat(0xe2c896, { roughness: 0.5 }), 0, 0.42, 0, brothPot);
+const fireLight = new THREE.PointLight(0xff7a2a, 0, 1.4, 2); fireLight.position.set(0, 0.05, -0.3); brothPot.add(fireLight);
+interact(brothPot, { kind: 'brothPot', ramen: 'tonkotsu' });
+label('돈코츠 육수 [T]', 0.4, 1.62, 1.2);
+// 쇼유 육수 냄비 (Day 3부터): 맑은 갈색 국물
+const shoyuPot = new THREE.Group(); shoyuPot.position.set(0.98, 0.96, 1.2); scene.add(shoyuPot);
+{
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.2, 0.4, 20, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0x9fa6ad, metalness: 0.6, roughness: 0.35, side: THREE.DoubleSide }));
+  pot.position.y = 0.23; shoyuPot.add(pot);
+  cyl(0.2, 0.2, 0.01, 20, steelDark, 0, 0.035, 0, shoyuPot);
+  cyl(0.2, 0.2, 0.01, 20, smat(0x7a3c12, { roughness: 0.15 }), 0, 0.36, 0, shoyuPot);
+  const ladle = cyl(0.008, 0.008, 0.45, 5, mat(0xb8bcc0, { metalness: 0.6 }), 0.09, 0.4, -0.06, shoyuPot);
+  ladle.rotation.z = -0.35; ladle.rotation.x = 0.2;
+}
+interact(shoyuPot, { kind: 'brothPot', ramen: 'shoyu' });
+const shoyuLabel = label('쇼유 육수 [Y]', 0.98, 1.5, 1.2);
+// 불 조절 손잡이 (벤치 앞면)
+const knob = new THREE.Group(); knob.position.set(0.55, 0.72, 0.85); scene.add(knob);
+const knobBody = cyl(0.05, 0.05, 0.04, 12, mat(0xb8322a), 0, 0, 0, knob); knobBody.rotation.x = Math.PI / 2;
+const knobTick = box(0.012, 0.06, 0.012, mat(0xffffff), 0, 0.02, -0.03, knob);
+knob.visible = false;
+// 버리는 통
+const bin = new THREE.Group(); bin.position.set(-1.45, 0.9, 1.2); scene.add(bin);
+cyl(0.16, 0.14, 0.3, 12, mat(0x3f4a3a), 0, 0.15, 0, bin);
+interact(bin, { kind: 'trash' });
+label('버리기', -1.45, 1.35, 1.2);
+// 뒷벽 선반 장식
+box(3.2, 0.03, 0.25, wood, 0, 1.9, 1.52);
+for (let i = 0; i < 8; i++) cyl(0.05, 0.05, 0.14, 8, mat([0x8a2a1e, 0x2b211b, 0xd9cdb5][i % 3]), -1.4 + i * 0.4, 1.99, 1.52);
+
+// ---------- 주방 소품 (장식, 클릭 안 됨) ----------
+function verticalSign(text, w, h, bg = '#e8d2a8', fg = '#2b211b') { // 세로 글씨 나무 패찰
+  const c = document.createElement('canvas'); c.width = 128; c.height = 128 * (h / w);
+  const g = c.getContext('2d');
+  g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height);
+  g.strokeStyle = 'rgba(90,60,30,.5)'; g.lineWidth = 6; g.strokeRect(3, 3, c.width - 6, c.height - 6);
+  g.fillStyle = fg; g.font = 'bold 84px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const chars = [...text], step = (c.height - 40) / chars.length;
+  chars.forEach((ch, i) => g.fillText(ch, 64, 20 + step * (i + 0.5)));
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
+}
+{
+  const white = mat(0xf4f1ea), black = mat(0x222222), red = mat(0xb8322a), cardboard = mat(0xc8a06a);
+  // 환기 후드 (면 솥·육수 위)
+  box(2.1, 0.32, 0.72, steel, 0.08, 2.3, 1.26);
+  box(2.1, 0.03, 0.7, steelDark, 0.08, 2.13, 1.26);
+  for (let i = 0; i < 9; i++) box(0.015, 0.02, 0.66, mat(0x3a3e44), -0.92 + i * 0.25, 2.12, 1.26);
+  box(0.36, 0.3, 0.36, steel, 0.7, 2.6, 1.35);   // 덕트
+  const hoodLight = new THREE.PointLight(0xfff0d8, 1.6, 2.2, 1.5); hoodLight.position.set(0.08, 2.0, 1.2); scene.add(hoodLight);
+
+  // 뒷벽 국자·채반 걸이
+  for (const [x0, x1] of [[-1.85, -1.05], [1.05, 1.85]]) {
+    cyl(0.01, 0.01, x1 - x0, 6, steel, (x0 + x1) / 2, 1.62, 1.58).rotation.z = Math.PI / 2;
+    for (let x = x0 + 0.1; x < x1; x += 0.2) {
+      const kind = Math.round((x - x0) * 5) % 3;
+      cyl(0.006, 0.006, 0.3, 5, steel, x, 1.46, 1.57);
+      if (kind === 0) cyl(0.07, 0.07, 0.01, 14, mat(0x9aa0a6, { metalness: 0.5 }), x, 1.3, 1.56).rotation.x = Math.PI / 2; // 평채반
+      else if (kind === 1) { const l = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat(0xb8bcc0, { metalness: 0.6, side: THREE.DoubleSide })); l.position.set(x, 1.32, 1.55); scene.add(l); } // 국자
+      else box(0.03, 0.12, 0.02, mat(0x5a3a24), x, 1.3, 1.56); // 주걱
+    }
+  }
+  // 뒷벽 위 나무 메뉴 패찰
+  [['とんこつ', -2.5], ['替玉', -2.15], ['味玉', -1.8], ['チャーシュー', -1.45], ['ビール', 1.45], ['ご飯', 1.8], ['餃子', 2.15], ['ネギ', 2.5]].forEach(([t, x]) => {
+    const s = verticalSign(t, 0.22, 0.6); s.position.set(x, 2.3, 1.585); s.rotation.y = Math.PI; scene.add(s);
+  });
+
+  // 싱크대 + 수도꼭지 (뒤 벤치 오른쪽 끝)
+  box(0.5, 0.03, 0.44, steelDark, 1.5, 0.905, 1.2);
+  box(0.44, 0.02, 0.38, mat(0x3a3e44, { metalness: 0.6 }), 1.5, 0.89, 1.2);
+  cyl(0.02, 0.02, 0.32, 8, steel, 1.5, 1.06, 1.42);
+  const spoutPipe = cyl(0.015, 0.015, 0.2, 8, steel, 1.5, 1.2, 1.33); spoutPipe.rotation.x = Math.PI / 2;
+  cyl(0.03, 0.03, 0.03, 8, red, 1.42, 1.0, 1.42); cyl(0.03, 0.03, 0.03, 8, mat(0x2a6ab8), 1.58, 1.0, 1.42);
+
+  // 앞 벤치 왼쪽 끝: 양념통, 렌게, 젓가락통
+  [[0x222222, 0xe9e3d6], [0x8a2a1e, 0xd9302a], [0xd9cdb5, 0xf2ead8], [0x3a6a3a, 0xe8d8a0]].forEach(([lid, body], i) => {
+    cyl(0.03, 0.03, 0.1, 10, mat(body), -1.68 + i * 0.08, 1.0, -1.18);
+    cyl(0.031, 0.031, 0.02, 10, mat(lid), -1.68 + i * 0.08, 1.06, -1.18);
+  });
+  for (let i = 0; i < 5; i++) { const r = cyl(0.03, 0.025, 0.012, 10, white, -1.55, 0.96 + i * 0.012, -0.72); r.scale.z = 1.6; }
+  cyl(0.045, 0.045, 0.16, 10, woodDark, -1.7, 1.03, -0.75);
+  for (let i = 0; i < 6; i++) cyl(0.004, 0.004, 0.24, 4, woodLight, -1.7 + (i % 3 - 1) * 0.015, 1.13, -0.75 + (i < 3 ? -0.01 : 0.01));
+
+  // 앞 벤치 오른쪽 끝: 도마 + 칼 + 파 한 단
+  box(0.4, 0.03, 0.28, mat(0xe9dcc0), 1.45, 0.965, -0.92);
+  box(0.22, 0.005, 0.045, mat(0xd8dde2, { metalness: 0.8, roughness: 0.2 }), 1.42, 0.985, -1.0);
+  box(0.1, 0.02, 0.03, black, 1.58, 0.988, -1.0);
+  for (let i = 0; i < 5; i++) { const n = cyl(0.008, 0.008, 0.3, 6, mat(i % 2 ? 0x7dbb4f : 0x9fd06a), 1.45, 0.99, -0.86 + i * 0.012); n.rotation.z = Math.PI / 2; }
+
+  // 뒤 벤치 아래 수납장
+  for (const [x, w] of [[-1.4, 0.74], [1.525, 0.5]]) {
+    box(w, 0.72, 0.02, mat(0xa7adb3, { metalness: 0.5, roughness: 0.4 }), x, 0.44, 0.85);
+    box(0.03, 0.2, 0.04, steelDark, x + w / 2 - 0.06, 0.55, 0.83);
+  }
+  // 바닥 고무 매트
+  box(3.2, 0.012, 0.6, mat(0x2e2e2e), 0, 0.012, 0.2);
+  for (let i = 0; i < 16; i++) box(0.02, 0.014, 0.58, mat(0x1e1e1e), -1.5 + i * 0.2, 0.014, 0.2);
+
+  // 오른쪽: 업소용 냉장고
+  box(0.7, 1.95, 0.72, mat(0xc4c9ce, { metalness: 0.5, roughness: 0.35 }), 2.45, 0.98, 0.75);
+  box(0.02, 1.8, 0.02, steelDark, 2.1, 0.98, 0.75);
+  for (const z of [0.55, 0.95]) box(0.03, 0.4, 0.03, steelDark, 2.08, 1.2, z);
+  box(0.02, 0.08, 0.16, mat(0x1a3a1a), 2.09, 1.8, 0.75); // 온도 표시
+  // 왼쪽: 철제 선반 + 재료 상자
+  for (const [x, z] of [[-2.75, 0.2], [-2.15, 0.2], [-2.75, 1.3], [-2.15, 1.3]]) cyl(0.012, 0.012, 1.8, 6, steel, x, 0.9, z);
+  for (const y of [0.3, 0.9, 1.5]) box(0.66, 0.02, 1.16, steel, -2.45, y, 0.75);
+  box(0.4, 0.3, 0.4, cardboard, -2.45, 0.47, 0.5); box(0.4, 0.3, 0.4, cardboard, -2.45, 0.47, 1.0);
+  const menBox = verticalSign('麺', 0.2, 0.2, '#c8a06a'); menBox.position.set(-2.24, 0.47, 0.5); menBox.rotation.y = Math.PI / 2; scene.add(menBox);
+  box(0.5, 0.25, 0.32, white, -2.45, 1.04, 0.6);  // 쌀 포대
+  for (let i = 0; i < 6; i++) { const b = makeBowlMesh(); b.position.set(-2.45, 1.52 + i * 0.03, 1.0); b.scale.setScalar(0.9); scene.add(b); }
+  for (let i = 0; i < 3; i++) cyl(0.08, 0.08, 0.22, 10, mat([0xe0c070, 0x8a2a1e, 0x4a3020][i]), -2.55 + i * 0.12, 1.62, 0.4);
+  // 수건 (앞 벤치 모서리에 걸침)
+  box(0.22, 0.3, 0.01, mat(0xf3ead8), 1.75, 0.8, -0.6);
+}
+
+// ================= 그릇 =================
+function makeBowlMesh(style = BOWL_STYLES[levelOf('fineBowl')]) {
+  const g = new THREE.Group();
+  const pts = [[0, 0], [0.05, 0], [0.055, 0.012], [0.088, 0.032], [0.108, 0.065], [0.115, 0.088]].map(p => new THREE.Vector2(p[0], p[1]));
+  const geo = new THREE.LatheGeometry(pts, 22);
+  const outer = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ ...style.outer, side: THREE.FrontSide }));
+  const inner = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: style.inner, roughness: 0.4, side: THREE.BackSide }));
+  outer.castShadow = true; g.add(outer, inner);
+  if (style.rim) {
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.0035, 6, 32), new THREE.MeshStandardMaterial({ color: style.rim, metalness: 0.85, roughness: 0.25 }));
+    rim.rotation.x = Math.PI / 2; rim.position.y = 0.088; g.add(rim);
+  }
+  return g;
+}
+// 그릇 더미: 그날 그릇 단계에 맞춰 다시 쌓음
+function restackBowls() {
+  bowlStack.children.filter(c => c.isGroup).forEach(c => bowlStack.remove(c));
+  for (let i = 0; i < 4; i++) { const b = makeBowlMesh(); b.position.y = i * 0.03; bowlStack.add(b); }
+}
+restackBowls();
+interact(bowlStack, { kind: 'bowlStack' });
+
+class Bowl {
+  constructor() {
+    this.tare = true; // 타레는 그릇을 놓을 때 자동으로 들어감
+    this.broth = null; this.temp = 0; this.noodles = null; this.miso = false;
+    this.chashu = []; this.top = new Set(); this.kaedama = false;
+    const g = makeBowlMesh(); this.group = g;
+    const p = {};
+    p.tare = cyl(0.05, 0.05, 0.004, 14, smat(0x4a2a14, { roughness: 0.3 }), 0, 0.014, 0, g);
+    p.broth = new THREE.Mesh(new THREE.CircleGeometry(0.104, 32), new THREE.MeshStandardMaterial({ map: brothTex, roughness: 0.3 }));
+    p.broth.rotation.x = -Math.PI / 2; p.broth.position.y = 0.066; g.add(p.broth);
+    // 면: 가는 면발이 국물 위로 살짝 보이게
+    p.noodles = new THREE.Group(); g.add(p.noodles);
+    for (let i = 0; i < 16; i++) {
+      const t = new THREE.Mesh(new THREE.TorusGeometry(0.012 + Math.random() * 0.045, 0.0022, 5, 24, Math.PI * (0.6 + Math.random())), noodleMat);
+      t.rotation.set(Math.PI / 2 + (Math.random() - 0.5) * 0.15, 0, Math.random() * 6.3);
+      t.position.set((Math.random() - 0.5) * 0.03, 0.067 + Math.random() * 0.003, (Math.random() - 0.5) * 0.03);
+      p.noodles.add(t);
+    }
+    // 챠슈: 그릇 앞쪽에 겹쳐서 기대어 놓음
+    p.chashu = [0, 1, 2].map(i => {
+      const m = makeChashu('good', 0.036);
+      m.position.set(-0.04 + i * 0.028, 0.076 + i * 0.003, 0.035 - i * 0.004); m.rotation.set(-0.35, 0.2 * i, 0.1);
+      g.add(m); return m;
+    });
+    p.negi = makeNegi(26, 0.022); p.negi.position.set(0.035, 0.071, -0.03); g.add(p.negi);
+    p.kikurage = makeKikurage(9, 0.02, 0.012); p.kikurage.position.set(-0.035, 0.071, -0.04); g.add(p.kikurage);
+    p.nori = makeNori(); p.nori.position.set(0.0, 0.1, -0.085); p.nori.rotation.x = 0.35; g.add(p.nori);
+    p.ajitama = makeAjitama(0.022); p.ajitama.position.set(0.058, 0.072, 0.03); p.ajitama.rotation.set(0.15, 0.8, 0); g.add(p.ajitama);
+    p.menma = makeMenma(6, 0.018, 0.012); p.menma.position.set(-0.06, 0.071, 0.0); g.add(p.menma);
+    p.corn = makeCorn(30, 0.02); p.corn.position.set(0.02, 0.071, 0.06); g.add(p.corn);
+    // 넣은 미소(된장) 한 덩이 — 육수를 부으면 풀려서 사라짐
+    p.miso = new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 8), misoPasteMat); p.miso.scale.y = 0.45; p.miso.position.set(0.02, 0.02, 0.01); g.add(p.miso);
+    this.parts = p;
+    this.refresh();
+  }
+  refresh() {
+    const p = this.parts;
+    p.tare.visible = this.tare && this.broth == null;
+    p.broth.visible = this.broth != null;
+    p.miso.visible = this.miso && this.broth == null;
+    const tex = this.broth && BROTH_TEX[this.miso ? 'miso' : this.broth];
+    if (tex && p.broth.material.map !== tex) { p.broth.material.map = tex; p.broth.material.needsUpdate = true; }
+    p.noodles.visible = this.noodles != null;
+    p.chashu.forEach((m, i) => {
+      const q = this.chashu[i];
+      m.visible = !!q;
+      if (q) setChashuQuality(m, q);
+    });
+    for (const k of Object.keys(TOPPINGS)) p[k].visible = this.top.has(k);
+  }
+  empty() { // 다 먹은 그릇
+    this.noodles = null; this.chashu = []; this.top.clear();
+    this.refresh();
+    this.parts.broth.position.y = 0.03; this.parts.broth.scale.set(0.6, 0.6, 1);
+  }
+  isBlank() { return !this.tare && this.broth == null && this.noodles == null && !this.chashu.length && !this.top.size; }
+  // 어떤 라멘이 됐나: 돈코츠 육수 + 미소 = 미소 라멘
+  kind() { return this.miso && this.broth === 'tonkotsu' ? 'miso' : this.broth; }
+  summary() {
+    const s = [];
+    if (this.miso) s.push('미소✓');
+    s.push(this.broth != null ? `${RAMEN[this.broth].name} 육수✓` : '<span style="opacity:.5">육수</span>');
+    s.push(this.noodles != null ? `면 ${FIRM_ALL[firmOf(this.noodles)]}` : '<span style="opacity:.5">면</span>');
+    if (this.chashu.length) s.push(`챠슈${this.chashu.length}`);
+    const tops = [...this.top].map(k => TOPPINGS[k]);
+    let html = s.join(' · ');
+    if (tops.length) html += '<br>' + tops.join(' ');
+    return html;
+  }
+}
+
+// ================= 사람 =================
+// look: { kind, skin, hair, top, bottom, skirt, glasses, cap, beard, ... } — 손님 생김새
+function makePerson(look) {
+  const L = look, g = new THREE.Group();
+  const skin = mat(L.skin), hairMat = mat(L.hair), topMat = mat(L.top);
+  const old = L.kind === 'grandpa' || L.kind === 'grandma';
+  // 다리 · 신발 (치마면 치마 + 맨다리)
+  const legMat = L.skirt ? skin : mat(L.bottom);
+  for (const s of [-1, 1]) {
+    box(L.skirt ? 0.07 : 0.1, 0.8, L.skirt ? 0.08 : 0.12, legMat, s * 0.08, 0.4, 0, g);
+    box(0.1, 0.06, 0.17, mat(L.shoes), s * 0.08, 0.03, 0.025, g);
+  }
+  if (L.skirt) cyl(0.13, 0.2, 0.36, 14, mat(L.bottom), 0, 0.66, 0, g);
+  // 몸통 · 팔 (여성은 어깨가 조금 좁게)
+  const sw = L.female ? 0.32 : 0.36;
+  const torso = box(sw, 0.44, 0.22, topMat, 0, 1.02, 0, g);
+  if (old) torso.rotation.x = 0.08; // 살짝 구부정
+  for (const s of [-1, 1]) {
+    box(0.085, 0.4, 0.1, topMat, s * (sw / 2 + 0.045), 1.0, 0, g);
+    box(0.06, 0.07, 0.07, skin, s * (sw / 2 + 0.045), 0.77, 0, g); // 손
+  }
+  if (L.suit) { // 양복: 흰 셔츠 V + 넥타이 + 깃
+    const v = box(0.1, 0.2, 0.01, mat(0xf4f4f0), 0, 1.13, 0.112, g);
+    box(0.035, 0.22, 0.012, mat(L.tie), 0, 1.1, 0.118, g);
+    for (const s of [-1, 1]) { const lp = box(0.05, 0.22, 0.012, topMat, s * 0.06, 1.12, 0.12, g); lp.rotation.z = s * 0.35; }
+    v.castShadow = false;
+  }
+  if (L.cardigan) { // 카디건 단추
+    for (let i = 0; i < 4; i++) cyl(0.009, 0.009, 0.006, 8, mat(0x5a4030), 0, 1.18 - i * 0.1, 0.113, g).rotation.x = Math.PI / 2;
+  }
+  if (L.hoodie) { const h = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.035, 6, 14), topMat); h.rotation.x = Math.PI / 2; h.position.set(0, 1.25, -0.03); g.add(h); }
+  if (L.bag) { const b = box(0.06, 0.4, 0.02, mat(0x3a2a20), 0.12, 1.05, 0.1, g); b.rotation.z = -0.6; box(0.2, 0.16, 0.06, mat(0x3a2a20), -0.2, 0.8, 0.05, g); }
+
+  // 머리 (먹을 때 통째로 숙이도록 한 그룹)
+  const head = new THREE.Group(); head.position.y = 1.38; g.add(head);
+  const face = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 10), skin); face.castShadow = true; head.add(face);
+  for (const s of [-1, 1]) { const ear = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 5), skin); ear.scale.set(0.6, 1, 1); ear.position.set(s * 0.12, -0.005, 0); head.add(ear); }
+  const hs = (r, phiLen, y, rx = 0) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 9, 0, Math.PI * 2, 0, phiLen), hairMat); m.position.y = y; m.rotation.x = rx; head.add(m); return m; };
+  switch (L.hairStyle) {
+    case 'short': hs(0.128, Math.PI * 0.5, 0.02, -0.25); break;
+    case 'neat': hs(0.128, Math.PI * 0.45, 0.02, -0.2); box(0.2, 0.03, 0.05, hairMat, 0.02, 0.1, 0.07, head).rotation.z = -0.15; break; // 가르마
+    case 'bald': { // 옆·뒤만 남은 머리
+      const r = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.03, 6, 16, Math.PI * 1.3), hairMat);
+      r.rotation.set(Math.PI / 2, 0, Math.PI * 0.85); r.position.y = 0.01; head.add(r); break;
+    }
+    case 'bob': hs(0.132, Math.PI * 0.62, 0.015, -0.3); box(0.25, 0.14, 0.1, hairMat, 0, -0.03, -0.07, head); break;
+    case 'long': hs(0.132, Math.PI * 0.55, 0.015, -0.3); box(0.24, 0.32, 0.06, hairMat, 0, -0.12, -0.09, head);
+      for (const s of [-1, 1]) box(0.04, 0.24, 0.08, hairMat, s * 0.115, -0.08, -0.02, head); break;
+    case 'pony': hs(0.13, Math.PI * 0.55, 0.015, -0.3); { const p = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 0.16, 4, 8), hairMat); p.position.set(0, -0.06, -0.15); p.rotation.x = 0.35; head.add(p); } break;
+    case 'bun': hs(0.128, Math.PI * 0.52, 0.015, -0.25); { const b = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), hairMat); b.position.set(0, 0.1, -0.1); head.add(b); } break;
+  }
+  if (L.cap) {
+    const capMat = mat(L.cap);
+    const c = new THREE.Mesh(new THREE.SphereGeometry(0.132, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.45), capMat); c.position.y = 0.02; head.add(c);
+    box(0.17, 0.012, 0.1, capMat, 0, 0.045, 0.15, head);
+  }
+  // 얼굴: 눈 · 눈썹 · 입 (여성은 입술 색)
+  const dark = mat(0x1a1a1a), browMat = mat(old ? 0xb8b8b8 : L.hair);
+  for (const s of [-1, 1]) {
+    box(0.022, L.female ? 0.034 : 0.028, 0.01, dark, s * 0.045, 0.01, 0.114, head);
+    box(0.035, 0.009, 0.01, browMat, s * 0.045, 0.045, 0.112, head);
+  }
+  const mouth = box(0.04, 0.012, 0.01, mat(L.female ? 0xc0504a : 0x7a3a2a), 0, -0.05, 0.112, head);
+  if (old) for (const s of [-1, 1]) box(0.025, 0.004, 0.006, mat(0xc89a78), s * 0.06, -0.035, 0.108, head).rotation.z = s * 0.6; // 팔자 주름
+  if (L.beard === 'mustache') box(0.07, 0.016, 0.014, mat(L.hair), 0, -0.03, 0.116, head);
+  if (L.beard === 'full') { const b = new THREE.Mesh(new THREE.SphereGeometry(0.105, 12, 8, 0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.45), hairMat); b.position.set(0, -0.005, 0.01); head.add(b); }
+  if (L.glasses) {
+    const gm = mat(L.glasses, { metalness: 0.4 });
+    for (const s of [-1, 1]) {
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.005, 6, 16), gm); rim.position.set(s * 0.045, 0.01, 0.122); head.add(rim);
+      box(0.004, 0.006, 0.12, gm, s * 0.118, 0.015, 0.06, head); // 다리
+    }
+    box(0.03, 0.005, 0.005, gm, 0, 0.018, 0.124, head); // 코받침
+  }
+  if (L.earrings) for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.01, 6, 5), mat(0xe8c050, { metalness: 0.7 })); e.position.set(s * 0.12, -0.04, 0.01); head.add(e); }
+  g.scale.setScalar(L.scale);
+  g.userData = { torso, head, mouth };
+  return g;
+}
+
+// ================= 들고 있는 물건 (바디캠 시점의 손) =================
+const holdGroup = new THREE.Group(); holdGroup.position.set(0.24, -0.26, -0.55); holdGroup.scale.setScalar(0.8); camera.add(holdGroup);
+// 사람 손 (손바닥·마디가 있는 손가락·엄지·손톱·손목) + 흰 조리복 소매
+const skinMat = new THREE.MeshStandardMaterial({ color: 0xe5ac86, roughness: 0.55 });
+const nailMat = smat(0xf0c6b0, { roughness: 0.3 });
+const jacketMat = smat(0xf6f2ea, { roughness: 0.85 });
+function capsuleZ(r, len, m, parent, z) { // z축 방향 캡슐
+  const c = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 4, 12), m);
+  c.rotation.x = Math.PI / 2; c.position.z = z; parent.add(c); return c;
+}
+function makeHand() {
+  const g = new THREE.Group();
+  const palm = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), skinMat);
+  palm.scale.set(0.041, 0.016, 0.047); g.add(palm);
+  const fingers = [];
+  // [x, 길이, 굵기] 검지 → 새끼 (손등이 위, 손가락은 -z 방향)
+  for (const [x, len, r] of [[-0.026, 0.024, 0.0078], [-0.009, 0.028, 0.0082], [0.009, 0.026, 0.0079], [0.025, 0.02, 0.007]]) {
+    const base = new THREE.Group(); base.position.set(x, 0.002, -0.04); base.rotation.y = -x * 1.4; g.add(base);
+    capsuleZ(r, len * 0.5, skinMat, base, -len * 0.3);
+    const mid = new THREE.Group(); mid.position.z = -len * 0.62; base.add(mid);
+    capsuleZ(r * 0.92, len * 0.42, skinMat, mid, -len * 0.26);
+    const nail = new THREE.Mesh(new THREE.SphereGeometry(r * 0.78, 10, 6), nailMat);
+    nail.scale.set(1, 0.32, 1.3); nail.position.set(0, r * 0.72, -len * 0.42); mid.add(nail);
+    fingers.push({ base, mid });
+  }
+  const thumb = new THREE.Group(); thumb.position.set(-0.035, -0.006, -0.008); thumb.rotation.set(0, 0.75, 0.35); g.add(thumb);
+  capsuleZ(0.0098, 0.018, skinMat, thumb, -0.014);
+  const tMid = new THREE.Group(); tMid.position.z = -0.03; thumb.add(tMid);
+  capsuleZ(0.009, 0.014, skinMat, tMid, -0.01);
+  const wrist = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.031, 0.17, 18), skinMat);
+  wrist.rotation.x = Math.PI / 2; wrist.position.set(0, -0.002, 0.11); g.add(wrist);
+  const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.054, 0.4, 20), jacketMat);
+  sleeve.rotation.x = Math.PI / 2; sleeve.position.z = 0.36; g.add(sleeve);
+  const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.047, 0.008, 8, 24), jacketMat); cuff.position.z = 0.16; g.add(cuff);
+  g.traverse(o => { if (o.isMesh) o.castShadow = false; });
+  return {
+    group: g,
+    setCurl(c) { // 0 = 펴짐, 1 = 꽉 쥠
+      fingers.forEach((f, i) => { f.base.rotation.x = -c * (1.0 + i * 0.08); f.mid.rotation.x = -c * 1.3; });
+      thumb.rotation.x = -c * 0.35; tMid.rotation.x = -c * 0.7;
+    },
+  };
+}
+const camHand = makeHand();
+camHand.group.position.set(0.0, -0.04, 0.06); camHand.group.rotation.set(0.35, 0.3, 0.15);
+camHand.setCurl(0.35); holdGroup.add(camHand.group);
+
+// 챠슈 구울 때: 그릴 위에서 토치를 쥔 손 (월드 공간, 고기를 향해 불꽃)
+const torchRig = new THREE.Group(); scene.add(torchRig);
+{
+  const t = new THREE.Group(); torchRig.add(t); // 노즐이 +z 방향
+  const can = new THREE.Mesh(new THREE.CylinderGeometry(0.031, 0.031, 0.17, 24), smat(0xd8562a, { roughness: 0.35, metalness: 0.2 }));
+  can.rotation.x = Math.PI / 2; can.position.z = -0.1; t.add(can);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.031, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), smat(0xd8562a, { roughness: 0.35 }));
+  cap.rotation.x = -Math.PI / 2; cap.position.z = -0.185; t.add(cap);
+  const head = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.033, 0.05, 20), smat(0x1e1e1e, { roughness: 0.4 }));
+  head.rotation.x = Math.PI / 2; head.position.z = 0.0; t.add(head);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.015, 0.09, 16), smat(0xb8bcc0, { metalness: 0.8, roughness: 0.25 }));
+  nozzle.rotation.x = Math.PI / 2; nozzle.position.set(0, 0.012, 0.065); t.add(nozzle);
+  const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.04, 0.02), smat(0xb8322a)); trigger.position.set(0, -0.04, -0.005); t.add(trigger);
+  const flame = new THREE.Group(); flame.position.set(0, 0.012, 0.11); t.add(flame);
+  const outer = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.11, 14), new THREE.MeshBasicMaterial({ color: 0xff9a3a, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }));
+  const inner = new THREE.Mesh(new THREE.ConeGeometry(0.011, 0.06, 14), new THREE.MeshBasicMaterial({ color: 0x5aa8ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+  outer.rotation.x = inner.rotation.x = Math.PI / 2; outer.position.z = 0.055; inner.position.z = 0.03;
+  flame.add(outer, inner);
+  torchRig.userData.flame = flame;
+  // 가스통을 감싸 쥔 손: 손가락은 앞(+z), 팔은 뒤(-z)로
+  const h = makeHand(); h.setCurl(1.05);
+  h.group.rotation.set(0, Math.PI, Math.PI / 2); h.group.position.set(0.04, 0.0, -0.06);
+  t.add(h.group);
+  torchRig.position.set(0.92, 1.3, -0.66);
+  torchRig.lookAt(0.78, 1.07, -0.9);
+  torchRig.traverse(o => { if (o.isMesh) o.castShadow = false; });
+  torchRig.visible = false;
+}
+let heldMesh = null;
+function setHeldMesh(obj) {
+  if (heldMesh && heldMesh !== obj) holdGroup.remove(heldMesh);
+  heldMesh = obj;
+  if (obj) holdGroup.add(obj);
+  camHand.setCurl(obj ? 0.95 : 0.35); // 뭔가 들면 손을 쥠
+}
+function buildHeld(h) {
+  if (!h) return null;
+  const g = new THREE.Group();
+  switch (h.type) {
+    case 'tare': { cyl(0.006, 0.006, 0.18, 5, mat(0xc4a27a), 0, 0.06, -0.04, g).rotation.x = 1.2; cyl(0.03, 0.025, 0.02, 10, mat(0x4a2a14), 0, 0.02, -0.12, g); break; }
+    case 'broth': {
+      const cup = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat(0xb8bcc0, { metalness: 0.6, side: THREE.DoubleSide }));
+      cup.position.set(0, 0.05, -0.12); g.add(cup);
+      cyl(0.048, 0.048, 0.004, 12, smat(h.ramen === 'shoyu' ? 0x7a3c12 : 0xe2c896, { roughness: 0.2 }), 0, 0.045, -0.12, g);
+      cyl(0.006, 0.006, 0.2, 5, mat(0xb8bcc0, { metalness: 0.6 }), 0, 0.05, 0.0, g).rotation.x = 1.3;
+      break;
+    }
+    case 'noodles': {
+      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.14, 10, 1, true), mat(0x8c8f93, { side: THREE.DoubleSide }));
+      b.position.set(0, 0.06, -0.12); g.add(b);
+      cyl(0.055, 0.045, 0.1, 10, mat(0xf2d27a), 0, 0.05, -0.12, g);
+      cyl(0.008, 0.008, 0.2, 5, mat(0x5a3a24), 0, 0.06, 0.0, g).rotation.x = 1.3;
+      break;
+    }
+    case 'chashu': {
+      const c = makeChashu(h.q, 0.04); c.position.set(0, 0.02, -0.1); c.rotation.x = 0.5; g.add(c);
+      break;
+    }
+    case 'topping': {
+      const food = h.key === 'negi' ? makeNegi(30, 0.025) : h.key === 'kikurage' ? makeKikurage(8, 0.02)
+        : h.key === 'nori' ? makeNori() : makeAjitama(0.026);
+      if (h.key === 'nori') food.rotation.x = -1.2;
+      food.position.set(0, 0.02, -0.1); g.add(food);
+      break;
+    }
+    case 'water': {
+      cyl(0.07, 0.085, 0.2, 12, mat(0x8fb5c9, { metalness: 0.3 }), 0, 0.08, -0.12, g);
+      break;
+    }
+    case 'bowl': {
+      h.bowl.group.position.set(-0.06, 0.0, -0.14); h.bowl.group.rotation.set(0, 0, 0);
+      g.add(h.bowl.group); break;
+    }
+  }
+  g.traverse(o => { if (o.isMesh) o.castShadow = false; });
+  return g;
+}
+
+// ================= 김(스팀) 파티클 =================
+const STEAM_MAX = 260;
+const steamGeo = new THREE.BufferGeometry();
+const steamPos = new Float32Array(STEAM_MAX * 3), steamCol = new Float32Array(STEAM_MAX * 3);
+const steamLife = new Float32Array(STEAM_MAX), steamVel = new Float32Array(STEAM_MAX * 3);
+steamGeo.setAttribute('position', new THREE.BufferAttribute(steamPos, 3));
+steamGeo.setAttribute('color', new THREE.BufferAttribute(steamCol, 3));
+const steamTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+})();
+const steam = new THREE.Points(steamGeo, new THREE.PointsMaterial({
+  size: 0.16, map: steamTex, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+}));
+steam.frustumCulled = false; scene.add(steam);
+for (let i = 0; i < STEAM_MAX; i++) steamPos[i * 3 + 1] = -100;
+let steamIdx = 0;
+function emitSteam(p, spread, strength = 1) {
+  const i = steamIdx = (steamIdx + 1) % STEAM_MAX;
+  steamPos[i * 3] = p.x + (Math.random() - 0.5) * spread;
+  steamPos[i * 3 + 1] = p.y;
+  steamPos[i * 3 + 2] = p.z + (Math.random() - 0.5) * spread;
+  steamVel[i * 3] = (Math.random() - 0.5) * 0.05; steamVel[i * 3 + 1] = 0.18 + Math.random() * 0.15; steamVel[i * 3 + 2] = (Math.random() - 0.5) * 0.05;
+  steamLife[i] = strength;
+}
+function updateSteam(dt) {
+  for (let i = 0; i < STEAM_MAX; i++) {
+    if (steamLife[i] <= 0) { steamPos[i * 3 + 1] = -100; continue; }
+    steamLife[i] -= dt * 0.45;
+    for (let k = 0; k < 3; k++) steamPos[i * 3 + k] += steamVel[i * 3 + k] * dt;
+    const a = Math.max(0, steamLife[i]) * 0.045;
+    steamCol[i * 3] = steamCol[i * 3 + 1] = steamCol[i * 3 + 2] = a;
+  }
+  steamGeo.attributes.position.needsUpdate = true;
+  steamGeo.attributes.color.needsUpdate = true;
+}
+
+// ================= 게임 상태 =================
+let G;
+
+function newGame() {
+  if (G) {
+    G.customers.forEach(c => { removeCustomerInteract(c); scene.remove(c.mesh); });
+    G.bowls.forEach(b => b && scene.remove(b.group));
+    G.seats.forEach(s => s.bowl && scene.remove(s.bowl.group));
+    G.customers.forEach(c => c.ticket?.remove());
+  }
+  G = {
+    running: false, paused: false, ended: false, time: 0, money: 0,
+    results: { happy: 0, normal: 0, angry: 0 }, scores: [],
+    hand: null,
+    broth: { temp: 92, level: 0.9, fire: true },
+    grill: { holding: false, t: 0 },
+    bowls: Array(slotCount()).fill(null), active: null, // active = 토핑·챠슈가 바로 들어가는 선택된 그릇 자리
+    seats: SEAT_X.map(x => ({ x, c: null, dirty: false, bowl: null })),
+    customers: [], queue: [], nextSpawn: 3, nextId: 1, recentRamen: [],
+    refill: {}, pop: {}, lastAdd: null, // 보충 중인 토핑(남은 초) · 그릇 위 "+파" 표시 · 되돌릴 수 있는 방금 넣은 것
+    day, stock: Object.fromEntries(Object.keys(TOPPINGS).map(k => [k, stockMax()])),
+  };
+  // 오늘 열린 요소만 보이게
+  const lv = levelCfg();
+  shoyuPot.visible = shoyuLabel.visible = lv.menu.includes('shoyu');
+  for (const [k, f] of Object.entries(fridges)) f.tag.visible = lv.stock && toppingsOn().includes(k);
+  trayLayout(); slotLayout(); restackBowls(); misoJar.visible = misoLabel.visible = lv.menu.includes('miso');
+  Object.keys(TOPPINGS).forEach(updateTray);
+  baskets.forEach(b => { b.cooking = false; b.t = 0; b.noodles.visible = false; });
+  setHand(null);
+  document.getElementById('tickets').innerHTML = '';
+  document.getElementById('labels').innerHTML = '';
+  labelEls.clear();
+}
+
+// ---------- 시점 ----------
+let yaw = 0, pitch = -0.36, turnTarget = null, pitchTarget = null, facingBack = false;
+const VIEW = { front: { yaw: 0, pitch: -0.36 }, back: { yaw: Math.PI + 0.15, pitch: -0.55 } };
+const keys = {};
+// 앞(조리대·손님) / 뒤(면 솥·육수) 두 시점 사이를 오간다
+function turnAround() {
+  facingBack = !facingBack;
+  const v = facingBack ? VIEW.back : VIEW.front;
+  turnTarget = v.yaw; pitchTarget = v.pitch;
+  document.getElementById('turnBtn').textContent = facingBack ? '↻ 앞 보기 (Space)' : '↻ 뒤돌기 — 면 솥·육수 (Space)';
+}
+
+// ---------- 손 ----------
+function setHand(h) {
+  G.hand = h;
+  setHeldMesh(buildHeld(h));
+  updateHandText();
+}
+function updateHandText() {
+  const h = G.hand; let t = '비어 있음';
+  if (h) t = {
+    tare: '타레 (국자)',
+    broth: `${RAMEN[h.ramen]?.name ?? ''} 육수 국자`,
+    noodles: `삶은 면 — ${FIRM_ALL[firmOf(h.t)]}`,
+    chashu: `챠슈 — ${{ raw: '덜 구워짐', good: '알맞게 구워짐 ✓', burnt: '탐' }[h.q]}`,
+    topping: TOPPINGS[h.key],
+    water: '물 주전자',
+    bowl: '라멘 그릇 → 손님을 클릭해서 내기',
+  }[h.type];
+  document.getElementById('hand').innerHTML = `손: ${t}${h ? '<small>Q: 버리기</small>' : ''}`;
+}
+
+// ---------- 유틸 ----------
+function firmOf(t) {
+  const N = CFG.noodle;
+  if (t < N.katame[0]) return 'raw';
+  if (t < N.katame[1]) return 'katame';
+  if (t < N.futsu[1]) return 'futsu';
+  if (t < N.yawa[1]) return 'yawa';
+  return 'nobi';
+}
+function firmPenalty(want, got) {
+  if (got === 'raw' || got === 'nobi') return 2;
+  return Math.abs(FIRM_IDX[want] - FIRM_IDX[got]);
+}
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+function toast(html, cls = '') {
+  const el = document.createElement('div'); el.className = 'toast ' + cls; el.innerHTML = html;
+  const box = document.getElementById('toast'); box.appendChild(el);
+  while (box.children.length > 3) box.firstChild.remove();
+  setTimeout(() => el.remove(), 3700);
+}
+
+// ================= 손님 =================
+const SKINS = [0xf0c8a0, 0xe8b890, 0xf5d3b0, 0xd9a47a];
+const COLORS = [0x6a8caf, 0xc4683f, 0x557a46, 0x8a6aa8, 0xd0b04a, 0x3a3a3a, 0xb24a5a, 0x4a8a8a, 0xe8e2d4];
+const DARK_HAIR = [0x1a1a1a, 0x3b2a1a, 0x2a1a10, 0x5a3a20];
+const GRAY_HAIR = [0x9a9a9a, 0xc8c8c4, 0xe6e4de];
+const chance = p => Math.random() < p;
+// 손님 종류: 남자 · 여자 · 회사원(양복) · 학생 · 할아버지 · 할머니
+const CUSTOMER_KINDS = {
+  man:      { w: 3, make: () => ({ hairStyle: pick(['short', 'short', 'neat']), hair: pick(DARK_HAIR), top: pick(COLORS), bottom: pick([0x2b2b33, 0x34466a, 0x5a5040]),
+              glasses: chance(0.3) && pick([0x1a1a1a, 0x6a5a40]), cap: chance(0.2) && pick([0x1a2a4a, 0xb24a3a, 0x2a2a2a]), beard: chance(0.15) && pick(['mustache', 'full']), hoodie: chance(0.25) }) },
+  woman:    { w: 3, female: true, make: () => ({ hairStyle: pick(['long', 'bob', 'pony']), hair: pick([...DARK_HAIR, 0x7a4a2a, 0x9a6a3a]), top: pick(COLORS), bottom: pick([0x2b2b33, 0x34466a, 0x8a3a4a, 0xc8b89a]),
+              skirt: chance(0.5), glasses: chance(0.25) && pick([0x1a1a1a, 0xb07a50]), earrings: chance(0.4), scale: rand(0.93, 0.97) }) },
+  salaryman:{ w: 2, make: () => ({ hairStyle: 'neat', hair: pick(DARK_HAIR), top: pick([0x22283a, 0x3a3a40, 0x2a2a2a]), suit: true, tie: pick([0x8a2a2a, 0x2a4a8a, 0x5a2a6a, 0x2a5a3a]),
+              glasses: chance(0.45) && 0x1a1a1a, bag: chance(0.3), shoes: 0x1a1210 }) },
+  student:  { w: 1, make: () => ({ hairStyle: 'short', hair: 0x1a1a1a, top: 0x1a1d2a, bottom: 0x1a1d2a, glasses: chance(0.3) && 0x1a1a1a, bag: true, scale: 0.95 }) },
+  grandpa:  { w: 1.5, make: () => ({ hairStyle: pick(['bald', 'short']), hair: pick(GRAY_HAIR), top: pick([0x6a5a48, 0x4a5a4a, 0x7a6a5a]), cardigan: true, bottom: pick([0x5a5040, 0x4a4a48]),
+              glasses: chance(0.6) && pick([0x6a5a40, 0xb0a070]), cap: chance(0.25) && 0x5a4a38, beard: chance(0.35) && 'mustache', scale: 0.95 }) },
+  grandma:  { w: 1.5, female: true, make: () => ({ hairStyle: pick(['bun', 'bob']), hair: pick(GRAY_HAIR), top: pick([0x9a6a7a, 0x7a8a9a, 0xb89a7a, 0x8a5a5a]), cardigan: true, bottom: pick([0x4a4a48, 0x5a4a5a]),
+              skirt: chance(0.6), glasses: chance(0.6) && pick([0x8a5a6a, 0xb0a070]), scale: 0.92 }) },
+};
+// 생김새에 맞는 목소리: 성별 음성이 있으면 그걸, 없으면 높낮이로 구분 · 어르신은 천천히
+function customerVoice(L) {
+  const old = L.kind === 'grandpa' || L.kind === 'grandma';
+  const own = Voices.byGender(L.female);
+  const pitch = own ? rand(0.92, 1.08) : L.female ? rand(1.15, 1.3) : rand(0.75, 0.9);
+  // gender: 미리 만든 남/녀 음성 파일 선택. fileRate는 같은 음성도 사람마다 살짝 다르게 (어르신은 낮고 느리게)
+  return { gender: L.female ? 'f' : 'm', voice: own ?? Voices.random(), pitch: old ? pitch * 0.9 : pitch, rate: old ? rand(0.85, 0.92) : rand(0.98, 1.12),
+    fileRate: rand(0.95, 1.06) * (old ? 0.9 : 1) };
+}
+function randomLook() {
+  const entries = Object.entries(CUSTOMER_KINDS);
+  let r = Math.random() * entries.reduce((s, [, k]) => s + k.w, 0);
+  const [kind, def] = entries.find(([, k]) => (r -= k.w) < 0) ?? entries[0];
+  return { kind, female: !!def.female, skin: pick(SKINS), shoes: pick([0x2a2a2a, 0x5a3a2a, 0xe8e8e8]), bottom: 0x2b2b33, scale: rand(0.98, 1.03), ...def.make() };
+}
+function makeOrder() {
+  const menu = levelCfg().menu;
+  // 메뉴 중 고르게, 같은 라멘이 3번 넘게 연달아 나오지 않게
+  let ramen = pick(menu);
+  const recent = G.recentRamen;
+  if (recent.length >= 3 && recent.slice(-3).every(r => r === ramen)) ramen = menu.find(r => r !== ramen) ?? ramen;
+  recent.push(ramen);
+  const base = baseOf(ramen); // 기본 토핑 (아지타마고는 추가 주문만)
+  const top = new Set(base);
+  const r = Math.random();
+  const firm = r < 0.4 ? 'katame' : r < 0.8 ? 'futsu' : 'yawa';
+  const chashu = Math.random() < 0.25 ? 2 : 1;
+  if (Math.random() < 0.4) top.add('ajitama');
+  if (Math.random() < 0.25) top.delete('negi');
+  if (base.includes('kikurage') && Math.random() < 0.15) top.delete('kikurage');
+  if (Math.random() < 0.1) top.delete('nori');
+  const on = toppingsOn();
+  if (on.includes('menma') && !base.includes('menma') && Math.random() < 0.2) top.add('menma');
+  if (on.includes('corn') && !base.includes('corn') && Math.random() < 0.12) top.add('corn');
+  if (base.includes('menma') && Math.random() < 0.12) top.delete('menma');
+  return { ramen, firm, chashu, top };
+}
+// 주문서: 올려야 할 토핑을 전부 적고, 기본에서 뺀 것은 줄을 그어 표시
+function orderHtml(o) {
+  const base = baseOf(o.ramen);
+  const lines = [`<span class="firm">면 ${FIRM[o.firm]}</span>`];
+  lines.push(o.chashu > 1 ? '<span class="add">챠슈 2장 (추가)</span>' : '챠슈 1장');
+  const tops = Object.keys(TOPPINGS).filter(k => o.top.has(k))
+    .map(k => base.includes(k) ? TOPPINGS[k] : `<span class="add">${TOPPINGS[k]}(추가)</span>`);
+  lines.push('토핑: ' + (tops.length ? tops.join(' · ') : '없음'));
+  const removed = base.filter(k => !o.top.has(k)).map(k => `<span class="del">${TOPPINGS[k]}</span>`);
+  if (removed.length) lines.push('빼기: ' + removed.join(' · '));
+  return lines.map(l => `<div class="line">${l}</div>`).join('');
+}
+function spawnCustomer() {
+  const look = randomLook(), mesh = makePerson(look);
+  mesh.position.copy(OUTSIDE); scene.add(mesh);
+  const c = { id: G.nextId++, mesh, state: 'queue', seat: -1, path: [], order: makeOrder(), patience: 0, maxPatience: patienceMax(),
+    queueT: 0, result: null, eatT: 0, look, voice: customerVoice(look), kaedamaAt: -1, kaedama: null, bubble: '', ticket: null, bob: Math.random() * 10 };
+  mesh.visible = false;
+  G.customers.push(c);
+  G.queue.push(c);
+  Sound.line('irasshaimase', 'いらっしゃいませー！', SHOP_VOICE);
+}
+function seatCustomer(i) { return G.seats[i].c; }
+function tryAssignSeats() {
+  while (G.queue.length) {
+    const i = G.seats.findIndex(s => !s.c && !s.dirty);
+    if (i < 0) break;
+    const c = G.queue.shift();
+    G.seats[i].c = c; c.seat = i; c.state = 'walking';
+    c.mesh.visible = true; c.mesh.position.copy(OUTSIDE);
+    c.path = [DOOR.clone(), new THREE.Vector3(SEAT_X[i], 0, AISLE_Z), new THREE.Vector3(SEAT_X[i], 0, SEAT_Z)];
+    c.desc = { kind: 'customer', seat: i, lift: 1.3 };
+    interact(c.mesh, c.desc);
+  }
+}
+function moveAlong(obj, path, speed, dt) {
+  if (!path.length) return true;
+  const target = path[0], p = obj.position;
+  const dx = target.x - p.x, dz = target.z - p.z, d = Math.hypot(dx, dz);
+  const step = speed * dt;
+  if (d <= step) { p.x = target.x; p.z = target.z; path.shift(); }
+  else { p.x += dx / d * step; p.z += dz / d * step; obj.rotation.y = Math.atan2(dx, dz); }
+  return path.length === 0;
+}
+function createTicket(c, kae = false) {
+  c.ticket?.remove();
+  const el = document.createElement('div');
+  el.className = 'ticket' + (kae ? ' kae' : '') + (!kae && c.order.ramen !== 'tonkotsu' ? ' ' + c.order.ramen : '');
+  el.innerHTML = kae
+    ? `<h4><span>🍜 카에다마</span><span>${c.seat + 1}번 자리</span></h4><div class="line"><span class="firm">면 ${FIRM[c.kaedama.firm]}</span> · 면만 추가</div><div class="bar"><i></i></div>`
+    : `<h4><span class="ramen">${RAMEN[c.order.ramen].name} #${c.id}</span><span>${c.seat + 1}번 자리</span></h4>${orderHtml(c.order)}<div class="bar"><i></i></div>`;
+  document.getElementById('tickets').appendChild(el);
+  c.ticket = el; c.ticketBar = el.querySelector('.bar > i');
+}
+function removeCustomerInteract(c) {
+  if (c.desc) interactDescs.delete(c.desc);
+  c.mesh.traverse(o => { if (o.isMesh) { const k = interactMeshes.indexOf(o); if (k >= 0) interactMeshes.splice(k, 1); } });
+}
+function evaluate(c, b) {
+  const issues = []; let m = 0;
+  if (b.broth == null) { issues.push('육수가 없어요!'); m += 3; }
+  else if (b.broth !== brothOf(c.order.ramen) || b.miso !== !!RAMEN[c.order.ramen].miso) {
+    issues.push(`${RAMEN[c.order.ramen].name} 시켰는데 ${RAMEN[b.kind()].name}예요!`); m += 3;
+  }
+  else if (b.temp < 60) { issues.push(`육수가 식었어요 (${Math.round(b.temp)}°)`); m += 2; }
+  else if (b.temp < 75) { issues.push(`육수가 미지근해요 (${Math.round(b.temp)}°)`); m += 1; }
+  if (!b.tare) { issues.push('타레가 없어서 싱거워요'); m += 1; }
+  if (b.noodles == null) { issues.push('면이 없어요!'); m += 3; }
+  else {
+    const f = firmOf(b.noodles), d = firmPenalty(c.order.firm, f);
+    if (d) { issues.push(`${FIRM[c.order.firm]} 주문인데 면이 ${FIRM_ALL[f]}`); m += d; }
+  }
+  if (b.chashu.length !== c.order.chashu) { issues.push(`챠슈 ${c.order.chashu}장 주문인데 ${b.chashu.length}장`); m += 1; }
+  if (b.chashu.some(q => q !== 'good')) { issues.push(b.chashu.includes('burnt') ? '챠슈가 탔어요' : '챠슈가 덜 구워졌어요'); m += 1; }
+  for (const k of Object.keys(TOPPINGS)) {
+    const want = c.order.top.has(k), has = b.top.has(k);
+    if (want && !has) { issues.push(`${TOPPINGS[k]}가 빠졌어요`); m += 1; }
+    if (!want && has) {
+      issues.push(baseOf(c.order.ramen).includes(k) ? `${TOPPINGS[k]} 빼 달라고 했는데…` : `${TOPPINGS[k]}는 안 시켰어요`);
+      m += 1;
+    }
+  }
+  const r = c.patience / c.maxPatience;
+  const timeScore = r > 0.45 ? 3 : r > 0.15 ? 2 : 1;
+  if (timeScore < 3) issues.push(r > 0.15 ? '조금 늦었어요' : '너무 오래 기다렸어요');
+  const score = timeScore - m;
+  const res = m >= 3 ? 'angry' : score >= 3 ? 'happy' : score >= 1 ? 'normal' : 'angry';
+  return { res, issues };
+}
+const RES_EMOJI = { happy: '😊', normal: '😐', angry: '😠' };
+const RES_NAME = { happy: '만족', normal: '보통', angry: '화남' };
+function reactSound(res) { ({ happy: Sound.happy, normal: Sound.normal, angry: Sound.angry })[res](); }
+
+function serve(c, bowl) {
+  const { res, issues } = evaluate(c, bowl);
+  c.result = res; c.state = 'eating'; c.eatT = rand(16, 24);
+  c.ticket?.remove(); c.ticket = null;
+  const seat = G.seats[c.seat];
+  seat.bowl = bowl;
+  bowl.group.position.set(SEAT_X[c.seat], 1.025, -1.62);
+  scene.add(bowl.group);
+  if (res !== 'angry' && Math.random() < 0.35) c.kaedamaAt = c.eatT * rand(0.35, 0.6);
+  reactSound(res); Sound.place();
+  const msg = issues.length ? issues.slice(0, 2).join('<br>') : pick(['완벽해요! 맛있겠다!', '와, 이거지!', '냄새부터 최고예요!']);
+  if (res === 'happy') {
+    const [key, jp] = pick([['itadakimasu', 'いただきます！'], ['umai', 'うまい！']]);
+    customerSay(c, `😊 ${msg}`, 'happy', key, jp);
+  } else customerSay(c, `${RES_EMOJI[res]} ${msg}`, res);
+}
+// 손님 말풍선 (얼굴 옆) — key/jp가 있으면 음성도 낸다
+function customerSay(c, text, mood = '', key = null, jp = null) {
+  c.speech = { text, mood, until: G.time + 5 };
+  if (key) Sound.line(key, jp, c.voice);
+}
+function deliverKaedama(c, t) {
+  const f = firmOf(t), d = firmPenalty(c.kaedama.firm, f);
+  c.ticket?.remove(); c.ticket = null;
+  c.state = 'eating'; c.eatT = rand(7, 10);
+  G.money += CFG.kaedamaPrice;
+  const b = G.seats[c.seat].bowl; if (b) { b.parts.noodles.visible = true; }
+  if (d === 0) {
+    if (c.result === 'normal') c.result = 'happy';
+    customerSay(c, '😋 딱 좋아요!', 'happy', 'umai', 'うまい！'); Sound.happy();
+  } else if (d === 1) {
+    customerSay(c, `😐 음… 조금 ${FIRM_ALL[f]}네요`, 'normal'); Sound.normal();
+  } else {
+    c.result = c.result === 'happy' ? 'normal' : 'angry';
+    customerSay(c, `😠 면이 ${FIRM_ALL[f]}!`, 'angry'); Sound.angry();
+  }
+  Sound.splash();
+}
+function customerLeaves(c, res) {
+  if (res) c.result = res;
+  c.state = 'leaving';
+  c.ticket?.remove(); c.ticket = null;
+  removeCustomerInteract(c);
+  G.results[c.result]++;
+  G.scores.push({ happy: 5, normal: 3, angry: 1 }[c.result]);
+  const seat = G.seats[c.seat];
+  seat.c = null; seat.dirty = true; seat.clearAt = G.time + 2.5; // 잠시 뒤 그릇이 치워지고 자리가 빔
+  c.path = [new THREE.Vector3(SEAT_X[c.seat], 0, AISLE_Z), DOOR.clone(), OUTSIDE.clone()];
+}
+function updateCustomers(dt) {
+  for (const c of [...G.customers]) {
+    c.bob += dt;
+    if (c.state === 'queue') {
+      c.queueT += dt;
+      if (c.queueT > CFG.queuePatience) {
+        G.queue.splice(G.queue.indexOf(c), 1);
+        G.results.angry++; G.scores.push(1);
+        toast('😠 자리가 없어서 기다리던 손님이 돌아갔어요', 'bad'); Sound.angry();
+        scene.remove(c.mesh); G.customers.splice(G.customers.indexOf(c), 1);
+      }
+      continue;
+    }
+    const m = c.mesh;
+    if (c.state === 'walking') {
+      if (moveAlong(m, c.path, 1.5, dt)) {
+        c.state = 'ordering'; c.orderT = 1.5; m.rotation.y = 0;
+      }
+      m.position.y = Math.abs(Math.sin(c.bob * 9)) * 0.025;
+    } else if (c.state === 'leaving') {
+      m.position.y = Math.abs(Math.sin(c.bob * 9)) * 0.025;
+      if (moveAlong(m, c.path, 1.6, dt)) { scene.remove(m); G.customers.splice(G.customers.indexOf(c), 1); }
+    } else {
+      m.position.y = 0;
+      m.userData.head.rotation.x = 0;
+      if (c.state === 'waiting') {
+        c.patience -= dt;
+        if (!c.warned && c.patience < c.maxPatience * 0.3) { c.warned = true; customerSay(c, pick(['😕 아직인가요…?', '😕 배고파요…']), 'normal'); }
+        if (c.patience <= 0) {
+          customerSay(c, '😠 너무 오래 기다렸어요!', 'angry'); Sound.angry();
+          customerLeaves(c, 'angry');
+        }
+      } else if (c.state === 'eating') {
+        m.userData.head.rotation.x = 0.25 + Math.sin(c.bob * 6) * 0.15; // 후루룩
+        c.eatT -= dt;
+        if (c.kaedamaAt > 0 && c.eatT <= c.kaedamaAt) {
+          c.kaedamaAt = -1;
+          c.state = 'kaedama';
+          c.kaedama = { firm: Math.random() < 0.6 ? 'katame' : pick(['futsu', 'yawa']) };
+          c.patience = c.maxPatience = CFG.kaedamaPatience;
+          const b = G.seats[c.seat].bowl; if (b) b.parts.noodles.visible = false;
+          createTicket(c, true);
+          Sound.kaedama();
+          const kf = c.kaedama.firm;
+          customerSay(c, `🍜 카에다마! ${FIRM[kf]}${kf === 'futsu' ? '으로' : '로'}요!`, 'kae', 'kaedama_' + kf,
+            'すみません、替え玉' + { katame: 'カタメで！', futsu: 'お願いします！', yawa: 'やわめで！' }[kf]);
+        } else if (c.eatT <= 0) {
+          G.money += RAMEN[c.order.ramen].price + (c.result === 'happy' ? tipAmount() : 0);
+          G.seats[c.seat].bowl?.empty();
+          if (c.result === 'happy') customerSay(c, '😋 잘 먹었습니다!', 'happy', 'gochisousama', 'ごちそうさまでした！');
+          else customerSay(c, c.result === 'normal' ? '🙂 잘 먹었어요' : '😠 …', c.result);
+          Sound.line('arigatou', 'ありがとうございましたー！', SHOP_VOICE);
+          customerLeaves(c);
+        }
+      } else if (c.state === 'kaedama') {
+        c.patience -= dt;
+        if (c.patience <= 0) {
+          c.result = c.result === 'happy' ? 'normal' : 'angry';
+          customerSay(c, '😤 카에다마는 이제 됐어요…', 'angry'); Sound.angry();
+          c.ticket?.remove(); c.ticket = null;
+          c.state = 'eating'; c.eatT = 3;
+        }
+      }
+    }
+    if (c.ticketBar) {
+      const r = Math.max(0, c.patience / c.maxPatience);
+      c.ticketBar.style.width = (r * 100) + '%';
+      c.ticketBar.style.background = r > 0.45 ? 'var(--green)' : r > 0.15 ? 'var(--yellow)' : 'var(--red)';
+    }
+  }
+}
+// 자리에 앉은 손님이 직접 주문하고, 떠난 자리는 잠시 뒤 비워진다
+function updateSeats(dt) {
+  for (const c of G.customers) {
+    if (c.state !== 'ordering') continue;
+    c.orderT -= dt;
+    if (c.orderT <= 0) {
+      c.state = 'waiting'; c.patience = c.maxPatience = patienceMax();
+      createTicket(c); Sound.ding();
+      customerSay(c, `📝 ${RAMEN[c.order.ramen].name} ${FIRM[c.order.firm]}${c.order.firm === 'futsu' ? '으로' : '로'} 주세요!`, '');
+    }
+  }
+  for (const s of G.seats) {
+    if (!s.dirty || G.time < s.clearAt) continue;
+    if (s.bowl) { scene.remove(s.bowl.group); s.bowl = null; }
+    s.dirty = false;
+  }
+}
+
+// ================= 상호작용 =================
+const raycaster = new THREE.Raycaster(); raycaster.far = 4.2;
+const aimNDC = new THREE.Vector2(0, 0);
+let dragMode = !params.has('lock'); // 기본: 마우스 커서로 바로 클릭 (?lock 이면 1인칭 마우스 고정)
+function isShown(o) { while (o) { if (!o.visible) return false; o = o.parent; } return true; }
+const AIM_ASSIST_PX = 90;
+const aimTmp = new THREE.Vector3();
+function aimed() {
+  const ndc = dragMode ? aimNDC : new THREE.Vector2(0, 0);
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(interactMeshes, false);
+  for (const h of hits) if (isShown(h.object)) return h.object.userData.desc;
+  // 조준 보정: 정확히 맞지 않아도 화면에서 가장 가까운 물건을 고른다
+  const sx = (ndc.x + 1) / 2 * innerWidth, sy = (1 - ndc.y) / 2 * innerHeight;
+  let best = null, bestDist = AIM_ASSIST_PX;
+  for (const d of interactDescs) {
+    if (!isShown(d.anchor)) continue;
+    d.anchor.getWorldPosition(aimTmp); aimTmp.y += d.lift ?? 0.05;
+    if (aimTmp.distanceTo(camera.position) > 4.2) continue;
+    aimTmp.project(camera);
+    if (aimTmp.z > 1) continue;
+    const dist = Math.hypot((aimTmp.x + 1) / 2 * innerWidth - sx, (1 - aimTmp.y) / 2 * innerHeight - sy);
+    if (dist < bestDist) { bestDist = dist; best = d; }
+  }
+  return best;
+}
+const activeBowl = () => (G.active != null ? G.bowls[G.active] : null);
+function hintFor(d) {
+  if (!d) return '';
+  const h = G.hand;
+  const busy = '손을 먼저 비우세요 (Q)';
+  switch (d.kind) {
+    case 'bowlStack': return h ? busy : (G.bowls.includes(null) ? '클릭: 새 그릇 놓기' : '그릇 자리가 꽉 찼어요');
+    case 'bowlSlot': {
+      const b = G.bowls[d.slot];
+      if (!b) return h?.type === 'bowl' ? '클릭: 그릇 내려놓기' : '빈 자리 — 그릇 더미를 클릭하세요';
+      if (!h) return G.active === d.slot ? '클릭: 그릇 들기 → 손님을 클릭해서 내기' : '클릭: 이 그릇 선택 (토핑·챠슈가 여기로)';
+      return { broth: '클릭: 육수 붓기', noodles: '클릭: 면 넣기', chashu: '클릭: 챠슈 올리기', topping: `클릭: ${TOPPINGS[h.key]} 올리기` }[h.type] || '여기엔 넣을 수 없어요';
+    }
+    case 'basket': {
+      const b = baskets[d.i];
+      if (!b.cooking) return h ? busy : '클릭: 면 넣고 삶기';
+      return h ? busy : `클릭: 면 건지기 (지금 ${FIRM_ALL[firmOf(b.t)]})`;
+    }
+    case 'brothPot':
+      return h ? busy : `클릭: ${RAMEN[d.ramen].name} 육수 뜨기`;
+    case 'grill': return h ? busy : `누르고 있기: 챠슈 굽기${activeBowl() ? ' → 선택한 그릇에 바로' : ''}`;
+    case 'topping':
+      if (h) return busy;
+      if (activeBowl()?.top.has(d.key)) return `${TOPPINGS[d.key]}는 ${G.active + 1}번 그릇에 이미 올렸어요`;
+      if (G.refill[d.key] != null) return `${TOPPINGS[d.key]} 냉장고에서 꺼내는 중…`;
+      if (levelCfg().stock && G.stock[d.key] <= 0) return `클릭: 냉장고에서 ${TOPPINGS[d.key]} 꺼내 채우기 (${REFILL_SEC}초)`;
+      return activeBowl() ? `클릭: ${TOPPINGS[d.key]} → ${G.active + 1}번 그릇` : `클릭: ${TOPPINGS[d.key]} 집기`;
+    case 'miso':
+      if (h) return busy;
+      if (!activeBowl()) return '미소 항아리 — 먼저 그릇을 놓으세요';
+      return activeBowl().miso ? '미소는 이미 넣었어요' : '클릭: 선택한 그릇에 미소 넣기 (육수 붓기 전에)';
+    case 'fridge':
+      if (!toppingsOn().includes(d.key)) return '빈 냉장고';
+      if (!levelCfg().stock) return '냉장고 (Day 2부터 사용)';
+      return `클릭: ${TOPPINGS[d.key]} 통 채우기 (${REFILL_SEC}초)`;
+    case 'trash': return h ? '클릭: 손에 든 것 버리기' : '버리는 곳';
+    case 'customer': {
+      const c = seatCustomer(d.seat); if (!c) return '';
+      if (c.state === 'waiting') return h?.type === 'bowl' ? '클릭: 라멘 내기' : `${c.seat + 1}번 손님 — 주문 기다리는 중`;
+      if (c.state === 'kaedama') return h?.type === 'noodles' ? '클릭: 카에다마 넣어 주기' : '카에다마! 면을 삶아서 가져오세요';
+      if (c.state === 'ordering') return '메뉴 고르는 중';
+      if (c.state === 'eating') return '맛있게 먹는 중';
+      return '';
+    }
+  }
+  return '';
+}
+function act(d) {
+  if (!d || !G.running || G.paused) return;
+  const h = G.hand;
+  switch (d.kind) {
+    case 'bowlStack': {
+      if (h) return;
+      const i = G.bowls.indexOf(null);
+      if (i < 0) return toast('그릇 자리가 꽉 찼어요', 'warn');
+      placeBowl(new Bowl(), i); Sound.place();
+      return;
+    }
+    case 'bowlSlot': {
+      const b = G.bowls[d.slot];
+      if (!b) { if (h?.type === 'bowl') { placeBowl(h.bowl, d.slot); setHand(null); Sound.place(); } return; }
+      if (!h) {
+        if (G.active !== d.slot) { G.active = d.slot; Sound.pick(); return; }
+        G.bowls[d.slot] = null; G.active = null;
+        setHand({ type: 'bowl', bowl: b }); Sound.pick(); return;
+      }
+      // 손에 든 걸 그 그릇에 넣음 (선택한 그릇은 바뀌지 않음 — 토핑이 엉뚱한 그릇에 가지 않게)
+      if (h.type === 'broth') { if (b.broth != null) return toast('육수는 이미 들어 있어요', 'warn'); b.broth = h.ramen; b.temp = 92; Sound.pour(); addTo(b, 'broth', `${RAMEN[h.ramen].name} 육수`); }
+      else if (h.type === 'noodles') { if (b.noodles != null) return toast('면은 이미 들어 있어요', 'warn'); b.noodles = h.t; Sound.splash(); addTo(b, 'noodles', '면'); }
+      else if (h.type === 'chashu') { if (b.chashu.length >= 3) return toast('챠슈는 3장까지만', 'warn'); b.chashu.push(h.q); addTo(b, 'chashu', '챠슈'); }
+      else if (h.type === 'topping') { if (b.top.has(h.key)) return toast(`${TOPPINGS[h.key]}는 이미 올렸어요`, 'warn'); b.top.add(h.key); addTo(b, 'top', TOPPINGS[h.key], h.key); }
+      else return;
+      b.refresh(); setHand(null); Sound.place();
+      if (G.active == null) G.active = d.slot;
+      return;
+    }
+    case 'basket': {
+      const bk = baskets[d.i];
+      if (h) return;
+      if (!bk.cooking) { bk.cooking = true; bk.t = 0; bk.noodles.visible = true; Sound.splash(); return; }
+      bk.cooking = false; bk.noodles.visible = false;
+      setHand({ type: 'noodles', t: bk.t }); Sound.splash();
+      return;
+    }
+    case 'brothPot': {
+      if (h) return;
+      setHand({ type: 'broth', ramen: d.ramen }); Sound.pour();
+      return;
+    }
+    case 'topping': {
+      if (h) return;
+      const stockOn = levelCfg().stock;
+      const b = activeBowl();
+      if (b?.top.has(d.key)) return toast(`${TOPPINGS[d.key]}는 이미 올렸어요 (방금 넣은 거라면 U로 빼기)`, 'warn');
+      if (G.refill[d.key] != null) return toast(`${TOPPINGS[d.key]} 꺼내는 중이에요… 조금만 기다려요`, 'warn');
+      if (stockOn && G.stock[d.key] <= 0) return startRefill(d.key); // 비었으면 냉장고에서 알아서 꺼내 채움
+      if (stockOn) { G.stock[d.key]--; updateTray(d.key); }
+      if (!b) { setHand({ type: 'topping', key: d.key }); Sound.pick(); return; }
+      b.top.add(d.key); b.refresh(); Sound.place(); addTo(b, 'top', TOPPINGS[d.key], d.key);
+      return;
+    }
+    case 'miso': {
+      if (h) return;
+      const b = activeBowl();
+      if (!b) return toast('먼저 그릇을 놓고 선택하세요', 'warn');
+      if (b.miso) return toast('미소는 이미 넣었어요 (방금 넣은 거라면 U로 빼기)', 'warn');
+      if (b.broth != null) return toast('미소는 육수를 붓기 전에 넣어요', 'warn');
+      b.miso = true; b.refresh(); Sound.place(); addTo(b, 'miso', '미소');
+      return;
+    }
+    case 'fridge': {
+      if (!toppingsOn().includes(d.key)) return;
+      if (!levelCfg().stock) return toast('아직 재료가 넉넉해요 (Day 2부터 사용)', '');
+      return startRefill(d.key);
+    }
+    case 'trash': discard(); return;
+    case 'customer': {
+      const c = seatCustomer(d.seat); if (!c) return;
+      if (c.state === 'waiting' && h?.type === 'bowl') { setHeldMesh(null); serve(c, h.bowl); G.hand = null; updateHandText(); return; }
+      if (c.state === 'kaedama' && h?.type === 'noodles') { deliverKaedama(c, h.t); setHand(null); return; }
+      return;
+    }
+  }
+}
+function placeBowl(b, i) {
+  G.bowls[i] = b;
+  if (G.active == null || !G.bowls[G.active]) G.active = i; // 이미 고른 그릇이 있으면 선택은 그대로
+  b.group.position.set(BOWL_SLOTS[i], 0.962, BOWL_Z); b.group.rotation.set(0, 0, 0);
+  scene.add(b.group);
+}
+// 그릇에 넣은 것 표시 ("+파") + 되돌리기용으로 방금 넣은 것 하나만 기억
+// 육수·면은 한 번 넣으면 되돌릴 수 없으니, 넣으면 되돌리기도 사라짐
+function addTo(b, type, name, key) {
+  G.lastAdd = type === 'broth' || type === 'noodles' ? null : { b, type, name, key };
+  popAt(G.bowls.indexOf(b), `+${name}`);
+}
+function popAt(slot, text, cls = 'in') {
+  if (slot >= 0) G.pop[slot] = { text, cls, until: G.time + 1.1 };
+}
+// 되돌리기: 방금 넣은 것 하나만 (그릇이 아직 조리대에 있고, 그게 아직 그릇에 있을 때)
+function lastUndoable() {
+  const e = G.lastAdd, b = e?.b;
+  if (!e || !G.bowls.includes(b)) return null;
+  const still = { top: () => b.top.has(e.key), chashu: () => b.chashu.length > 0, miso: () => b.miso && b.broth == null }[e.type]();
+  return still ? e : null;
+}
+function undoBowl() {
+  const e = lastUndoable();
+  if (!e) return toast('되돌리기는 방금 넣은 것 하나만 할 수 있어요', 'warn');
+  const b = e.b; G.lastAdd = null;
+  if (e.type === 'top') { b.top.delete(e.key); if (levelCfg().stock) { G.stock[e.key]++; updateTray(e.key); } }
+  if (e.type === 'chashu') b.chashu.pop();
+  if (e.type === 'miso') b.miso = false;
+  b.refresh(); Sound.trash(); popAt(G.bowls.indexOf(b), `−${e.name}`, 'out');
+}
+// 토핑 보충: 냉장고에서 꺼내 통을 채우는 데 2초 (그동안 다른 일 해도 됨)
+const REFILL_SEC = 2;
+function startRefill(key) {
+  if (!levelCfg().stock) return;
+  if (G.refill[key] != null) return;
+  if (G.stock[key] >= stockMax()) return toast(`${TOPPINGS[key]} 통은 가득 차 있어요`, '');
+  G.refill[key] = REFILL_SEC; fridges[key].openT = 0.6; Sound.door();
+}
+function tickRefill(dt) {
+  for (const key of Object.keys(G.refill)) {
+    if ((G.refill[key] -= dt) > 0) continue;
+    delete G.refill[key];
+    G.stock[key] = stockMax(); updateTray(key); Sound.place();
+  }
+}
+function discard() {
+  if (!G.hand) return;
+  if (G.hand.type === 'bowl') setHeldMesh(null);
+  setHand(null); Sound.trash();
+}
+function grillStart() { G.grill.holding = true; G.grill.t = 0; grillMeat.visible = true; Sound.setSizzle(true); }
+function grillEnd() {
+  if (!G.grill.holding) return;
+  const t = G.grill.t; G.grill.holding = false; grillMeat.visible = false; Sound.setSizzle(false);
+  const q = t < 0.5 ? 'raw' : t <= 0.72 ? 'good' : 'burnt';
+  const b = activeBowl();
+  if (b && b.chashu.length < 3) { b.chashu.push(q); b.refresh(); addTo(b, 'chashu', '챠슈'); }
+  else setHand({ type: 'chashu', q });
+  if (q === 'good') Sound.pick(); else Sound.normal();
+  if (q !== 'good') toast(q === 'raw' ? '챠슈가 덜 구워졌어요' : '챠슈가 탔어요', 'warn');
+}
+function press() {
+  if (!G.running || G.paused) return;
+  const d = aimed();
+  if (d?.kind === 'grill' && !G.hand) { grillStart(); return true; }
+  if (d) { act(d); return true; }
+  return false;
+}
+
+// ---------- 입력 ----------
+const canvas = renderer.domElement;
+let dragging = false, lastX = 0, lastY = 0;
+canvas.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  if (!dragMode && document.pointerLockElement !== canvas) return;
+  if (dragMode) { aimNDC.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); }
+  const used = press();
+  if (dragMode && !used) { dragging = true; lastX = e.clientX; lastY = e.clientY; }
+});
+addEventListener('mouseup', e => { if (e.button === 0) { dragging = false; grillEnd(); } });
+addEventListener('mousemove', e => {
+  if (!dragMode && document.pointerLockElement === canvas) look(e.movementX, e.movementY);
+  if (dragMode) {
+    aimNDC.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    if (dragging) { look(e.clientX - lastX, e.clientY - lastY); lastX = e.clientX; lastY = e.clientY; }
+  }
+});
+function look(dx, dy) {
+  if (turnTarget != null) return;
+  yaw -= dx * 0.0024; pitch -= dy * 0.0024;
+  pitch = Math.max(-1.25, Math.min(0.7, pitch));
+}
+addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (!G.running || G.paused) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return; // Cmd+Shift+R 같은 브라우저 단축키는 그대로
+  if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) turnAround(); }
+  if (e.code === 'KeyQ') discard();
+  if (e.code === 'KeyU' || e.code === 'Backspace') { e.preventDefault(); undoBowl(); }
+  if (!e.repeat) shortcut(e);
+});
+addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'KeyR') grillEnd(); });
+// 단축키: 그 물건을 클릭한 것과 똑같이 동작 (어느 쪽을 보고 있어도 됨)
+const findDesc = pred => [...interactDescs].find(d => pred(d) && isShown(d.anchor));
+const BASKET_KEYS = { KeyZ: 0, KeyX: 1, KeyC: 2, KeyV: 3 };
+function shortcut(e) {
+  const h = G.hand, code = e.code;
+  const num = /^Digit([1-6])$/.exec(code)?.[1];
+  if (num) {
+    const n = +num - 1;
+    if (h?.type === 'bowl') { // 그릇을 들고 있으면 숫자 = 손님 자리
+      const c = seatCustomer(n);
+      return c?.state === 'waiting' ? act(c.desc) : toast(`${n + 1}번 자리에 라멘을 기다리는 손님이 없어요`, 'warn');
+    }
+    if (n < G.bowls.length) act(findDesc(d => d.kind === 'bowlSlot' && d.slot === n));
+    return;
+  }
+  if (code in BASKET_KEYS) return act(findDesc(d => d.kind === 'basket' && d.i === BASKET_KEYS[code]));
+  if (code === 'KeyE') return act(findDesc(d => d.kind === 'bowlStack'));
+  if (code === 'KeyT') return act(findDesc(d => d.kind === 'brothPot' && d.ramen === 'tonkotsu'));
+  if (code === 'KeyY') return act(findDesc(d => d.kind === 'brothPot' && d.ramen === 'shoyu'));
+  if (code === 'KeyM') return act(findDesc(d => d.kind === 'miso'));
+  if (code === 'KeyR') { if (!h) grillStart(); return; }
+  if (code === 'KeyK') {
+    const c = G.customers.filter(c => c.state === 'kaedama').sort((a, b) => a.patience - b.patience)[0];
+    if (!c) return toast('카에다마를 기다리는 손님이 없어요', 'warn');
+    return h?.type === 'noodles' ? act(c.desc) : toast('먼저 면을 삶아서 건지세요 (Z X C V)', 'warn');
+  }
+  const top = Object.keys(TOP_KEYS).find(k => 'Key' + TOP_KEYS[k] === code);
+  if (top && toppingsOn().includes(top)) act(findDesc(d => d.kind === (e.shiftKey ? 'fridge' : 'topping') && d.key === top));
+}
+addEventListener('contextmenu', e => e.preventDefault());
+
+document.addEventListener('pointerlockchange', () => {
+  if (dragMode) return;
+  if (document.pointerLockElement !== canvas && G.running && !G.ended) pause(true);
+});
+document.addEventListener('pointerlockerror', () => enableDragMode());
+function enableDragMode() {
+  if (dragMode) return;
+  dragMode = true; document.body.classList.add('drag');
+  toast('마우스 고정이 안 돼서 <b>드래그로 둘러보기</b> 모드로 바꿨어요. 물건은 커서로 클릭하세요.', 'warn');
+  if (G.paused) pause(false);
+}
+function lockPointer() {
+  if (dragMode) return;
+  try {
+    const p = canvas.requestPointerLock();
+    if (p && p.catch) p.catch(() => enableDragMode());
+  } catch (e) { enableDragMode(); }
+}
+function pause(on) {
+  G.paused = on;
+  document.getElementById('pause').classList.toggle('hidden', !on);
+  if (on) { grillEnd(); Sound.setBoil(0); Sound.suspend(); } else Sound.init(); VoiceFiles.decode();
+}
+if (dragMode) document.body.classList.add('drag');
+// 하루 시작: 그날 설정으로 새로 깔고 안내를 띄움
+function startDay() {
+  document.getElementById('start').classList.add('hidden');
+  document.getElementById('end').classList.add('hidden');
+  newGame(); yaw = 0; pitch = -0.36; if (facingBack) turnAround();
+  G.running = true; Sound.init(); VoiceFiles.decode(); lockPointer();
+  store.set('ramen-seen', Math.max(day, store.get('ramen-seen', 0)));
+  const lv = levelCfg();
+  toast(`📅 <b>Day ${day} — ${lv.title}</b><br><small>${lv.note}</small>`, 'warn');
+}
+function dayInfoHtml(d) {
+  const lv = levelCfg(d);
+  return `<b>📅 Day ${d} — ${lv.title}</b><br>${lv.note}`;
+}
+// 이미 그 날을 지나 버린 경우(예: 업데이트 전에 Day 9까지 감) 못 본 새 요소 안내를 모아서 보여 줌
+function startInfoHtml() {
+  const seen = store.get('ramen-seen', Math.min(day, 4));
+  const missed = [];
+  for (let d = seen + 1; d < Math.min(day, LEVELS.length + 1); d++) missed.push(`<b>🆕 ${LEVELS[d - 1].title}</b> — ${LEVELS[d - 1].note}`);
+  return dayInfoHtml(day) + (missed.length ? '<hr style="border:0;border-top:1px dashed #d9b54a;margin:8px 0">' + missed.join('<br>') : '');
+}
+// 업그레이드 상점 (시작 화면·영업 종료 화면): 단계 점(●○), 지금 효과 → 다음 단계 효과
+function renderShop(id) {
+  const el = document.getElementById(id);
+  el.innerHTML = `<h3>🏪 가게 업그레이드 <span>금고 ¥${bank.toLocaleString()}</span></h3><div class="shop-grid">` +
+    Object.entries(UPGRADES).map(([k, u]) => {
+      const lv = levelOf(k), max = u.prices.length, price = u.prices[lv], done = lv >= max, can = !done && bank >= price;
+      const pips = '●'.repeat(lv) + '○'.repeat(max - lv);
+      const now = `<small>지금: ${u.names[lv]} — ${u.desc(u.values[lv])}</small>`;
+      const next = done ? '' : `<small class="next">다음: ${u.names[lv + 1]} — ${u.desc(u.values[lv + 1])}</small>`;
+      return `<button class="upg${done ? ' owned' : ''}" data-k="${k}" ${!can ? 'disabled' : ''}>
+        <b>${u.icon} ${u.name} <span class="pips">${pips}</span></b>${now}${next}
+        <span class="price">${done ? '✓ 최고 단계' : `¥${price.toLocaleString()}${can ? '' : ' (돈 부족)'}`}</span></button>`;
+    }).join('') + '</div>';
+  el.querySelectorAll('.upg').forEach(b => b.onclick = () => {
+    if (buyUpgrade(b.dataset.k)) { Sound.init(); Sound.happy(); renderShop(id); }
+  });
+}
+document.getElementById('dayInfo').innerHTML = startInfoHtml();
+renderShop('startShop');
+document.getElementById('startBtn').textContent = day > 1 ? `Day ${day} 영업 시작` : '영업 시작';
+document.getElementById('startBtn').onclick = startDay;
+document.getElementById('resetBtn').style.display = day > 1 ? '' : 'none';
+document.getElementById('resetBtn').onclick = () => { // 금고·업그레이드까지 처음부터
+  day = 1; saveDay(); bank = 0; for (const k in upgLv) delete upgLv[k]; store.set('ramen-bank', 0); store.set('ramen-upg', []); store.set('ramen-upg2', {}); store.set('ramen-seen', 1); startDay();
+};
+document.getElementById('resumeBtn').onclick = () => { pause(false); lockPointer(); };
+document.getElementById('turnBtn').onclick = e => { e.currentTarget.blur(); if (G.running && !G.paused) turnAround(); };
+document.getElementById('undoBtn').onclick = e => { e.currentTarget.blur(); if (G.running && !G.paused) undoBowl(); };
+document.getElementById('againBtn').onclick = startDay;
+document.getElementById('nextBtn').onclick = () => { day++; saveDay(); startDay(); };
+canvas.addEventListener('click', () => { if (G.running && !G.paused && !dragMode && document.pointerLockElement !== canvas) lockPointer(); });
+addEventListener('keydown', e => { if (e.code === 'Escape' && dragMode && G.running && !G.ended) pause(!G.paused); });
+
+// ================= 월드 라벨 (DOM) =================
+const labelEls = new Map();
+const tmpV = new THREE.Vector3();
+function worldLabel(key, pos, html, cls = 'wl') {
+  let el = labelEls.get(key);
+  if (!el) { el = document.createElement('div'); document.getElementById('labels').appendChild(el); labelEls.set(key, el); }
+  el.className = cls;
+  if (el._html !== html) { el.innerHTML = html; el._html = html; }
+  tmpV.copy(pos).project(camera);
+  const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir);
+  const toObj = pos.clone().sub(camera.position);
+  if (tmpV.z > 1 || toObj.dot(camDir) < 0 || toObj.length() > 4.5) { el.style.display = 'none'; el._seen = true; return; }
+  el.style.display = '';
+  el.style.left = ((tmpV.x + 1) / 2 * innerWidth) + 'px';
+  el.style.top = ((1 - tmpV.y) / 2 * innerHeight) + 'px';
+  el._seen = true;
+}
+function updateLabels() {
+  for (const el of labelEls.values()) el._seen = false;
+  const wp = new THREE.Vector3();
+  const panel = [];
+  baskets.forEach((b, i) => {
+    b.num.visible = !b.cooking;
+    if (!b.cooking) return;
+    const f = firmOf(b.t);
+    b.noodles.material.color.setHex(FIRM_COLOR[f]);
+    // 안쪽 줄(1·2)은 더 높이 띄워서 바깥쪽 줄(3·4) 라벨과 겹치지 않게
+    b.group.getWorldPosition(wp); wp.y += i < 2 ? 0.34 : 0.18;
+    const pct = Math.min(1, b.t / 33) * 100;
+    worldLabel('basket' + i, wp, `<b>${'ZXCV'[i]}</b> ${FIRM_ALL[f]}`, `wl firm-${f}`);
+    panel.push(`<div class="row firm-${f}"><b>${'ZXCV'[i]}</b><span>${FIRM_ALL[f]}</span><div class="doneness"><b style="left:${pct}%"></b></div></div>`);
+  });
+  const pp = document.getElementById('potPanel');
+  const html = panel.length ? '<h5>🍜 면 솥</h5>' + panel.join('') : '';
+  if (pp._html !== html) { pp.innerHTML = html; pp._html = html; }
+  // 토핑 통: 단축키 · 이름 · 남은 양을 통 위 이름표 하나로
+  for (const key of toppingsOn()) {
+    const n = G.stock[key], stockOn = levelCfg().stock;
+    wp.set(trays[key].group.position.x, 1.02, TOPPING_Z - 0.06);
+    const filling = G.refill[key] != null;
+    const left = !stockOn ? '' : `<br><small>${filling ? '채우는 중…' : n > 0 ? `${n}/${stockMax()}` : '비었음!'}</small>`;
+    worldLabel('tray' + key, wp, `<b class="k">${TOP_KEYS[key]}</b><br>${TRAY_NAME[key]}${left}`,
+      `wl tray${filling ? ' firm-katame' : stockOn && n <= 1 ? ' firm-nobi' : ''}`);
+  }
+  // 방금 그릇에 넣은/뺀 것 ("+파", "−김")
+  for (const [i, p] of Object.entries(G.pop)) {
+    if (G.time > p.until || !G.bowls[i]) { delete G.pop[i]; continue; }
+    wp.set(BOWL_SLOTS[i], 1.08 + (1.1 - (p.until - G.time)) * 0.06, BOWL_Z);
+    worldLabel('pop' + i, wp, p.text, `wl pop ${p.cls}`);
+  }
+  // 그릇: 번호 · 담긴 것 이름표는 그릇 앞(아래쪽)에 달아서 토핑 통 이름표와 안 겹치게
+  G.bowls.forEach((b, i) => {
+    wp.set(BOWL_SLOTS[i], 0.96, BOWL_Z + 0.15);
+    if (!b) return worldLabel('bowl' + i, wp, `<b>${i + 1}</b>`, 'wl below');
+    worldLabel('bowl' + i, wp, `<b>[${i + 1}]</b> ` + (G.active === i ? '<b style="color:#ffd23a">▶ 선택</b><br>' : '') + b.summary(), 'wl below');
+  });
+  for (const c of G.customers) {
+    // 얼굴 옆 말풍선
+    if (c.speech && G.time < c.speech.until && c.state !== 'queue') {
+      c.mesh.getWorldPosition(wp); wp.x += 0.16; wp.y += 1.42;
+      worldLabel('say' + c.id, wp, c.speech.text, `wl say ${c.speech.mood}`);
+    }
+    if (c.seat < 0 || c.state === 'leaving' || c.state === 'queue') continue;
+    c.mesh.getWorldPosition(wp); wp.y += 1.62;
+    let html = '', cls = 'wl bubble';
+    if (c.state === 'walking') continue;
+    if (c.state === 'ordering') html = '📝';
+    else if (c.state === 'waiting') {
+      const r = Math.max(0, c.patience / c.maxPatience);
+      html = `${c.seat + 1}번 ${r > 0.45 ? '🙂' : r > 0.15 ? '😕' : '😠'}<div class="bar"><i style="width:${r * 100}%;background:${r > 0.45 ? 'var(--green)' : r > 0.15 ? 'var(--yellow)' : 'var(--red)'}"></i></div>`;
+    } else if (c.state === 'eating') html = `${RES_EMOJI[c.result]} 🍜`;
+    else if (c.state === 'kaedama') {
+      cls += ' kae';
+      const r = Math.max(0, c.patience / c.maxPatience);
+      html = `카에다마! ${FIRM[c.kaedama.firm]}<div class="bar"><i style="width:${r * 100}%;background:var(--red)"></i></div>`;
+    }
+    worldLabel('cust' + c.id, wp, html, cls);
+  }
+  for (const [k, el] of labelEls) if (!el._seen) { el.remove(); labelEls.delete(k); }
+}
+
+// ================= 메인 루프 =================
+const aimBox = new THREE.BoxHelper(undefined, 0xffd23a);
+aimBox.material.depthTest = false; aimBox.renderOrder = 999; aimBox.visible = false;
+scene.add(aimBox);
+const activeRing = new THREE.Mesh(new THREE.RingGeometry(0.13, 0.15, 32), new THREE.MeshBasicMaterial({ color: 0xffd23a }));
+activeRing.rotation.x = -Math.PI / 2; activeRing.visible = false;
+scene.add(activeRing);
+
+const clock = new THREE.Clock();
+let hudTimer = 0;
+function update(dt) {
+  G.time += dt;
+  tickRefill(dt);
+  // 손님 도착
+  if (G.time >= G.nextSpawn && G.time < CFG.dayLength - 25) {
+    spawnCustomer();
+    const t = G.time;
+    G.nextSpawn = t + (t < 60 ? rand(40, 46) : t < 150 ? rand(24, 30) : rand(30, 36)) * levelCfg().spawn;
+  }
+  tryAssignSeats();
+  // 면 솥
+  for (const b of baskets) if (b.cooking) b.t += dt;
+  // 육수는 항상 알맞게 뜨거운 상태 (온도·양 관리 없음)
+  const br = G.broth;
+  brothSurface.position.y = 0.06 + 0.36 * br.level;
+  // 그릴
+  if (G.grill.holding) {
+    G.grill.t += dt / 3.5;
+    if (G.grill.t > 1.15) grillEnd();
+  }
+  updateCustomers(dt);
+  updateSeats(dt);
+  // 사운드
+  const cooking = baskets.filter(b => b.cooking).length;
+  Sound.setBoil(0.25 + cooking * 0.35 + (br.fire ? 0.35 : 0));
+  // 영업 종료
+  if (G.time >= CFG.dayLength) {
+    for (const c of G.queue.splice(0)) { G.results.angry++; G.scores.push(1); scene.remove(c.mesh); G.customers.splice(G.customers.indexOf(c), 1); }
+    if (!G.customers.length || G.time > CFG.dayLength + 90) endDay();
+  }
+}
+function visuals(dt, t) {
+  // 시점
+  if (turnTarget != null) {
+    const d = turnTarget - yaw;
+    yaw += d * Math.min(1, dt * 10);
+    if (Math.abs(d) < 0.01) { yaw = turnTarget; turnTarget = null; }
+  }
+  if (pitchTarget != null) {
+    pitch += (pitchTarget - pitch) * Math.min(1, dt * 10);
+    if (Math.abs(pitchTarget - pitch) < 0.005) { pitch = pitchTarget; pitchTarget = null; }
+  }
+  if (G.running && !G.paused) {
+    const k = 1.8 * dt;
+    if (keys.ArrowLeft) yaw += k;
+    if (keys.ArrowRight) yaw -= k;
+    if (keys.ArrowUp) pitch = Math.min(0.7, pitch + k * 0.6);
+    if (keys.ArrowDown) pitch = Math.max(-1.25, pitch - k * 0.6);
+  }
+  camera.position.copy(EYE);            // 시선 고정 (흔들림 없음)
+  camera.rotation.set(pitch, yaw, 0);
+  // 냉장 서랍: 꺼낼 때 잠깐 열렸다 닫힘
+  for (const f of Object.values(fridges)) {
+    f.openT = Math.max(0, f.openT - dt);
+    const tz = -0.6 + (f.openT > 0 ? 0.14 : 0);
+    f.group.position.z += (tz - f.group.position.z) * Math.min(1, dt * 12);
+  }
+  // 미닫이 문: 드나드는 손님이 가까이 오면 열림
+  const nearDoor = G.customers.some(c => c.mesh.visible && (c.state === 'walking' || c.state === 'leaving') && c.mesh.position.distanceTo(DOOR) < 1.6);
+  if (nearDoor !== doorOpen) { doorOpen = nearDoor; Sound.door(); }
+  const doorX = doorOpen ? DOOR_OPEN_X : DOOR_CLOSED_X;
+  slideDoor.position.x += (doorX - slideDoor.position.x) * Math.min(1, dt * 6);
+  // 불 / 그릴
+  const fire = G.broth.fire;
+  flames.forEach((f, i) => { f.visible = fire; f.scale.y = 0.7 + Math.abs(Math.sin(t * 13 + i * 1.7)) * 0.7; });
+  fireLight.intensity = fire ? 1.4 + Math.sin(t * 20) * 0.3 : 0;
+  knobTick.position.set(fire ? 0.02 : 0, fire ? 0.0 : 0.02, -0.03);
+  knobTick.rotation.z = fire ? Math.PI / 2 : 0;
+  const gt = G.grill.t;
+  grillBars.forEach(b => b.material.emissiveIntensity = G.grill.holding ? 0.9 + Math.sin(t * 30) * 0.2 : 0);
+  grillLight.intensity = G.grill.holding ? 1.6 : 0;
+  torchRig.visible = G.grill.holding; holdGroup.visible = !G.grill.holding; // 굽는 동안엔 손이 그릴 위로
+  if (torchRig.visible) torchRig.userData.flame.scale.set(0.9 + Math.random() * 0.2, 0.9 + Math.random() * 0.2, 0.8 + Math.random() * 0.45);
+  if (G.grill.holding) setChashuQuality(grillMeat, gt < 0.5 ? 'raw' : gt <= 0.72 ? 'good' : 'burnt');
+  const gg = document.getElementById('grillGauge');
+  gg.style.display = G.grill.holding ? 'block' : 'none';
+  if (G.grill.holding) gg.querySelector('.marker').style.left = Math.min(100, gt / 1.0 * 100) + '%';
+  // 김
+  if (Math.random() < dt * 30) emitSteam(new THREE.Vector3(-0.45, 1.18, 1.2), 0.65, 1);
+  if (G.broth.temp > 70 && Math.random() < dt * (G.broth.temp - 60) * 0.5) emitSteam(new THREE.Vector3(0.4, 0.96 + 0.36 * G.broth.level, 1.2), 0.4, 1);
+  if (shoyuPot.visible && Math.random() < dt * 12) emitSteam(new THREE.Vector3(0.98, 1.28, 1.2), 0.3, 0.8);
+  G.bowls.forEach((b, i) => { if (b && b.broth != null && b.temp > 70 && Math.random() < dt * 6) emitSteam(new THREE.Vector3(BOWL_SLOTS[i], 1.04, BOWL_Z), 0.12, 0.6); });
+  G.seats.forEach(s => { if (s.bowl && s.c && s.c.state !== 'leaving' && Math.random() < dt * 3) emitSteam(new THREE.Vector3(s.x, 1.1, -1.62), 0.1, 0.5); });
+  if (G.grill.holding && Math.random() < dt * 25) emitSteam(new THREE.Vector3(0.78, 1.1, -0.9), 0.12, 0.8);
+  updateSteam(dt);
+}
+// 지금 해야 할 일을 한 줄로 알려 준다
+function nextStep() {
+  const h = G.hand;
+  const back = facingBack;
+  const turn = (where, what) => (where === 'back') === back ? what : `Space로 ${where === 'back' ? '뒤돌아서' : '앞으로 돌아서'} ${what}`;
+  const kae = G.customers.find(c => c.state === 'kaedama');
+  const waiting = G.customers.filter(c => c.state === 'waiting').sort((a, b) => a.patience - b.patience);
+  if (h) {
+    if (h.type === 'bowl') return turn('front', '손님을 클릭해서 라멘 내기');
+    if (h.type === 'noodles') {
+      const b = activeBowl();
+      if (b && b.noodles == null) return turn('front', '노란 고리 그릇에 면 넣기');
+      if (kae) return turn('front', `${kae.seat + 1}번 손님 클릭 (카에다마)`);
+      return turn('front', '그릇에 면 넣기');
+    }
+    if (h.type === 'broth') return turn('front', '노란 고리 그릇에 육수 붓기');
+    return turn('front', '그릇을 클릭해서 올리기');
+  }
+  const cooking = baskets.find(b => b.cooking);
+  const b = activeBowl();
+  if (!b) {
+    if (kae) return cooking ? turn('back', '면이 익으면 바구니 클릭해서 건지기') : turn('back', '면 솥 바구니 클릭 (카에다마 면 삶기)');
+    if (waiting.length) return turn('front', '그릇 더미를 클릭해서 그릇 놓기');
+    return '손님을 기다리는 중…';
+  }
+  const want = waiting[0]?.order;
+  if (b.noodles == null && !cooking) return turn('back', '면 솥 바구니 클릭 (면 삶기 시작)');
+  const wr = want?.ramen ?? 'tonkotsu';
+  if (b.broth == null && RAMEN[wr].miso && !b.miso) return turn('front', '미소 항아리 클릭 (미소 넣기)');
+  if (b.broth == null) return turn('back', `${RAMEN[brothOf(wr)].name} 육수 냄비 클릭 (육수 뜨기)${RAMEN[wr].miso ? ' — 미소는 돈코츠 육수로!' : ''}`);
+  if (b.noodles == null) {
+    const target = want ? FIRM[want.firm] : '';
+    return turn('back', `면이 ${target ? target + '이 되면' : '익으면'} 바구니 클릭해서 건지기`);
+  }
+  if (want) {
+    if (b.chashu.length < want.chashu) return turn('front', `그릴을 누르고 있다가 초록에서 떼기 (챠슈 ${want.chashu}장)`);
+    const empty = [...want.top].find(k => !b.top.has(k) && levelCfg().stock && G.stock[k] <= 0);
+    if (empty) return turn('front', G.refill[empty] != null ? `${TOPPINGS[empty]} 채우는 중… 잠깐만요` : `${TOPPINGS[empty]}가 떨어졌어요 → ${TOPPINGS[empty]} 통 클릭 (냉장고에서 자동으로 채워요)`);
+    const missing = [...want.top].filter(k => !b.top.has(k)).map(k => TOPPINGS[k]);
+    if (missing.length) return turn('front', `토핑 클릭: ${missing.join(', ')}`);
+    const extra = [...b.top].filter(k => !want.top.has(k)).map(k => TOPPINGS[k]);
+    if (extra.length) return turn('front', `${extra.join(', ')}는 주문에 없어요 (방금 넣었으면 U로 빼기)`);
+  }
+  return turn('front', '그릇을 클릭해서 들고 → 손님 클릭');
+}
+function updateHud() {
+  document.getElementById('guide').textContent = G.running && !G.paused ? '👉 ' + nextStep() : '';
+  // 되돌리기 버튼: 방금 넣은 것을 뺄 수 있을 때만 보임
+  const ub = document.getElementById('undoBtn'), last = G.running && !G.paused && lastUndoable();
+  ub.disabled = !last;
+  if (last) { const txt = `↶ 방금 넣은 ${last.name} 빼기 (${G.bowls.indexOf(last.b) + 1}번 그릇 · U)`; if (ub.textContent !== txt) ub.textContent = txt; }
+  const t = Math.min(G.time, CFG.dayLength) / CFG.dayLength;
+  const mins = Math.floor(11 * 60 + t * 180);
+  const clk = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+  document.getElementById('clock').textContent = `Day ${G.day} · ` + (G.time >= CFG.dayLength ? `${clk} · 마지막 손님 마무리` : `🕐 ${clk}`);
+  document.getElementById('money').textContent = `¥${G.money.toLocaleString()}`;
+  const avg = G.scores.length ? G.scores.reduce((a, b) => a + b, 0) / G.scores.length : null;
+  document.getElementById('rating').textContent = avg ? `평점 ★${avg.toFixed(1)}` : '평점 —';
+  const qc = document.getElementById('queueChip');
+  qc.style.display = G.queue.length ? '' : 'none';
+  qc.textContent = `🚶 대기 ${G.queue.length}명`;
+  updateHandText();
+}
+function endDay() {
+  G.running = false; G.ended = true;
+  Sound.setBoil(0); Sound.setSizzle(false);
+  if (document.pointerLockElement) document.exitPointerLock();
+  const avg = G.scores.length ? G.scores.reduce((a, b) => a + b, 0) / G.scores.length : 0;
+  const full = Math.round(avg);
+  document.getElementById('endStars').textContent = '★'.repeat(full) + '☆'.repeat(5 - full);
+  document.getElementById('endRating').textContent = `오늘의 평점 ${avg.toFixed(1)} / 5.0 · 손님 ${G.scores.length}명`;
+  document.getElementById('endHappy').textContent = G.results.happy;
+  document.getElementById('endNormal').textContent = G.results.normal;
+  document.getElementById('endAngry').textContent = G.results.angry;
+  bank += G.money; store.set('ramen-bank', bank); // 오늘 번 돈은 금고로
+  document.getElementById('endMoney').textContent = `오늘 매출 ¥${G.money.toLocaleString()} → 금고에 넣었어요`;
+  renderShop('endShop');
+  document.getElementById('endComment').textContent =
+    avg >= 4.3 ? '줄 서는 라멘집이 될 것 같아요! 🎉' :
+    avg >= 3.3 ? '좋은 하루였어요. 조금만 더 빠르게!' :
+    avg >= 2.3 ? '바쁜 하루였네요. 주문서와 면 익힘을 신경 써 봐요.' :
+    '오늘은 힘들었어요… 내일은 더 잘할 수 있어요!';
+  // 내일 열리는 요소 미리 보기
+  const next = day + 1;
+  document.getElementById('endNext').innerHTML = '내일은… ' + dayInfoHtml(next);
+  document.getElementById('nextBtn').textContent = `Day ${next} 영업 시작 →`;
+  document.querySelector('#end h1').textContent = `Day ${day} 영업 종료`;
+  document.getElementById('end').classList.remove('hidden');
+}
+function frame() {
+  const dt = Math.min(0.05, clock.getDelta());
+  const t = clock.elapsedTime;
+  if (G.running && !G.paused) update(dt);
+  visuals(G.running && !G.paused ? dt : 0, t);
+  Sound.update(dt);
+  const d = G.running && !G.paused ? aimed() : null;
+  // 조준한 물건 노란 상자 표시
+  if (d) {
+    const target = d.kind === 'bowlSlot' && G.bowls[d.slot] ? G.bowls[d.slot].group : d.anchor;
+    aimBox.setFromObject(target); aimBox.visible = true;
+  } else aimBox.visible = false;
+  const ab = G.active != null && G.bowls[G.active];
+  activeRing.visible = !!ab;
+  if (ab) activeRing.position.set(BOWL_SLOTS[G.active], 0.966, BOWL_Z);
+  const hintEl = document.getElementById('hint');
+  const hint = hintFor(d);
+  hintEl.style.display = hint ? 'block' : 'none';
+  if (hint) hintEl.textContent = hint;
+  if (dragMode && hint) { hintEl.style.left = ((aimNDC.x + 1) / 2 * innerWidth) + 'px'; hintEl.style.top = ((1 - aimNDC.y) / 2 * innerHeight + 22) + 'px'; }
+  else { hintEl.style.left = ''; hintEl.style.top = ''; }
+  updateLabels();
+  hudTimer -= dt;
+  if (hudTimer <= 0) { hudTimer = 0.1; updateHud(); }
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+// 좁은 화면에서도 좌우 조리대가 보이도록 가로 시야각을 기준으로 맞춘다
+// 왼쪽 주문서가 조리대를 가리지 않게, 화면을 주문서 오른쪽 영역에 맞춰 잡고
+// 남는 왼쪽(주문서 뒤)은 그대로 그려서 이어지게 함
+function fitCamera() {
+  const side = Math.min(210, innerWidth * 0.25); // 주문서 칸 너비
+  const w = innerWidth - side;
+  const hfov = THREE.MathUtils.degToRad(100);
+  const vfovFull = Math.max(60, Math.min(90, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(hfov / 2) / (innerWidth / innerHeight)))));
+  // 전체 화면에 보이던 폭이 주문서 오른쪽 영역에 다 들어오도록 살짝 넓게
+  camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(vfovFull) / 2) * innerWidth / w));
+  camera.aspect = w / innerHeight;
+  camera.setViewOffset(w, innerHeight, -side, 0, innerWidth, innerHeight);
+}
+addEventListener('resize', () => {
+  fitCamera();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+fitCamera();
+newGame();
+frame();
+
+// 테스트용 핸들
+window.__game = {
+  get G() { return G; }, VoiceFiles, act, aimed, press, grillStart, grillEnd, serve, spawnCustomer, baskets, endDay,
+  view(y, p) { yaw = y; pitch = p; },
+  step(sec) { for (let t = 0; t < sec; t += 0.05) { update(0.05); visuals(0.05, t); } updateHud(); },
+};
+</script>
+</body>
+</html>
