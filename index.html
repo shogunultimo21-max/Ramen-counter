@@ -525,7 +525,7 @@ const UPGRADES = {
   // ---- 가게 확장 (group: 'expand') — 비싸지만 가게가 커짐. rent·wage = 단계별 매일 나가는 돈 ----
   seats:   { group: 'expand', name: '좌석 확장', icon: '🪑', values: [6, 8], prices: [30000], rent: [0, 600],
     names: ['6자리', '8자리'], desc: v => `카운터 ${v}자리` },
-  staff:   { group: 'expand', name: '주방 보조', icon: '🧑‍🍳', values: [0, 1], prices: [25000], wage: [0, 1200],
+  staff:   { group: 'expand', name: '주방 보조', icon: '🧑‍🍳', values: [0, 1], prices: [40000], wage: [0, 1200], unlockDay: 15, // 초반엔 너무 쉬워져서 Day 15부터
     names: ['혼자', '보조 1명'], desc: v => (v ? '그릇 놓기 · 주문에 맞는 육수 붓기를 도와줘요' : '혼자 일해요') },
   evening: { group: 'expand', name: '저녁 영업', icon: '🌙', values: [210, 270], prices: [45000], rent: [0, 800],
     names: ['점심 영업', '점심 + 저녁'], desc: v => (v > 210 ? '영업 시간이 길어져 손님이 더 와요' : '점심만 영업해요') },
@@ -561,7 +561,7 @@ const wageToday = () => Object.keys(UPGRADES).reduce((s, k) => s + costOf(k, 'wa
 const dayLen = () => upgValue('evening'); // 영업 시간(초)
 function buyUpgrade(k) {
   const u = UPGRADES[k], lv = levelOf(k), price = u.prices[lv];
-  if (price == null || bank < price) return false;
+  if (price == null || bank < price || day < (u.unlockDay ?? 0)) return false;
   bank -= price; upgLv[k] = lv + 1;
   store.set('ramen-bank', bank); store.set('ramen-upg2', upgLv);
   return true;
@@ -3099,14 +3099,15 @@ function renderShop(prefix) {
     const title = group ? '🏗 가게 확장' : '🏪 가게 업그레이드';
     el.innerHTML = `<h3>${title} <span>금고 ¥${bank.toLocaleString()}</span></h3>` + (group ? goalHtml() : '') + '<div class="shop-grid">' +
       Object.entries(UPGRADES).filter(([, u]) => u.group === group).map(([k, u]) => {
-        const lv = levelOf(k), max = u.prices.length, price = u.prices[lv], done = lv >= max, can = !done && bank >= price;
+        const locked = day < (u.unlockDay ?? 0);
+        const lv = levelOf(k), max = u.prices.length, price = u.prices[lv], done = lv >= max, can = !done && !locked && bank >= price;
         const pips = '●'.repeat(lv) + '○'.repeat(max - lv);
         const now = `<small>지금: ${u.names[lv]} — ${u.desc(u.values[lv])}</small>`;
         const next = done ? '' : `<small class="next">다음: ${u.names[lv + 1]} — ${u.desc(u.values[lv + 1])}</small>`;
         const upkeep = done ? 0 : (u.rent?.[lv + 1] ?? 0) - (u.rent?.[lv] ?? 0) + (u.wage?.[lv + 1] ?? 0) - (u.wage?.[lv] ?? 0);
         return `<button class="upg${done ? ' owned' : ''}" data-k="${k}" ${!can ? 'disabled' : ''}>
           <b>${u.icon} ${u.name} <span class="pips">${pips}</span></b>${now}${next}${upkeep ? `<small class="upkeep">매일 −¥${upkeep.toLocaleString()}</small>` : ''}
-          <span class="price">${done ? '✓ 최고 단계' : `¥${price.toLocaleString()}${can ? '' : ' (돈 부족)'}`}</span></button>`;
+          <span class="price">${done ? '✓ 최고 단계' : locked ? `🔒 Day ${u.unlockDay}부터 · ¥${price.toLocaleString()}` : `¥${price.toLocaleString()}${can ? '' : ' (돈 부족)'}`}</span></button>`;
       }).join('') + '</div>';
     el.querySelectorAll('.upg').forEach(b => b.onclick = () => {
       if (buyUpgrade(b.dataset.k)) { Sound.init(); Sound.happy(); renderShop(prefix); }
@@ -3115,7 +3116,7 @@ function renderShop(prefix) {
 }
 // 다음 확장 목표까지 진행 막대 (아직 안 산 확장 중 가장 싼 것)
 function goalHtml() {
-  const next = Object.entries(UPGRADES).filter(([k, u]) => u.group === 'expand' && levelOf(k) < u.prices.length)
+  const next = Object.entries(UPGRADES).filter(([k, u]) => u.group === 'expand' && levelOf(k) < u.prices.length && day >= (u.unlockDay ?? 0))
     .map(([k, u]) => ({ u, price: u.prices[levelOf(k)] })).sort((a, b) => a.price - b.price)[0];
   if (!next) return '<div class="goal">🏆 모든 확장을 끝냈어요! 최고의 라멘집이에요.</div>';
   const pct = Math.max(0, Math.min(100, bank / next.price * 100));
