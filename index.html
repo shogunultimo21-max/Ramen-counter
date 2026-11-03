@@ -78,6 +78,17 @@
   .kit-btn.in::after { content: '✓'; position: absolute; top: 2px; left: 5px; color: #2f7a3a; font-size: 13px; }
   .kit-btn.grill { background: #ffd2b8; }
   .kit-btn.off { opacity: .45; }
+  /* 주방 보조 카드 (오른쪽 위): 한 일을 말하고 반짝 */
+  #helperCard { position: absolute; top: 54px; right: calc(12px + env(safe-area-inset-right)); display: flex; gap: 8px; align-items: center;
+    background: var(--paper); color: var(--ink); border-radius: 12px; padding: 6px 10px; box-shadow: 0 3px 10px rgba(0,0,0,.35); max-width: 240px; }
+  #helperCard .face { font-size: 26px; }
+  #helperCard b { display: block; font-size: 12px; color: #8a5a00; }
+  #helperCard .say { font-size: 13px; font-weight: 700; }
+  #helperCard.flash { animation: helperFlash 1s ease-out; }
+  @keyframes helperFlash { 0% { box-shadow: 0 0 0 6px #ffd23a; transform: scale(1.06); } 100% { box-shadow: 0 3px 10px rgba(0,0,0,.35); transform: scale(1); } }
+  body.mobile #helperCard { top: 32px; padding: 3px 8px; max-width: 190px; }
+  body.mobile #helperCard .face { font-size: 20px; }
+  body.mobile #helperCard .say { font-size: 11px; }
   /* 조작 안내: 실제 게임 화면 위에 말풍선으로 */
   .coach-open { margin-top: 4px; }
   .coach-hint { text-align: center; font-size: 13px; opacity: .75; margin: 6px 0 10px; }
@@ -326,6 +337,7 @@
   <div id="tut"></div>
   <!-- 조작 버튼: 왼손 엄지(뒤돌기·빼기) / 오른손 엄지(내기·버리기) -->
   <div id="barL" class="thumbs"><button id="mTurn">↻ 뒤돌기</button><button id="mUndo">↶ 빼기</button></div>
+  <div id="helperCard" hidden><span class="face">🧑‍🍳</span><div><b>보조 켄</b><span class="say"></span></div></div>
   <div id="kit"></div>
   <div id="basketPad"></div>
   <div id="barR" class="thumbs"><button id="mServe">🍜 내기</button><button id="mTrash">🗑 버리기</button></div>
@@ -671,7 +683,8 @@ const Sound = (() => {
     // 휴대폰이 소리를 멈춰 뒀으면 다시 켬 (화면 탭 · 앱으로 돌아올 때)
     wake() { if (ctx && ctx.state !== 'running' && !(G?.paused)) ctx.resume(); },
     // 비 오는 날 빗소리
-    setRain(on) { if (!ctx) return; rainGain ??= loopNoise('highpass', 900, 0.4); rainGain.gain.setTargetAtTime(on ? 0.05 : 0, ctx.currentTime, 0.5); },
+    // 빗소리: 낮고 부드럽게 (치익 하는 챠슈 굽는 소리와 헷갈리지 않게)
+    setRain(on) { if (!ctx) return; rainGain ??= loopNoise('lowpass', 1100, 0.3); rainGain.gain.setTargetAtTime(on ? 0.03 : 0, ctx.currentTime, 0.5); },
     // 배경 음악: 일본 음계(요나누키)로 코토처럼 뜯는 멜로디 + 부드러운 화음 + 베이스를 그 자리에서 만들어 연주
     music(on) {
       if (!ctx) return;
@@ -1995,7 +2008,9 @@ camHand.group.position.set(0.0, -0.04, 0.06); camHand.group.rotation.set(0.35, 0
 camHand.setCurl(0.35); holdGroup.add(camHand.group);
 
 // 챠슈 구울 때: 그릴 위에서 토치를 쥔 손 (월드 공간, 고기를 향해 불꽃)
-const torchRig = new THREE.Group(); scene.add(torchRig);
+// 챠슈 굽는 토치: 셰프 오른손(내 손)에 쥐고 앞쪽 그릴을 향해 (세상 속 다른 손이 아니라 1인칭으로)
+const torchRig = new THREE.Group(); holdGroup.add(torchRig);
+const grillAim = new THREE.Vector3(0.78, 1.08, -0.9); // 그릴 위 고기 자리
 {
   const t = new THREE.Group(); torchRig.add(t); // 노즐이 +z 방향
   const can = new THREE.Mesh(new THREE.CylinderGeometry(0.031, 0.031, 0.17, 24), smat(0xd8562a, { roughness: 0.35, metalness: 0.2 }));
@@ -2013,12 +2028,7 @@ const torchRig = new THREE.Group(); scene.add(torchRig);
   outer.rotation.x = inner.rotation.x = Math.PI / 2; outer.position.z = 0.055; inner.position.z = 0.03;
   flame.add(outer, inner);
   torchRig.userData.flame = flame;
-  // 가스통을 감싸 쥔 손: 손가락은 앞(+z), 팔은 뒤(-z)로
-  const h = makeHand(); h.setCurl(1.05);
-  h.group.rotation.set(0, Math.PI, Math.PI / 2); h.group.position.set(0.04, 0.0, -0.06);
-  t.add(h.group);
-  torchRig.position.set(0.92, 1.3, -0.66);
-  torchRig.lookAt(0.78, 1.07, -0.9);
+  torchRig.position.set(0.03, 0.03, -0.17); // 오른손에 쥠 — 방향은 매 프레임 그릴 쪽으로 (visuals)
   torchRig.traverse(o => { if (o.isMesh) o.castShadow = false; });
   torchRig.visible = false;
 }
@@ -2026,7 +2036,13 @@ let heldMesh = null;
 const HELD_LAYER = 1;
 // 손·든 물건은 HELD_LAYER에만 (조명은 두 층 모두 비춤)
 const toHeldLayer = obj => obj.traverse(o => o.layers.set(HELD_LAYER));
-toHeldLayer(camHand.group);
+toHeldLayer(camHand.group); toHeldLayer(torchRig);
+// 왼손: 오른손을 좌우로 뒤집어 화면 왼쪽 아래에 (그릇·국자는 오른손이 듦)
+const leftHold = new THREE.Group(); leftHold.position.set(-0.26, -0.27, -0.55); leftHold.scale.set(-0.8, 0.8, 0.8); camera.add(leftHold);
+// 휴대폰은 아래쪽 버튼 줄에 손이 가려지지 않게 두 손을 조금 위로
+if (params.has('mobile') || matchMedia('(pointer: coarse)').matches) { holdGroup.position.y += 0.06; leftHold.position.y += 0.06; }
+const leftHand = makeHand(); leftHand.group.position.set(0.0, -0.04, 0.06); leftHand.group.rotation.set(0.35, 0.3, 0.15); leftHand.setCurl(0.4);
+leftHold.add(leftHand.group); toHeldLayer(leftHand.group);
 function setHeldMesh(obj) {
   if (heldMesh && heldMesh !== obj) holdGroup.remove(heldMesh);
   heldMesh = obj;
@@ -2293,21 +2309,37 @@ function orderHtml(o) {
   if (o.gyoza) lines.push('<span class="add">🥟 교자 1접시</span>');
   return lines.map(l => `<div class="line">${l}</div>`).join('');
 }
-// ---------- 주방 보조 (가게 확장): 2.5초마다 기다리는 주문을 보고 그릇을 놓고 맞는 육수를 미리 부어 줌 ----------
+// ---------- 주방 보조 (가게 확장): 2.5초마다 주문을 보고 그릇 놓기 · 맞는 육수 붓기 · 빈 토핑 채우기 ----------
+// 화면 오른쪽 위 카드에 한 일을 말하고(반짝), 뒤돌면 면 솥 옆에서 일하는 모습이 보임
 let helper = null;
 function staffLayout() {
   if (!helper) {
     helper = makePerson({ kind: 'man', female: false, skin: 0xe8b890, hair: 0x1a1a1a, hairStyle: 'short', top: 0xf3ead8, bottom: 0x2b2b33,
       shoes: 0x2a2a2a, cap: 0x1f2b4a, scale: 0.97 });
-    helper.position.set(-2.3, 0, -0.75); helper.rotation.y = Math.PI / 2; scene.add(helper); // 조리대 왼쪽 끝에서 그릇 쪽을 봄
+    helper.position.set(-1.3, 0, 0.5); helper.rotation.y = Math.PI / 2 + 0.5; scene.add(helper); // 면 화구 옆에서 화구 쪽을 봄
   }
   helper.visible = !!upgValue('staff');
+  const card = document.getElementById('helperCard');
+  card.hidden = !upgValue('staff');
+  card.querySelector('.say').textContent = '오늘도 잘 부탁해요!';
+}
+function staffSay(text) {
+  const card = document.getElementById('helperCard');
+  card.querySelector('.say').textContent = text;
+  card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash'); // 다시 반짝
+  if (helper) helper.userData.busy = 0.6; // 몸을 살짝 숙이며 일하는 동작
 }
 function tickStaff(dt) {
+  if (helper?.userData.busy > 0) { helper.userData.busy -= dt; helper.userData.torso.rotation.x = 0.25 * Math.max(0, Math.sin(helper.userData.busy * 10)); }
   if (!upgValue('staff') || G.tut) return;
   if ((G.staffT -= dt) > 0) return;
   G.staffT = 2.5;
-  // 주문마다 필요한 바탕(육수 + 미소). 이미 그런 그릇이 있으면 그 주문은 준비된 걸로 봄
+  // 1) 빈 토핑 통 채우기
+  if (levelCfg().stock) {
+    const empty = toppingsOn().find(k => G.stock[k] <= 0 && G.refill[k] == null);
+    if (empty) { startRefill(empty); return staffSay(`${TOPPINGS[empty]} 채울게요!`); }
+  }
+  // 2) 주문마다 필요한 바탕(육수 + 미소). 이미 그런 그릇이 있으면 그 주문은 준비된 걸로 봄
   const waiting = G.customers.filter(c => c.state === 'waiting').sort((a, b) => a.patience - b.patience);
   const ready = G.bowls.filter(b => b && b.broth != null).map(b => ({ broth: b.broth, miso: b.miso, used: false }));
   const needs = [];
@@ -2320,13 +2352,14 @@ function tickStaff(dt) {
   // 육수 없는 그릇이 있으면 붓고, 없으면 빈 자리에 그릇부터 놓음
   const i = G.bowls.findIndex(b => b && b.broth == null && (!b.miso || needs.some(n => n.miso)));
   if (i < 0) {
-    const empty = G.bowls.indexOf(null);
-    if (empty >= 0) { placeBowl(new Bowl(), empty); Sound.place(); popAt(empty, '+그릇 (보조)'); }
+    const slot = G.bowls.indexOf(null);
+    if (slot >= 0) { placeBowl(new Bowl(), slot); Sound.pick(); popAt(slot, '+그릇 (보조)'); staffSay(`${slot + 1}번 자리에 그릇 놓았어요`); }
     return;
   }
   const b = G.bowls[i], n = b.miso ? needs.find(x => x.miso) : needs[0];
   b.miso = b.miso || n.miso; b.broth = n.broth; b.temp = 92; b.refresh();
-  Sound.pour(); popAt(i, `+${n.miso ? '미소 ' : ''}${RAMEN[n.broth].name} 육수 (보조)`);
+  const what = `${n.miso ? '미소 ' : ''}${RAMEN[n.broth].name} 육수`;
+  Sound.pick(); popAt(i, `+${what} (보조)`); staffSay(`${i + 1}번 그릇에 ${what} 부었어요`);
 }
 
 // ---------- Day 1 튜토리얼: 첫 손님 한 그릇을 단계별로 따라 하기 ----------
@@ -3483,6 +3516,7 @@ function update(dt) {
   tickRefill(dt); tickTutorial();
   if (G.gyozaPan.t != null) G.gyozaPan.t += dt;
   tickStaff(dt);
+  if (!G.grill.holding) Sound.setSizzle(false); // 굽는 중이 아니면 지글 소리는 반드시 꺼짐
   // 손님 도착
   if (!G.tut && G.time >= G.nextSpawn && G.time < dayLen() - 25) { // 튜토리얼 중엔 연습 손님만
     spawnCustomer();
@@ -3554,7 +3588,8 @@ function visuals(dt, t) {
   const gt = G.grill.t;
   grillBars.forEach(b => b.material.emissiveIntensity = G.grill.holding ? 0.9 + Math.sin(t * 30) * 0.2 : 0);
   grillLight.intensity = G.grill.holding ? 1.6 : 0;
-  torchRig.visible = G.grill.holding; holdGroup.visible = !G.grill.holding; // 굽는 동안엔 손이 그릴 위로
+  torchRig.visible = G.grill.holding; camHand.setCurl(G.grill.holding ? 1.0 : G.hand ? 0.95 : 0.35); // 굽는 동안엔 오른손이 토치를 꽉 쥠
+  if (torchRig.visible) torchRig.lookAt(grillAim); // 노즐(+z)이 그릴 위 고기를 향하게
   if (torchRig.visible) torchRig.userData.flame.scale.set(0.9 + Math.random() * 0.2, 0.9 + Math.random() * 0.2, 0.8 + Math.random() * 0.45);
   if (G.grill.holding) setChashuQuality(grillMeat, gt < 0.5 ? 'raw' : gt <= 0.72 ? 'good' : 'burnt');
   const gg = document.getElementById('grillGauge');
@@ -3739,7 +3774,7 @@ frame();
 
 // 테스트용 핸들
 window.__game = {
-  get G() { return G; }, VoiceFiles, act, aimed, press, grillStart, grillEnd, serve, spawnCustomer, baskets, endDay,
+  get G() { return G; }, Sound, VoiceFiles, act, aimed, press, grillStart, grillEnd, serve, spawnCustomer, baskets, endDay,
   view(y, p) { yaw = y; pitch = p; },
   step(sec) { for (let t = 0; t < sec; t += 0.05) { update(0.05); visuals(0.05, t); } updateHud(); },
 };
