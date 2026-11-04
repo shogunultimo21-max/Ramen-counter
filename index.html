@@ -1479,25 +1479,47 @@ const BOWL_STYLES = [
   { outer: { map: seigaihaTex, roughness: 0.25 }, inner: 0xf6f1e6, rim: 0xd4ab4a },              // 청해파 + 금테
   { outer: { color: 0xc99a3a, roughness: 0.22, metalness: 0.75 }, inner: 0x161214, rim: 0xf0d27a }, // 금박 + 검은 안쪽
 ];
-// 그릴
+// 챠슈 아부리(불맛 내기) 자리: 실제 라멘집처럼 스테인리스 쟁반 위 석쇠 망에 챠슈를 올려 토치로 그을림
 const grill = new THREE.Group(); grill.position.set(0.78, 0.95, -0.9); scene.add(grill);
-box(0.42, 0.1, 0.3, mat(0x2b2b2b, { metalness: 0.4 }), 0, 0.05, 0, grill);
-const grillBars = [];
-for (let i = 0; i < 6; i++) {
-  grillBars.push(box(0.38, 0.012, 0.012, mat(0x333333, { emissive: 0xff4a10, emissiveIntensity: 0 }), 0, 0.105, -0.12 + i * 0.048, grill));
-}
-const grillMeat = makeChashu('raw', 0.06); grillMeat.position.set(0, 0.118, 0); grill.add(grillMeat);
-grillMeat.visible = false;
-const grillLight = new THREE.PointLight(0xff6a20, 0, 1.2, 2); grillLight.position.set(0, 0.25, 0); grill.add(grillLight);
-// 챠슈 덩어리 (그릴 옆): 실로 묶은 삼겹살 말이
 {
-  const roll = new THREE.Group(); roll.position.set(0.3, 0.065, -0.04); roll.rotation.z = Math.PI / 2; grill.add(roll);
-  const body = makeChashu('good', 0.06); body.scale.y = 14; roll.add(body);
-  for (const y of [-0.05, 0, 0.05]) { const s = new THREE.Mesh(new THREE.TorusGeometry(0.061, 0.0025, 6, 24), smat(0xf3ead8)); s.rotation.x = Math.PI / 2; s.position.y = y; roll.add(s); }
-  for (let i = 0; i < 3; i++) { const sl = makeChashu('good', 0.05); sl.position.set(0.18 + i * 0.008, 0.11, -0.05 + i * 0.03); sl.rotation.set(0.2, 0, -1.2); grill.add(sl); }
+  const pan = mat(0xb9bec3, { metalness: 0.7, roughness: 0.3 });
+  box(0.4, 0.006, 0.28, pan, 0, 0.003, 0, grill);                                   // 쟁반 바닥
+  for (const z of [-0.14, 0.14]) box(0.4, 0.022, 0.006, pan, 0, 0.011, z, grill);   // 앞뒤 턱
+  for (const x of [-0.2, 0.2]) box(0.006, 0.022, 0.28, pan, x, 0.011, 0, grill);    // 좌우 턱
+  for (const [x, z] of [[-0.12, -0.06], [0.04, 0.05], [0.13, -0.08], [-0.05, 0.09]]) { // 쟁반에 떨어진 기름·그을음
+    const d = new THREE.Mesh(new THREE.CircleGeometry(0.012 + Math.random() * 0.012, 14), mat(0x5a3818, { roughness: 0.3, transparent: true, opacity: 0.55 }));
+    d.rotation.x = -Math.PI / 2; d.position.set(x, 0.0065, z); grill.add(d);
+  }
+}
+// 석쇠 망: 가로 철사(토치 열에 빨갛게 달아오름) + 세로 철사 + 다리
+const grillBars = [];
+const wire = (len, m) => new THREE.Mesh(new THREE.CylinderGeometry(0.0022, 0.0022, len, 6), m);
+for (let i = 0; i < 9; i++) {
+  const w = wire(0.34, mat(0x55585c, { metalness: 0.6, roughness: 0.4, emissive: 0xff4a10, emissiveIntensity: 0 }));
+  w.rotation.z = Math.PI / 2; w.position.set(0, 0.034, -0.1 + i * 0.025); grill.add(w); grillBars.push(w);
+}
+{
+  const rackMat = mat(0x6a6e72, { metalness: 0.6, roughness: 0.4 });
+  for (let i = 0; i < 4; i++) { const w = wire(0.22, rackMat); w.rotation.x = Math.PI / 2; w.position.set(-0.15 + i * 0.1, 0.031, 0); grill.add(w); }
+  for (const x of [-0.16, 0.16]) for (const z of [-0.1, 0.1]) { const l = wire(0.026, rackMat); l.position.set(x, 0.018, z); grill.add(l); }
+}
+const grillMeat = makeChashu('raw', 0.06); grillMeat.position.set(0, 0.046, 0); grill.add(grillMeat);
+grillMeat.visible = false;
+const grillLight = new THREE.PointLight(0xff6a20, 0, 1.2, 2); grillLight.position.set(0, 0.2, 0); grill.add(grillLight);
+// 오른쪽 도마: 실로 묶은 챠슈 덩어리 + 썰어 둔 조각
+{
+  const board = new THREE.Group(); board.position.set(0.33, 0, -0.02); grill.add(board);
+  box(0.25, 0.022, 0.2, mat(0xc89a62, { roughness: 0.8 }), 0, 0.011, 0, board);     // 나무 도마
+  const roll = new THREE.Group(); roll.position.set(-0.02, 0.083, -0.03); roll.rotation.z = Math.PI / 2; board.add(roll);
+  const body = makeChashu('good', 0.06); body.scale.y = 12; roll.add(body);
+  for (const y of [-0.045, -0.015, 0.015, 0.045]) { const s = new THREE.Mesh(new THREE.TorusGeometry(0.061, 0.0022, 6, 24), smat(0xf3ead8)); s.rotation.x = Math.PI / 2; s.position.y = y; roll.add(s); }
+  for (let i = 0; i < 4; i++) { const sl = makeChashu('good', 0.05); sl.position.set(0.075, 0.03 + i * 0.006, 0.02 + i * 0.016); sl.rotation.set(-1.2, 0, 0.15); board.add(sl); }
+  const knife = new THREE.Group(); knife.position.set(-0.02, 0.024, 0.075); knife.rotation.y = 0.15; board.add(knife);
+  box(0.13, 0.002, 0.026, mat(0xd8dde2, { metalness: 0.85, roughness: 0.2 }), 0.02, 0, 0, knife);
+  box(0.07, 0.012, 0.018, mat(0x2a1a10), -0.08, 0.002, 0, knife);
 }
 interact(grill, { kind: 'grill' });
-label('그릴 (챠슈)', 0.78, 1.3, -0.9);
+label('그릴 (챠슈)', 0.78, 1.2, -0.9);
 
 // 토핑 트레이 (스테인리스 밧드 안에 재료가 소복이)
 const trayFood = {}, trays = {};
@@ -1506,8 +1528,13 @@ const TRAY_NAME = { ...TOPPINGS, kikurage: '목이', ajitama: '아지타마', mi
 for (const key of Object.keys(TOPPINGS)) {
   const x = 0, z = TOPPING_Z; // 실제 자리는 trayLayout()이 그날 열린 토핑 수에 맞춰 정함
   const g = new THREE.Group(); g.position.set(x, 0.95, z); scene.add(g);
-  box(0.3, 0.05, 0.2, steel, 0, 0.025, 0, g);
-  box(0.27, 0.005, 0.17, mat(0x6e757c, { metalness: 0.5 }), 0, 0.051, 0, g);
+  // 호텔 팬(밧드): 냉장 레일에 쏙 들어가 테두리만 위로 보이는 깊은 스테인리스 통
+  const panMat = mat(0xc3c8cd, { metalness: 0.75, roughness: 0.25 });
+  box(0.27, 0.004, 0.17, mat(0x8a9096, { metalness: 0.6, roughness: 0.35 }), 0, 0.012, 0, g); // 바닥
+  for (const z of [-0.085, 0.085]) box(0.27, 0.05, 0.004, panMat, 0, 0.037, z, g);            // 앞뒤 벽
+  for (const x of [-0.135, 0.135]) box(0.004, 0.05, 0.17, panMat, x, 0.037, 0, g);            // 좌우 벽
+  for (const z of [-0.093, 0.093]) box(0.29, 0.003, 0.014, panMat, 0, 0.063, z, g);           // 위 테두리(립)
+  for (const x of [-0.143, 0.143]) box(0.014, 0.003, 0.19, panMat, x, 0.063, 0, g);
   let food;
   if (key === 'negi') food = makeNegi(140, 0.12, 0.075);
   else if (key === 'kikurage') food = makeKikurage(45, 0.11, 0.07);
@@ -1522,15 +1549,27 @@ for (const key of Object.keys(TOPPINGS)) {
     [[-0.09, -0.04], [-0.03, 0.04], [0.03, -0.04], [0.09, 0.04]].forEach(([ex, ez]) => { const e = makeAjitama(0.026); e.position.set(ex, 0.002, ez); e.rotation.y = Math.random() * 3; food.add(e); });
     const whole = new THREE.Mesh(new THREE.SphereGeometry(0.026, 18, 12), eggShellMat); whole.scale.set(1, 0.95, 1.3); whole.position.set(0.1, 0.02, -0.03); food.add(whole);
   }
-  food.position.y = 0.055; g.add(food);
+  food.position.y = 0.05; g.add(food); // 통 안에 소복이 — 윗부분이 테두리 위로 살짝
   trayFood[key] = food;
   interact(g, { kind: 'topping', key });
   trays[key] = { group: g }; // 이름·단축키·재고는 updateLabels()의 화면 이름표로
 }
+// 토핑 냉장 레일: 스테인리스 틀에 통들이 나란히 박혀 있고 뒤쪽은 높은 턱
+const rail = new THREE.Group(); rail.position.set(0, 0.95, TOPPING_Z); scene.add(rail);
+const railMat = mat(0xb4babf, { metalness: 0.7, roughness: 0.3 });
 // 그날 열린 토핑 통만 그릇 자리 뒤에 한 줄로 (6개면 통을 좁게)
 function trayLayout() {
   const on = toppingsOn(), n = on.length;
   const x0 = -0.72, x1 = 0.5, w = Math.min(0.3, (x1 - x0) / n - 0.012), step = (x1 - x0) / n;
+  // 레일 틀은 통 개수에 맞춰 다시 짬
+  rail.clear();
+  const L = n * step + 0.03, cx = (x0 + x1) / 2 - ((x1 - x0) - n * step) / 2;
+  box(L, 0.064, 0.012, railMat, cx, 0.032, 0.106, rail);              // 셰프 쪽 앞판 (낮음)
+  box(L, 0.1, 0.012, railMat, cx, 0.05, -0.106, rail);                // 손님 쪽 뒤판 (높은 턱)
+  box(L, 0.004, 0.03, railMat, cx, 0.1, -0.1, rail);                  // 뒤판 위 접힌 턱
+  for (const ex of [cx - L / 2, cx + L / 2]) box(0.012, 0.064, 0.224, railMat, ex, 0.032, 0, rail); // 양 끝
+  box(L, 0.008, 0.224, mat(0x6a7076, { metalness: 0.5, roughness: 0.5 }), cx, 0.004, 0, rail);      // 안쪽 바닥(그늘)
+  for (let i = 1; i < n; i++) box(0.01, 0.004, 0.21, railMat, x0 + step * i, 0.064, 0, rail);       // 통 사이 칸막이 바
   for (const [key, t] of Object.entries(trays)) {
     const i = on.indexOf(key), show = i >= 0;
     t.group.visible = show;
@@ -2071,7 +2110,7 @@ camHand.setCurl(0.35); holdGroup.add(camHand.group);
 // 챠슈 구울 때: 그릴 위에서 토치를 쥔 손 (월드 공간, 고기를 향해 불꽃)
 // 챠슈 굽는 토치: 셰프 오른손(내 손)에 쥐고 앞쪽 그릴을 향해 (세상 속 다른 손이 아니라 1인칭으로)
 const torchRig = new THREE.Group(); holdGroup.add(torchRig);
-const grillAim = new THREE.Vector3(0.78, 1.08, -0.9); // 그릴 위 고기 자리
+const grillAim = new THREE.Vector3(0.78, 1.0, -0.9); // 석쇠 위 고기 자리
 {
   // 휴대용 가스토치: 아래로 세운 부탄가스 캔 + 위에 주황 머리 + 앞으로 뻗은 긴 은색 노즐 (노즐이 +z 방향)
   const t = new THREE.Group(); torchRig.add(t);
