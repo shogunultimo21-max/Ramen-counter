@@ -1089,23 +1089,47 @@ function norenLayout() {
   cyl(0.09, 0.09, 0.03, 10, mat(0x1a1a1a), DOOR_X0 - 0.3, 2.13, FRONT_Z + 0.38);
   const pl = new THREE.PointLight(0xff7a4a, 1.5, 2.5, 1.5); pl.position.set(DOOR_X0 - 0.3, 2.3, FRONT_Z + 0.55); scene.add(pl);
 }
-// 바깥 거리 (해 질 녘) — 창문과 입구로 보임
-{
-  const c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+// 바깥 거리 — 창문과 입구로 보임. 가게 시계에 맞춰 낮(점심) → 노을 → 밤으로 바뀜 (비 오는 날은 흐림)
+const STREET_SHOPS = Array.from({ length: 9 }, (_, i) => ({ x: i * 120 - 20, h: 180 + Math.random() * 120, c: i % 3, lit: Array.from({ length: 6 }, () => Math.random()) }));
+const STREET_LOOK = {
+  day:    { sky: ['#6fa8dc', '#a8cff0', '#e6f2fa'], shop: ['#8a7466', '#9a8270', '#7a7484'], win: '#bcd6e4', dark: '#6a7a88', lit: 0, lantern: '#c8463a', ground: '#9a928a' },
+  cloudy: { sky: ['#8a929c', '#aab2ba', '#c8ccd0'], shop: ['#6a5e58', '#7a6a60', '#625e68'], win: '#9aa8b2', dark: '#5a6268', lit: 0.15, lantern: '#b8463a', ground: '#6a6460' },
+  sunset: { sky: ['#3a3f78', '#c9737a', '#f2b27a'], shop: ['#3b2c2a', '#4a3530', '#2f2a35'], win: '#ffd98a', dark: '#5a4a48', lit: 0.7, lantern: '#d8382a', ground: '#5a524c' },
+  night:  { sky: ['#070a1e', '#141838', '#2a2450'], shop: ['#1c161c', '#221a1c', '#18161f'], win: '#ffcf6a', dark: '#2a2228', lit: 0.85, lantern: '#ff4a2a', ground: '#2a2826' },
+};
+function streetTexture(look) {
+  const L = STREET_LOOK[look], c = document.createElement('canvas'); c.width = 1024; c.height = 512;
   const g = c.getContext('2d');
   const sky = g.createLinearGradient(0, 0, 0, 512);
-  sky.addColorStop(0, '#3a3f78'); sky.addColorStop(0.45, '#c9737a'); sky.addColorStop(0.75, '#f2b27a');
+  sky.addColorStop(0, L.sky[0]); sky.addColorStop(0.45, L.sky[1]); sky.addColorStop(0.75, L.sky[2]);
   g.fillStyle = sky; g.fillRect(0, 0, 1024, 512);
-  for (let i = 0; i < 9; i++) {   // 건너편 가게들
-    const x = i * 120 - 20, h = 180 + Math.random() * 120;
-    g.fillStyle = ['#3b2c2a', '#4a3530', '#2f2a35'][i % 3]; g.fillRect(x, 512 - h, 116, h);
-    for (let k = 0; k < 6; k++) { g.fillStyle = Math.random() < 0.7 ? '#ffd98a' : '#5a4a48'; g.fillRect(x + 12 + (k % 3) * 34, 512 - h + 20 + Math.floor(k / 3) * 50, 22, 28); }
-    g.fillStyle = '#d8382a'; g.beginPath(); g.ellipse(x + 100, 512 - 70, 10, 14, 0, 0, Math.PI * 2); g.fill();
+  if (look === 'night') for (let i = 0; i < 60; i++) { g.fillStyle = `rgba(255,255,240,${0.3 + Math.random() * 0.6})`; g.fillRect(Math.random() * 1024, Math.random() * 200, 2, 2); } // 별
+  if (look === 'day') { g.fillStyle = 'rgba(255,255,255,.75)'; for (const [x, y, r] of [[160, 60, 40], [200, 50, 50], [250, 66, 34], [700, 90, 36], [740, 80, 46], [785, 94, 30]]) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); } } // 구름
+  for (const sh of STREET_SHOPS) {   // 건너편 가게들 (모양은 늘 같고 색·불빛만 바뀜)
+    g.fillStyle = L.shop[sh.c]; g.fillRect(sh.x, 512 - sh.h, 116, sh.h);
+    for (let k = 0; k < 6; k++) { g.fillStyle = sh.lit[k] < L.lit ? L.win : look === 'day' || look === 'cloudy' ? (sh.lit[k] < 0.5 ? L.win : L.dark) : L.dark; g.fillRect(sh.x + 12 + (k % 3) * 34, 512 - sh.h + 20 + Math.floor(k / 3) * 50, 22, 28); }
+    if (look === 'night') { g.fillStyle = 'rgba(255,90,40,.35)'; g.beginPath(); g.arc(sh.x + 100, 512 - 70, 26, 0, Math.PI * 2); g.fill(); } // 밤엔 등불이 번짐
+    g.fillStyle = L.lantern; g.beginPath(); g.ellipse(sh.x + 100, 512 - 70, 10, 14, 0, 0, Math.PI * 2); g.fill();
   }
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-  const street = new THREE.Mesh(new THREE.PlaneGeometry(12, 4), new THREE.MeshBasicMaterial({ map: tex }));
-  street.position.set(0, 1.6, -6.5); scene.add(street);
-  box(12, 0.02, 3, mat(0x5a524c), 0, -0.01, -5.1); // 바깥 길바닥
+  return tex;
+}
+const STREET_TEX = Object.fromEntries(Object.keys(STREET_LOOK).map(k => [k, streetTexture(k)]));
+// 두 장을 겹쳐서 천천히 섞음 (아래 = 지금 하늘, 위 = 다음 하늘)
+const streetBase = new THREE.Mesh(new THREE.PlaneGeometry(12, 4), new THREE.MeshBasicMaterial({ map: STREET_TEX.day }));
+const streetNext = new THREE.Mesh(new THREE.PlaneGeometry(12, 4), new THREE.MeshBasicMaterial({ map: STREET_TEX.sunset, transparent: true, opacity: 0, depthWrite: false }));
+streetBase.position.set(0, 1.6, -6.5); streetNext.position.set(0, 1.6, -6.49); scene.add(streetBase, streetNext);
+const streetGround = box(12, 0.02, 3, new THREE.MeshBasicMaterial({ color: STREET_LOOK.day.ground }), 0, -0.01, -5.1); // 바깥 길바닥
+// 시각(분) → 하늘: 16시까지 낮, 16~18시 노을로, 18~19시 밤으로
+function updateSky(mins, rainy) {
+  const dayLook = rainy ? 'cloudy' : 'day';
+  let a = dayLook, b = 'sunset', t = 0;
+  if (mins >= 16 * 60 && mins < 18 * 60) { a = dayLook; b = 'sunset'; t = (mins - 16 * 60) / 120; }
+  else if (mins >= 18 * 60 && mins < 19 * 60) { a = 'sunset'; b = 'night'; t = (mins - 18 * 60) / 60; }
+  else if (mins >= 19 * 60) { a = 'night'; t = 0; }
+  streetBase.material.map = STREET_TEX[a]; streetNext.material.map = STREET_TEX[b]; streetNext.material.opacity = t;
+  const ground = new THREE.Color(STREET_LOOK[a].ground).lerp(new THREE.Color(STREET_LOOK[b].ground), t);
+  streetGround.material.color.copy(ground);
 }
 // 벽 메뉴판
 {
@@ -1119,6 +1143,13 @@ function norenLayout() {
   p.position.set(-2.84, 1.9, -1.4); p.rotation.y = Math.PI / 2; scene.add(p);
 }
 
+// 가게 시계: 점심만이면 11:00~14:00, 저녁 영업까지 하면 11:00~20:00 (그 사이 해가 짐)
+const TEST_HOUR = +new URLSearchParams(location.search).get('hour') || 0; // 확인용: ?hour=19 면 그 시각 하늘
+function clockMins() {
+  if (TEST_HOUR) return TEST_HOUR * 60;
+  const len = dayLen(), t = Math.min(G.time, len);
+  return Math.floor(11 * 60 + t * (len > 210 ? 540 : 180) / len);
+}
 // ---------- 가게 꾸미기 (업그레이드 단계마다 하나씩 늘어남) ----------
 const softMat = (c, o = {}) => mat(c, { flatShading: false, roughness: 0.5, ...o }); // 매끈한 재질 (smat은 아래에서 정의됨)
 const decor = { plant: new THREE.Group(), cat: new THREE.Group(), scroll: new THREE.Group(), lanterns: new THREE.Group() };
@@ -4034,7 +4065,8 @@ function updateHud() {
   const txt = last ? `↶ ${last.name} 빼기` : '↶ 빼기';
   if (ub.textContent !== txt) ub.textContent = txt;
   updateKit();
-  const mins = Math.floor(11 * 60 + Math.min(G.time, dayLen()) * 180 / 210); // 점심 210초 = 3시간, 저녁 영업이면 더 늦게까지
+  const mins = clockMins();
+  updateSky(mins, G.event === 'rain');
   const clk = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
   document.getElementById('clock').textContent = `Day ${G.day} · Lv.${levelInfo(xp + G.xpToday).lv} · ${ev().icon} · ` + (G.tut ? '🎓 연습 중' : G.time >= dayLen() ? `${clk} · 마지막 손님 마무리` : `🕐 ${clk}`);
   document.getElementById('money').textContent = `¥${G.money.toLocaleString()}`;
@@ -4205,7 +4237,7 @@ newGame();
 frame();
 
 // 테스트용 핸들
-window.__game = { setHand: h => setHand(h),
+window.__game = { setHand: h => setHand(h), sky: (m, r) => updateSky(m, r),
   get G() { return G; }, Sound, VoiceFiles, act, aimed, press, grillStart, grillEnd, serve, spawnCustomer, baskets, endDay,
   view(y, p) { yaw = y; pitch = p; },
   step(sec) { for (let t = 0; t < sec; t += 0.05) { update(0.05); visuals(0.05, t); } updateHud(); },
