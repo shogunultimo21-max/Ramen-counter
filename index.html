@@ -1223,11 +1223,34 @@ seatLayout();
 // 그릇 더미
 const bowlStack = new THREE.Group(); bowlStack.position.set(-1.0, 0.95, -0.8); scene.add(bowlStack);
 // 타레 항아리
-const tareJar = new THREE.Group(); tareJar.position.set(-1.3, 0.95, -1.12); scene.add(tareJar);
-cyl(0.08, 0.07, 0.16, 12, mat(0x3b2a20), 0, 0.08, 0, tareJar);
-cyl(0.07, 0.07, 0.005, 12, mat(0x4a2a14), 0, 0.158, 0, tareJar);
-const tareSpoon = cyl(0.006, 0.006, 0.22, 5, mat(0xc4a27a), 0.03, 0.2, 0, tareJar); tareSpoon.rotation.z = -0.4;
-label('타레 (자동)', -1.3, 1.27, -1.12, { scale: 0.26 });
+// 타레 자리: 실제 라멘집처럼 스테인리스 타레 통 여러 개에 긴 국자가 꽂혀 있고, 앞에 향미유 짜는 병
+const tareJar = new THREE.Group(); tareJar.position.set(-1.45, 0.95, -1.06); tareJar.scale.setScalar(1.3); scene.add(tareJar); // 그릇 더미에 안 가리게 왼쪽으로
+{
+  const potMat = mat(0xc6cbd0, { metalness: 0.75, roughness: 0.25 }), ladleMat = mat(0xd0d4d8, { metalness: 0.8, roughness: 0.22 });
+  box(0.36, 0.012, 0.13, mat(0x9aa0a6, { metalness: 0.6, roughness: 0.35 }), 0, 0.006, -0.02, tareJar); // 받침 쟁반
+  // [이름, 국물 색]: 간장 · 소금 · 돈코츠 · 향미 간장
+  [['醤油', 0x3a1a08], ['塩', 0xd8c48a], ['豚骨', 0xe8dcc4], ['香味', 0x5a2a0e]].forEach(([name, col], i) => {
+    const x = -0.135 + i * 0.09, p = new THREE.Group(); p.position.set(x, 0.012, -0.02); tareJar.add(p);
+    cyl(0.036, 0.034, 0.1, 16, potMat, 0, 0.05, 0, p);                                    // 통
+    cyl(0.038, 0.038, 0.006, 16, potMat, 0, 0.1, 0, p);                                   // 위 테
+    cyl(0.033, 0.033, 0.003, 16, mat(col, { roughness: 0.12 }), 0, 0.094, 0, p);          // 안의 타레
+    const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.04, 0.04), new THREE.MeshStandardMaterial({ map: canvasTex(64, g => {
+      g.fillStyle = '#f6efe0'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#2a1a10'; g.font = `bold ${name.length > 1 ? 24 : 36}px serif`;
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, 32, 34); }), roughness: 0.8 }));
+    tag.position.set(0, 0.05, 0.0365); p.add(tag);                                        // 앞에 붙인 이름 종이
+    const ladle = new THREE.Group(); ladle.position.set(0.012, 0.06, -0.005); ladle.rotation.set(-0.25, 0, -0.18 + i * 0.1); p.add(ladle);
+    cyl(0.003, 0.003, 0.2, 6, ladleMat, 0, 0.09, 0, ladle);                               // 긴 손잡이
+    const cup = new THREE.Mesh(new THREE.SphereGeometry(0.014, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), ladleMat); cup.material.side = THREE.DoubleSide; ladle.add(cup); // 작은 국자 (통 안)
+  });
+  // 향미유 짜는 병 (마유 검정 · 라드 흰색 · 파기름 노랑)
+  [[0x1a1410, -0.11], [0xf2ead8, -0.04], [0xe8c060, 0.03]].forEach(([col, x]) => {
+    const b = new THREE.Group(); b.position.set(x + 0.04, 0, -0.115); tareJar.add(b); // 통 뒤쪽에 (통을 가리지 않게)
+    cyl(0.022, 0.022, 0.1, 12, mat(col, { roughness: 0.3, transparent: true, opacity: 0.92 }), 0, 0.05, 0, b);
+    cyl(0.014, 0.022, 0.02, 12, mat(0xd8382a, { roughness: 0.4 }), 0, 0.11, 0, b);        // 빨간 뚜껑
+    cyl(0.003, 0.008, 0.035, 8, mat(0xd8382a, { roughness: 0.4 }), 0, 0.137, 0, b);       // 뾰족한 입구
+  });
+}
+label('타레 (자동)', -1.5, 1.3, -1.06, { scale: 0.26 });
 label('그릇', -1.0, 1.22, -0.8);
 // 미소 항아리 (미소 라멘 날부터): 흰 도기 항아리에 된장 + 나무 주걱
 const misoJar = new THREE.Group(); misoJar.position.set(-1.0, 0.95, -1.12); scene.add(misoJar);
