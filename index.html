@@ -1795,7 +1795,7 @@ function rangeKnob(x, y, z) {
 }
 // 화구 하나: 버너 링 + 주철 받침 + 파란 불꽃 (top = 상판 높이)
 function burner(x, r, n, top = 0.885, z = 1.2) {
-  const y = top + 0.03;
+  const y = top + 0.03, fl = [];
   const ring = new THREE.Mesh(new THREE.TorusGeometry(r * 0.55, 0.018, 8, 28), castIron);
   ring.rotation.x = Math.PI / 2; ring.position.set(x, y, z); scene.add(ring);
   for (let i = 0; i < 4; i++) { // 냄비 받침 (+자 모양 주철 바)
@@ -1805,12 +1805,13 @@ function burner(x, r, n, top = 0.885, z = 1.2) {
     const a = (i / n) * Math.PI * 2;
     const f = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.06, 6),
       new THREE.MeshBasicMaterial({ color: i % 3 ? 0x3a8aff : 0xffa040, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
-    f.position.set(x + Math.cos(a) * r * 0.55, y + 0.025, z + Math.sin(a) * r * 0.55); scene.add(f); flames.push(f);
+    f.position.set(x + Math.cos(a) * r * 0.55, y + 0.025, z + Math.sin(a) * r * 0.55); scene.add(f); fl.push(f); flames.push(f);
   }
   const l = new THREE.PointLight(0x5a9aff, 0.8, 0.9, 2); l.position.set(x, y + 0.04, z - 0.25); scene.add(l);
+  return { fl, light: l, on: () => true };
 }
-burner(-0.45, 0.34, 20);
-burner(0.47, 0.34, 20, STOCK_TOP); burner(1.0, 0.19, 12, STOCK_TOP, 1.0); burner(1.0, 0.19, 12, STOCK_TOP, 1.4); // 돈코츠 · 쇼유(앞) · 시오(뒤)
+const burnerNoodle = burner(-0.45, 0.34, 20);
+const burnerStock = [burner(0.47, 0.34, 20, STOCK_TOP), burner(1.0, 0.19, 12, STOCK_TOP, 1.0), burner(1.0, 0.19, 12, STOCK_TOP, 1.4)]; // 돈코츠 · 쇼유(앞) · 시오(뒤)
 // 면 솥
 const NOODLE_POT_R = 0.33; // 화구(깊이 0.7) 안에 쏙 들어가게
 const noodlePot = new THREE.Group(); noodlePot.position.set(-0.45, 0.96, 1.2); scene.add(noodlePot);
@@ -1887,20 +1888,28 @@ function basketLayout() {
 label('면 솥', -0.45, 1.45, 1.2);
 // 육수 냄비: 낮은 육수 화구 위의 큰 통 (돈코츠는 아주 큰 들통)
 const potMat = new THREE.MeshStandardMaterial({ color: 0xa4abb2, metalness: 0.65, roughness: 0.3, side: THREE.DoubleSide });
-function stockPot(group, r, h, surfaceMat) {
+function stockPot(group, r, h, surfaceMat, tool = 'ladle') {
   const pot = new THREE.Mesh(new THREE.CylinderGeometry(r, r - 0.01, h, 28, 1, true), potMat); pot.position.y = 0.03 + h / 2; group.add(pot);
   cyl(r - 0.01, r - 0.01, 0.01, 28, steelDark, 0, 0.035, 0, group);
   const rim = new THREE.Mesh(new THREE.TorusGeometry(r, 0.012, 8, 32), steel); rim.rotation.x = Math.PI / 2; rim.position.y = 0.03 + h; group.add(rim);
   for (const s of [-1, 1]) { const ear = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.008, 6, 12, Math.PI), steel); ear.position.set(s * (r + 0.02), h - 0.02, 0); ear.rotation.set(0, s > 0 ? Math.PI / 2 : -Math.PI / 2, Math.PI / 2); group.add(ear); }
-  const ladle = new THREE.Group(); ladle.position.set(r * 0.45, 0.03 + h, -r * 0.3); ladle.rotation.set(0.25, 0, -0.5); group.add(ladle);
-  cyl(0.006, 0.006, 0.34, 6, steel, 0, 0.12, 0, ladle);
-  const cup = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), steel); cup.position.y = -0.06; ladle.add(cup);
+  if (tool === 'paddle') { // 큰 들통엔 뼈 국물을 젓는 아주 큰 나무 주걱 (테두리에 기대 세움)
+    const paddleWood = mat(0xc89a62, { roughness: 0.75 });
+    const pd = new THREE.Group(); pd.position.set(r * 0.35, 0.03 + h, -r * 0.2); pd.rotation.set(0.12, 0.6, -0.32); group.add(pd);
+    cyl(0.016, 0.018, 0.9, 10, paddleWood, 0, 0.15, 0, pd);                       // 긴 자루 (아래쪽은 국물 속)
+    box(0.11, 0.26, 0.016, paddleWood, 0, -0.38, 0, pd);                          // 넓적한 날 (국물 속)
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), paddleWood); knob.position.y = 0.6; pd.add(knob); // 자루 끝
+  } else {
+    const ladle = new THREE.Group(); ladle.position.set(r * 0.45, 0.03 + h, -r * 0.3); ladle.rotation.set(0.25, 0, -0.5); group.add(ladle);
+    cyl(0.006, 0.006, 0.34, 6, steel, 0, 0.12, 0, ladle);
+    const cup = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), steel); cup.position.y = -0.06; ladle.add(cup);
+  }
   return cyl(r - 0.012, r - 0.012, 0.01, 28, surfaceMat, 0, 0.03 + h - 0.03, 0, group);
 }
 const POT_BASE_Y = STOCK_TOP + 0.045; // 육수 화구 받침 위
 const brothPot = new THREE.Group(); brothPot.position.set(0.47, POT_BASE_Y, 1.2); scene.add(brothPot);
 const BROTH_POT_H = 0.55;
-const brothSurface = stockPot(brothPot, 0.33, BROTH_POT_H, mat(0xe2c896, { roughness: 0.5 }));
+const brothSurface = stockPot(brothPot, 0.33, BROTH_POT_H, mat(0xe2c896, { roughness: 0.5 }), 'paddle');
 const fireLight = new THREE.PointLight(0xff7a2a, 0, 1.4, 2); fireLight.position.set(0, 0.05, -0.3); brothPot.add(fireLight);
 interact(brothPot, { kind: 'brothPot', ramen: 'tonkotsu' });
 label('돈코츠 육수', 0.47, 1.25, 1.2);
@@ -2952,8 +2961,13 @@ function spawnCustomer(forced = null) { // forced: { order, special } — 튜토
 function seatCustomer(i) { return G.seats[i].c; }
 function tryAssignSeats() {
   while (G.queue.length) {
-    const i = G.seats.findIndex(s => !s.c && !s.dirty);
-    if (i < 0) break;
+    // 빈자리 중 다른 손님과 가장 멀리 떨어진 자리부터 (모르는 사람 바로 옆은 피함) — 같은 거리면 아무 데나
+    const free = G.seats.map((s, k) => (!s.c && !s.dirty ? k : -1)).filter(k => k >= 0);
+    if (!free.length) break;
+    const taken = G.seats.map((s, k) => (s.c ? k : -1)).filter(k => k >= 0);
+    const gap = k => (taken.length ? Math.min(...taken.map(j => Math.abs(j - k))) : 0);
+    const best = Math.max(...free.map(gap)), pickFrom = free.filter(k => gap(k) === best);
+    const i = pickFrom[Math.floor(Math.random() * pickFrom.length)];
     const c = G.queue.shift();
     G.seats[i].c = c; c.seat = i; c.state = 'walking';
     c.mesh.visible = true; c.mesh.position.copy(OUTSIDE);
@@ -4102,7 +4116,10 @@ function visuals(dt, t) {
   slideDoor.position.x += (doorX - slideDoor.position.x) * Math.min(1, dt * 6);
   // 불 / 그릴
   const fire = G.broth.fire;
-  flames.forEach((f, i) => { f.visible = fire; f.scale.y = 0.7 + Math.abs(Math.sin(t * 13 + i * 1.7)) * 0.7; });
+  // 쓰는 화구만 불이 켜짐: 면 솥은 늘, 돈코츠는 불 조절대로, 쇼유·시오는 그 냄비가 나온 날만
+  const burnerOn = [[burnerNoodle, true], [burnerStock[0], fire], [burnerStock[1], shoyuPot.visible], [burnerStock[2], shioPot.visible]];
+  for (const [b, on] of burnerOn) { b.fl.forEach(f => { f.visible = on; }); b.light.intensity = on ? 0.8 : 0; }
+  flames.forEach((f, i) => { f.scale.y = 0.7 + Math.abs(Math.sin(t * 13 + i * 1.7)) * 0.7; });
   fireLight.intensity = fire ? 1.4 + Math.sin(t * 20) * 0.3 : 0;
   knobTick.position.set(fire ? 0.02 : 0, fire ? 0.0 : 0.02, -0.03);
   knobTick.rotation.z = fire ? Math.PI / 2 : 0;
