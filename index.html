@@ -1626,8 +1626,13 @@ const RANGE_X0 = -1.0, RANGE_X1 = 0.05, RANGE_CX = (RANGE_X0 + RANGE_X1) / 2, RA
 const STOCK_X0 = 0.12, STOCK_X1 = 1.27, STOCK_CX = (STOCK_X0 + STOCK_X1) / 2, STOCK_W = STOCK_X1 - STOCK_X0, STOCK_TOP = 0.42;
 box(RANGE_X0 + 1.8, 0.04, 0.7, steel, (-1.8 + RANGE_X0) / 2, 0.88, 1.2);
 box(0.8, 0.86, 0.66, steelDark, (-1.8 + RANGE_X0) / 2, 0.43, 1.2);
-box(1.8 - STOCK_X1, 0.04, 0.7, steel, (STOCK_X1 + 1.8) / 2, 0.88, 1.2);
-box(1.8 - STOCK_X1, 0.86, 0.66, steelDark, (STOCK_X1 + 1.8) / 2, 0.43, 1.2);
+// 오른쪽 끝(뒤돌면 화면 왼쪽)은 업소용 싱크대: 상판에 구멍을 내고 깊은 개수대를 넣음
+const SINK = { x0: 1.33, x1: 1.74, z0: 0.98, z1: 1.42, depth: 0.2 };
+box(SINK.x0 - STOCK_X1, 0.04, 0.7, steel, (STOCK_X1 + SINK.x0) / 2, 0.88, 1.2);
+box(1.8 - SINK.x1, 0.04, 0.7, steel, (SINK.x1 + 1.8) / 2, 0.88, 1.2);
+box(SINK.x1 - SINK.x0, 0.04, SINK.z0 - 0.85, steel, (SINK.x0 + SINK.x1) / 2, 0.88, (0.85 + SINK.z0) / 2);
+box(SINK.x1 - SINK.x0, 0.04, 1.55 - SINK.z1, steel, (SINK.x0 + SINK.x1) / 2, 0.88, (SINK.z1 + 1.55) / 2);
+box(1.8 - STOCK_X1, 0.9 - SINK.depth - 0.04, 0.66, steelDark, (STOCK_X1 + 1.8) / 2, (0.9 - SINK.depth - 0.04) / 2, 1.2); // 개수대 밑 수납장
 // ---------- 가스 화구 ----------
 const castIron = smat(0x1b1c1e, { roughness: 0.75, metalness: 0.3 });
 const flames = [];
@@ -1790,14 +1795,55 @@ const knob = new THREE.Group(); knob.position.set(0.55, 0.72, 0.85); scene.add(k
 const knobBody = cyl(0.05, 0.05, 0.04, 12, mat(0xb8322a), 0, 0, 0, knob); knobBody.rotation.x = Math.PI / 2;
 const knobTick = box(0.012, 0.06, 0.012, mat(0xffffff), 0, 0.02, -0.03, knob);
 knob.visible = false;
-// 버리는 통
-const bin = new THREE.Group(); bin.position.set(-1.45, 0.9, 1.2); scene.add(bin);
-cyl(0.16, 0.14, 0.3, 12, mat(0x3f4a3a), 0, 0.15, 0, bin);
-interact(bin, { kind: 'trash' });
-label('버리기', -1.45, 1.35, 1.2);
-// 뒷벽 선반 장식
-box(3.2, 0.03, 0.25, wood, 0, 1.9, 1.52);
-for (let i = 0; i < 8; i++) cyl(0.05, 0.05, 0.14, 8, mat([0x8a2a1e, 0x2b211b, 0xd9cdb5][i % 3]), -1.4 + i * 0.4, 1.99, 1.52);
+// 왼쪽 작업대(뒤돌면 화면 오른쪽): 업소용 밥솥 + 뚜껑 덮인 재료 통 (버리기는 🗑 버튼으로)
+{
+  const cream = mat(0xe9e3d6, { roughness: 0.35 }), dark = mat(0x3a3c40, { roughness: 0.4, metalness: 0.3 });
+  const rc = new THREE.Group(); rc.position.set(-1.5, 0.9, 1.22); scene.add(rc);
+  cyl(0.17, 0.16, 0.22, 24, cream, 0, 0.11, 0, rc);                                         // 몸통
+  const lid = new THREE.Mesh(new THREE.SphereGeometry(0.17, 24, 8, 0, Math.PI * 2, 0, Math.PI / 2), dark); lid.scale.y = 0.35; lid.position.y = 0.22; rc.add(lid); // 둥근 뚜껑
+  cyl(0.03, 0.03, 0.02, 12, mat(0x8a8e94, { metalness: 0.6 }), 0, 0.28, 0, rc);            // 김 빠지는 구멍
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.008, 6, 20, Math.PI), dark); handle.position.set(0, 0.22, 0); rc.add(handle);
+  box(0.1, 0.06, 0.01, mat(0x1a1a1a), 0, 0.12, -0.165, rc);                                 // 앞 조작판 (손님 쪽 말고 셰프 쪽은 -z)
+  const led = new THREE.Mesh(new THREE.CircleGeometry(0.008, 10), new THREE.MeshBasicMaterial({ color: 0xff8a2a })); led.position.set(-0.03, 0.13, -0.171); led.rotation.y = Math.PI; rc.add(led);
+  const sign = verticalSign('ご飯', 0.07, 0.16, '#f6efe0'); sign.position.set(0.06, 0.12, -0.172); sign.rotation.y = Math.PI; rc.add(sign);
+  // 뚜껑 덮인 재료 통 (반찬·양념 밑준비)
+  [[-1.18, 1.05, 0xf2ead8], [-1.18, 1.35, 0xc8902a], [-1.18, 1.2, 0x6a8a3a]].forEach(([x, z, col]) => {
+    cyl(0.07, 0.065, 0.1, 16, mat(0xdfe4e8, { metalness: 0.6, roughness: 0.3 }), x, 0.95, z);
+    cyl(0.072, 0.072, 0.012, 16, mat(col, { roughness: 0.5, transparent: true, opacity: 0.85 }), x, 1.006, z); // 반투명 뚜껑
+  });
+}
+// 뒷벽 선반: 스테인리스 선반 + 받침대, 이름표 붙은 양념 통 · 큰 술병(청주·미림) · 겹쳐 둔 밧드 · 다시마 상자
+{
+  box(3.2, 0.025, 0.28, steel, 0, 1.9, 1.5);
+  for (const x of [-1.5, -0.5, 0.5, 1.5]) { box(0.02, 0.12, 0.012, steelDark, x, 1.83, 1.62); box(0.02, 0.012, 0.26, steelDark, x, 1.881, 1.5); } // ㄱ자 벽 받침
+  const canister = (x, label, lidCol) => {
+    cyl(0.055, 0.055, 0.16, 16, mat(0xe2e6ea, { metalness: 0.6, roughness: 0.3 }), x, 1.99, 1.5);
+    cyl(0.057, 0.057, 0.025, 16, mat(lidCol, { roughness: 0.5 }), x, 2.08, 1.5);
+    const t = verticalSign(label, 0.06, 0.1, '#f6efe0'); t.position.set(x, 1.99, 1.444); t.rotation.y = Math.PI; scene.add(t);
+  };
+  canister(-1.35, '塩', 0xd8382a); canister(-1.2, '砂糖', 0x2a6ab8); canister(-1.05, '胡椒', 0x222222);
+  canister(1.05, '昆布', 0x3a6a3a); canister(1.2, '煮干', 0x8a5a2a);
+  // 큰 술병 (1.8L 됫병): 갈색 유리 + 빨간 라벨
+  [[-0.8, 0x4a2a10, '酒'], [-0.68, 0x6a4a18, '味醂'], [1.38, 0x2a1a0c, '醤油']].forEach(([x, col, name]) => {
+    cyl(0.045, 0.045, 0.22, 14, mat(col, { roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.9 }), x, 2.025, 1.5);
+    cyl(0.016, 0.045, 0.06, 14, mat(col, { roughness: 0.15, transparent: true, opacity: 0.9 }), x, 2.165, 1.5);
+    cyl(0.017, 0.017, 0.03, 10, mat(0xc8a040, { metalness: 0.5 }), x, 2.21, 1.5);
+    const t = verticalSign(name, 0.06, 0.11, '#f6efe0', '#b8322a'); t.position.set(x, 2.0, 1.453); t.rotation.y = Math.PI; scene.add(t);
+  });
+  // 겹쳐 둔 밧드 · 다시마 상자
+  for (let i = 0; i < 4; i++) box(0.3, 0.012, 0.2, mat(0xc6cbd0, { metalness: 0.7, roughness: 0.25 }), 1.65 - 0.02, 1.92 + i * 0.016, 1.5);
+  box(0.26, 0.12, 0.18, mat(0xc8a06a), -1.65, 1.97, 1.5);
+}
+// 화구 뒤 벽을 따라가는 가스관 + 노란 밸브 손잡이
+{
+  const pipe = mat(0x8a8e94, { metalness: 0.7, roughness: 0.35 }), yellow = mat(0xf2c21e, { roughness: 0.4 });
+  cyl(0.014, 0.014, STOCK_X1 - RANGE_X0 + 0.3, 8, pipe, (RANGE_X0 + STOCK_X1) / 2, 1.02, 1.6).rotation.z = Math.PI / 2;
+  for (const x of [RANGE_CX - 0.2, RANGE_CX + 0.2, STOCK_CX]) {
+    cyl(0.02, 0.02, 0.04, 8, pipe, x, 1.02, 1.575).rotation.x = Math.PI / 2;
+    box(0.07, 0.012, 0.012, yellow, x, 1.02, 1.55);
+    cyl(0.01, 0.01, 0.12, 6, pipe, x, 0.95, 1.6);
+  }
+}
 
 // ---------- 주방 소품 (장식, 클릭 안 됨) ----------
 function verticalSign(text, w, h, bg = '#e8d2a8', fg = '#2b211b') { // 세로 글씨 나무 패찰
@@ -1836,13 +1882,31 @@ function verticalSign(text, w, h, bg = '#e8d2a8', fg = '#2b211b') { // 세로 �
     const s = verticalSign(t, 0.22, 0.6); s.position.set(x, 2.3, 1.585); s.rotation.y = Math.PI; scene.add(s);
   });
 
-  // 싱크대 + 수도꼭지 (뒤 벤치 오른쪽 끝)
-  box(0.5, 0.03, 0.44, steelDark, 1.5, 0.905, 1.2);
-  box(0.44, 0.02, 0.38, mat(0x3a3e44, { metalness: 0.6 }), 1.5, 0.89, 1.2);
-  cyl(0.02, 0.02, 0.32, 8, steel, 1.5, 1.06, 1.42);
-  const spoutPipe = cyl(0.015, 0.015, 0.2, 8, steel, 1.5, 1.2, 1.33); spoutPipe.rotation.x = Math.PI / 2;
-  cyl(0.03, 0.03, 0.03, 8, red, 1.42, 1.0, 1.42); cyl(0.03, 0.03, 0.03, 8, mat(0x2a6ab8), 1.58, 1.0, 1.42);
-
+  // 싱크대: 깊은 스테인리스 개수대 + 배수구 + 뒤 물막이판 + 업소용 프리린스 수전(스프링 호스 샤워기)
+  {
+    const sx = (SINK.x0 + SINK.x1) / 2, sz = (SINK.z0 + SINK.z1) / 2, sw = SINK.x1 - SINK.x0, sd = SINK.z1 - SINK.z0, bot = 0.9 - SINK.depth;
+    const basin = mat(0xaeb4ba, { metalness: 0.75, roughness: 0.28 });
+    box(sw, 0.006, sd, basin, sx, bot, sz);                                                      // 개수대 바닥
+    for (const z of [SINK.z0, SINK.z1]) box(sw, SINK.depth, 0.006, basin, sx, bot + SINK.depth / 2, z);
+    for (const x of [SINK.x0, SINK.x1]) box(0.006, SINK.depth, sd, basin, x, bot + SINK.depth / 2, sz);
+    cyl(0.03, 0.03, 0.004, 16, mat(0x2a2c30, { metalness: 0.6 }), sx, bot + 0.005, sz + 0.05);   // 배수구
+    for (let i = -2; i <= 2; i++) box(0.04, 0.005, 0.003, mat(0x8a9096), sx + 0, bot + 0.008, sz + 0.05 + i * 0.01);
+    box(0.53, 0.26, 0.03, steel, (STOCK_X1 + 1.8) / 2, 1.03, 1.535);                              // 뒤 물막이판
+    // 프리린스 수전: 뒤에서 솟은 기둥 → 위에서 앞으로 꺾인 팔 → 스프링 감긴 호스 → 매달린 샤워기
+    const chrome = mat(0xd8dde2, { metalness: 0.9, roughness: 0.15 });
+    const fx = sx, fz = 1.49;
+    cyl(0.013, 0.013, 0.62, 10, chrome, fx, 1.21, fz);                                           // 기둥
+    const arm = cyl(0.01, 0.01, 0.22, 10, chrome, fx, 1.52, fz - 0.11); arm.rotation.x = Math.PI / 2; // 위쪽 팔
+    for (let i = 0; i < 14; i++) { const c = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.003, 5, 16), chrome); c.rotation.x = Math.PI / 2; c.position.set(fx, 1.5 - i * 0.017, fz - 0.22); scene.add(c); } // 스프링
+    cyl(0.006, 0.006, 0.26, 6, mat(0x2a2a2a), fx, 1.39, fz - 0.22);                              // 호스
+    cyl(0.018, 0.024, 0.07, 12, chrome, fx, 1.23, fz - 0.22);                                    // 샤워기 머리
+    box(0.012, 0.04, 0.02, mat(0x2a6ab8), fx + 0.03, 1.25, fz - 0.22);                            // 샤워기 손잡이(파란 레버)
+    const spout = cyl(0.009, 0.009, 0.2, 10, chrome, fx, 1.06, fz - 0.1); spout.rotation.x = Math.PI / 2; // 아래쪽 꼭지
+    cyl(0.006, 0.004, 0.03, 8, chrome, fx, 1.04, fz - 0.2);
+    for (const [dx, col] of [[-0.06, 0xd8382a], [0.06, 0x2a6ab8]]) {                           // 온수·냉수 손잡이
+      cyl(0.012, 0.012, 0.03, 8, chrome, fx + dx, 1.0, fz); box(0.05, 0.01, 0.012, mat(col), fx + dx, 1.02, fz - 0.015);
+    }
+  }
   // 앞 벤치 왼쪽 끝: 양념통, 렌게, 젓가락통
   [[0x222222, 0xe9e3d6], [0x8a2a1e, 0xd9302a], [0xd9cdb5, 0xf2ead8], [0x3a6a3a, 0xe8d8a0]].forEach(([lid, body], i) => {
     cyl(0.03, 0.03, 0.1, 10, mat(body), -1.68 + i * 0.08, 1.0, -1.18);
