@@ -384,7 +384,7 @@
   <div id="comboPop"></div>
   <div id="kit"></div>
   <div id="basketPad"></div>
-  <div id="barR" class="thumbs"><button id="mServe">🍜 내기</button><button id="mTrash">🗑 손 비우기</button></div>
+  <div id="barR" class="thumbs"><button id="mServe">🍜 내기</button><button id="mTrash">✋ 손 비우기</button></div>
 </div>
 
 <div id="coach" hidden><div id="coachTips"></div><button class="btn" id="coachClose">알겠어요</button></div>
@@ -1919,7 +1919,7 @@ const knob = new THREE.Group(); knob.position.set(0.55, 0.72, 0.85); scene.add(k
 const knobBody = cyl(0.05, 0.05, 0.04, 12, mat(0xb8322a), 0, 0, 0, knob); knobBody.rotation.x = Math.PI / 2;
 const knobTick = box(0.012, 0.06, 0.012, mat(0xffffff), 0, 0.02, -0.03, knob);
 knob.visible = false;
-// 왼쪽 작업대(뒤돌면 화면 오른쪽): 업소용 밥솥 + 뚜껑 덮인 재료 통 (버리기는 🗑 손 비우기 버튼으로)
+// 왼쪽 작업대(뒤돌면 화면 오른쪽): 업소용 밥솥 + 뚜껑 덮인 재료 통 (버리기는 ✋ 손 비우기 버튼으로)
 {
   const cream = mat(0xe9e3d6, { roughness: 0.35 }), dark = mat(0x3a3c40, { roughness: 0.4, metalness: 0.3 });
   const rc = new THREE.Group(); rc.position.set(-1.5, 0.9, 1.22); scene.add(rc);
@@ -3741,7 +3741,7 @@ const COACH_TIPS = [
   { el: '#mTurn', text: '↻ 뒤돌아서<br>면 삶기 · 육수', side: 'right' },
   { el: '#mUndo', text: '↶ 방금 넣은 토핑 하나 빼기', side: 'right' },
   { el: '#mServe', text: '🍜 ✅완성된 그릇 내기', side: 'left' },
-  { el: '#mTrash', text: '🗑 손 비우기 — 들고 있는 것(그릇 포함) 버리기', side: 'left' },
+  { el: '#mTrash', text: '✋ 손 비우기 — 들고 있는 것(그릇 포함) 버리기', side: 'left' },
 ];
 function showCoach() {
   document.getElementById('start').classList.add('hidden');
@@ -3861,7 +3861,7 @@ function buildKit() {
     if (k === 'chashu') { // 누르고 있는 동안 굽고, 떼면 선택한 그릇에 올라감
       b.addEventListener('pointerdown', e => {
         e.preventDefault(); if (!G.running || G.paused) return;
-        if (G.hand) return toast('손을 먼저 비우세요 (🗑 손 비우기)', 'warn');
+        if (G.hand) return toast('손을 먼저 비우세요 (✋ 손 비우기)', 'warn');
         if (!G.bowls.some(readyForToppings)) return toast('챠슈는 육수와 면을 넣은 그릇에 올려요', 'warn');
         b.classList.add('held'); grillStart();
       });
