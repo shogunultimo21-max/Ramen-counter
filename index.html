@@ -120,6 +120,7 @@
   .coach-open { margin-top: 4px; }
   .coach-hint { text-align: center; font-size: 13px; opacity: .75; margin: 6px 0 10px; }
   .credit { font-size: 11px; opacity: .55; line-height: 1.5; margin-top: 10px; }
+  .credit summary { cursor: pointer; list-style: none; } /* 음성 출처는 이용 규칙상 남겨 두되 접어 둠 */
   .flow { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; counter-reset: f; justify-content: center; }
   .flow li { counter-increment: f; background: #fff3d1; border-radius: 8px; padding: 5px 9px; font-size: 13px; }
   .flow li::before { content: counter(f) '. '; font-weight: 800; color: var(--red); }
@@ -405,7 +406,7 @@
       <ol class="flow">
         <li><b>그릇</b> 놓기</li><li>↻ 뒤돌아 <b>면</b> 삶기</li><li><b>육수</b> 붓기</li><li>면 넣기</li><li>🔥 <b>챠슈</b> · 토핑</li><li>✅ 완성 → 🍜 <b>내기</b></li>
       </ol>
-      <p class="credit">목소리: VOICEVOX:青山龍星 / 玄野武宏 / 剣崎雌雄 / 雀松朱司 / 麒ヶ島宗麟 / 白上虎太郎 / 四国めたん / 九州そら / 冥鳴ひまり / 春日部つむぎ / 波音リツ / No.7 / ちび式じい / もち子さん / 東北イタコ</p>
+      <details class="credit"><summary>ⓘ 크레딧</summary>목소리: VOICEVOX:青山龍星 / 玄野武宏 / 剣崎雌雄 / 雀松朱司 / 麒ヶ島宗麟 / 白上虎太郎 / 四国めたん / 九州そら / 冥鳴ひまり / 春日部つむぎ / 波音リツ / No.7 / ちび式じい / もち子さん / 東北イタコ</details>
     </section>
     <section class="pg" data-tab="주방">
       <div class="shop" id="startKitchen"></div>
