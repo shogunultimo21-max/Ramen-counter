@@ -976,27 +976,27 @@ function woodMat(base, repeatX, repeatY, opts) {
 }
 
 // ---------- 방 ----------
-const woodDark = mat(0x7a5232), wood = mat(0xb4824f), woodLight = mat(0xe2c08f);
+const woodDark = mat(0x3e2414), wood = mat(0x6e4426), woodLight = mat(0xa87a4e); // 짙은 갈색 인테리어
 const steel = mat(0x8d949b, { metalness: 0.6, roughness: 0.4 });
 const steelDark = mat(0x5e6369, { metalness: 0.5, roughness: 0.45 });
 box(6, 0.02, 3.2, mat(0x9a9286), 0, 0, 0);                                     // 주방 바닥 (타일)
-box(6, 0.02, 2.4, woodMat(0xa87443, 6, 3, { planks: 8 }), 0, 0, -2.6);         // 홀 바닥 (나무)
-box(6, 0.02, 7, woodMat(0xc99a66, 4, 6, { planks: 10, vertical: true }), 0, 2.75, -1); // 천장 (나무 판자)
+box(6, 0.02, 2.4, woodMat(0x5e3a20, 6, 3, { planks: 8 }), 0, 0, -2.6);         // 홀 바닥 (나무)
+box(6, 0.02, 7, woodMat(0x553420, 4, 6, { planks: 10, vertical: true }), 0, 2.75, -1); // 천장 (나무 판자)
 for (const z of [-3.0, -1.9, -0.8, 0.4]) box(6, 0.12, 0.12, woodDark, 0, 2.68, z);   // 천장 보
 box(6, 2.8, 0.1, mat(0xe2dacb), 0, 1.4, 1.66);                                 // 주방 뒷벽 (흰 타일)
 for (let i = 0; i < 12; i++) box(0.005, 1.0, 0.01, mat(0xcfc8ba), -2.75 + i * 0.5, 1.7, 1.6);
 for (let j = 0; j < 3; j++) box(6, 0.005, 0.01, mat(0xcfc8ba), 0, 1.35 + j * 0.35, 1.6);
-const wallWood = () => woodMat(0xd8b083, 5, 1, { planks: 10, vertical: true, grain: 0.12 });
+const wallWood = () => woodMat(0x5e3a22, 5, 1, { planks: 10, vertical: true, grain: 0.2 });
 box(0.1, 2.8, 7, wallWood(), -2.9, 1.4, -1);    // 왼쪽 벽 (세로 판자)
 box(0.1, 2.8, 7, wallWood(), 2.9, 1.4, -1);     // 오른쪽 벽
 for (const x of [-2.84, 2.84]) {                // 벽 아래 진한 나무 판 + 몰딩
-  box(0.03, 0.9, 7, woodMat(0x8a5a34, 6, 1, { planks: 14, vertical: true }), x, 0.45, -1);
+  box(0.03, 0.9, 7, woodMat(0x4a2c18, 6, 1, { planks: 14, vertical: true }), x, 0.45, -1);
   box(0.05, 0.05, 7, woodDark, x, 0.92, -1);
 }
 
 // ---------- 가게 앞벽: 창문 + 입구 ----------
 const FRONT_Z = -3.6, DOOR_X0 = 1.75, DOOR_X1 = 2.75, DOOR_H = 2.05;
-const frontWood = () => woodMat(0xd8b083, 4, 1, { planks: 10, vertical: true, grain: 0.12 });
+const frontWood = () => woodMat(0x5e3a22, 4, 1, { planks: 10, vertical: true, grain: 0.2 });
 // 창문 구멍(x -1.9 ~ 0.7, y 1.12 ~ 2.18)과 입구 구멍을 남기고 벽을 조각으로 세움
 box(DOOR_X0 - 0.7, 2.8, 0.1, frontWood(), (0.7 + DOOR_X0) / 2, 1.4, FRONT_Z);          // 창문~입구 사이
 box(-1.9 + 2.9, 2.8, 0.1, frontWood(), (-2.9 - 1.9) / 2, 1.4, FRONT_Z);                // 왼쪽 끝~창문
@@ -1004,7 +1004,7 @@ box(2.6, 1.12, 0.1, frontWood(), -0.6, 0.56, FRONT_Z);                          
 box(2.6, 2.8 - 2.18, 0.1, frontWood(), -0.6, (2.18 + 2.8) / 2, FRONT_Z);                // 창문 위
 box(2.9 - DOOR_X1, 2.8, 0.1, frontWood(), (DOOR_X1 + 2.9) / 2, 1.4, FRONT_Z);           // 입구 오른쪽
 box(DOOR_X1 - DOOR_X0, 2.8 - DOOR_H, 0.1, frontWood(), (DOOR_X0 + DOOR_X1) / 2, (DOOR_H + 2.8) / 2, FRONT_Z); // 입구 위
-box(4.7, 0.9, 0.03, woodMat(0x8a5a34, 6, 1, { planks: 14, vertical: true }), -0.55, 0.45, FRONT_Z + 0.06);
+box(4.7, 0.9, 0.03, woodMat(0x4a2c18, 6, 1, { planks: 14, vertical: true }), -0.55, 0.45, FRONT_Z + 0.06);
 // 창틀 (격자)
 for (const x of [-1.9, -1.25, -0.6, 0.05, 0.7]) box(0.05, 1.06, 0.06, woodDark, x, 1.65, FRONT_Z);
 for (const y of [1.12, 1.65, 2.18]) box(2.65, 0.05, 0.06, woodDark, -0.6, y, FRONT_Z);
@@ -1017,7 +1017,7 @@ box(DOOR_X1 - DOOR_X0, 0.03, 0.4, mat(0x6a4a30), (DOOR_X0 + DOOR_X1) / 2, 0.01, 
 const slideDoor = new THREE.Group(); scene.add(slideDoor);
 {
   const w = DOOR_X1 - DOOR_X0;
-  box(w, 0.9, 0.04, woodMat(0xb4824f, 1, 1, { planks: 3, vertical: true }), 0, 0.45, 0, slideDoor); // 아래쪽 나무 판
+  box(w, 0.9, 0.04, woodMat(0x6e4426, 1, 1, { planks: 3, vertical: true }), 0, 0.45, 0, slideDoor); // 아래쪽 나무 판
   const glass = box(w - 0.1, DOOR_H - 0.95, 0.01, new THREE.MeshStandardMaterial({ color: 0xcfe6f0, transparent: true, opacity: 0.22, roughness: 0.1 }), 0, 0.92 + (DOOR_H - 0.95) / 2, 0, slideDoor);
   glass.castShadow = false;
   for (const x of [-w / 2 + 0.03, w / 2 - 0.03, 0]) box(0.04, DOOR_H - 0.05, 0.05, woodDark, x, DOOR_H / 2, 0, slideDoor);
