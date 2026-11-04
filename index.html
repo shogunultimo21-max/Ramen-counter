@@ -55,7 +55,7 @@
   #hand { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); background: var(--panel);
     padding: 7px 14px; border-radius: 8px; font-size: 15px; white-space: nowrap; }
   #hand small { opacity: .65; margin-left: 8px; }
-  /* 조작 버튼: 왼손(뒤돌기·빼기) · 오른손(내기·버리기) */
+  /* 조작 버튼: 왼손(뒤돌기·직전 토핑 빼기) · 오른손(내기·손 비우기) */
   .thumbs { position: absolute; bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
   #barL { left: calc(10px + env(safe-area-inset-left)); align-items: flex-start; }
   #barR { right: calc(10px + env(safe-area-inset-right)); align-items: flex-end; }
@@ -377,14 +377,14 @@
   <div id="toast"></div>
   <div id="guide"></div>
   <div id="tut"></div>
-  <!-- 조작 버튼: 왼손 엄지(뒤돌기·빼기) / 오른손 엄지(내기·버리기) -->
-  <div id="barL" class="thumbs"><button id="mTurn">↻ 뒤돌기</button><button id="mUndo">↶ 빼기</button></div>
+  <!-- 조작 버튼: 왼손 엄지(뒤돌기·직전 토핑 빼기) / 오른손 엄지(내기·손 비우기) -->
+  <div id="barL" class="thumbs"><button id="mTurn">↻ 뒤돌기</button><button id="mUndo">↶ 직전 토핑 빼기</button></div>
   <div id="helperCard" hidden><span class="face">🧑‍🍳</span><div><b>보조 켄</b><span class="say"></span></div></div>
   <div id="missionPanel" hidden></div>
   <div id="comboPop"></div>
   <div id="kit"></div>
   <div id="basketPad"></div>
-  <div id="barR" class="thumbs"><button id="mServe">🍜 내기</button><button id="mTrash">🗑 버리기</button></div>
+  <div id="barR" class="thumbs"><button id="mServe">🍜 내기</button><button id="mTrash">🗑 손 비우기</button></div>
 </div>
 
 <div id="coach" hidden><div id="coachTips"></div><button class="btn" id="coachClose">알겠어요</button></div>
@@ -1919,7 +1919,7 @@ const knob = new THREE.Group(); knob.position.set(0.55, 0.72, 0.85); scene.add(k
 const knobBody = cyl(0.05, 0.05, 0.04, 12, mat(0xb8322a), 0, 0, 0, knob); knobBody.rotation.x = Math.PI / 2;
 const knobTick = box(0.012, 0.06, 0.012, mat(0xffffff), 0, 0.02, -0.03, knob);
 knob.visible = false;
-// 왼쪽 작업대(뒤돌면 화면 오른쪽): 업소용 밥솥 + 뚜껑 덮인 재료 통 (버리기는 🗑 버튼으로)
+// 왼쪽 작업대(뒤돌면 화면 오른쪽): 업소용 밥솥 + 뚜껑 덮인 재료 통 (버리기는 🗑 손 비우기 버튼으로)
 {
   const cream = mat(0xe9e3d6, { roughness: 0.35 }), dark = mat(0x3a3c40, { roughness: 0.4, metalness: 0.3 });
   const rc = new THREE.Group(); rc.position.set(-1.5, 0.9, 1.22); scene.add(rc);
@@ -3739,9 +3739,9 @@ const COACH_TIPS = [
   { world: [1.1, 1.75, SEAT_Z], text: '손님 — 주문서는<br>왼쪽에 쌓여요', side: 'above' },
   { el: '#kit', text: '재료 버튼 — 토핑은 탭<br>🔥챠슈는 꾹 눌렀다 초록에서 떼기', side: 'above' },
   { el: '#mTurn', text: '↻ 뒤돌아서<br>면 삶기 · 육수', side: 'right' },
-  { el: '#mUndo', text: '↶ 방금 넣은 것 빼기', side: 'right' },
+  { el: '#mUndo', text: '↶ 방금 넣은 토핑 하나 빼기', side: 'right' },
   { el: '#mServe', text: '🍜 ✅완성된 그릇 내기', side: 'left' },
-  { el: '#mTrash', text: '🗑 손에 든 것 버리기', side: 'left' },
+  { el: '#mTrash', text: '🗑 손 비우기 — 들고 있는 것(그릇 포함) 버리기', side: 'left' },
 ];
 function showCoach() {
   document.getElementById('start').classList.add('hidden');
@@ -3861,7 +3861,7 @@ function buildKit() {
     if (k === 'chashu') { // 누르고 있는 동안 굽고, 떼면 선택한 그릇에 올라감
       b.addEventListener('pointerdown', e => {
         e.preventDefault(); if (!G.running || G.paused) return;
-        if (G.hand) return toast('손을 먼저 비우세요 (🗑 버리기)', 'warn');
+        if (G.hand) return toast('손을 먼저 비우세요 (🗑 손 비우기)', 'warn');
         if (!G.bowls.some(readyForToppings)) return toast('챠슈는 육수와 면을 넣은 그릇에 올려요', 'warn');
         b.classList.add('held'); grillStart();
       });
@@ -4186,7 +4186,7 @@ function updateHud() {
   // 빼기 버튼: 방금 넣은 것을 뺄 수 있을 때만 켜짐
   const ub = document.getElementById('mUndo'), last = G.running && !G.paused && lastUndoable();
   ub.disabled = !last;
-  const txt = last ? `↶ ${last.name} 빼기` : '↶ 빼기';
+  const txt = last ? `↶ ${last.name} 빼기` : '↶ 직전 토핑 빼기'; // 뺄 게 있으면 짧게 (아래 토핑 버튼 줄과 안 겹치게)
   if (ub.textContent !== txt) ub.textContent = txt;
   updateKit();
   const mins = clockMins();
