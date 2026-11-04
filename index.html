@@ -632,6 +632,8 @@ let bank = store.get('ramen-bank', 0);
 // 가게 평판 (★1~5): 하루 평점이 조금씩 반영되고, 높을수록 손님이 자주 옴
 let rep = store.get('ramen-rep', 3);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+// 한국어 조사: 마지막 글자에 받침이 있으면 a, 없으면 b — josa('김', '이', '가') → '김이', josa('파', '이', '가') → '파가'
+const josa = (w, a, b) => { const c = String(w).charCodeAt(String(w).length - 1); return w + (c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? a : b); };
 const repSpawn = () => clamp(1 + (3 - rep) * 0.2, 0.75, 1.4); // 손님 오는 간격 배수 (작을수록 자주)
 const repText = () => {
   const pct = Math.round((1 / repSpawn() - 1) * 100);
@@ -3026,7 +3028,7 @@ function evaluate(c, b) {
   const issues = []; let m = 0;
   if (b.broth == null) { issues.push('육수가 없어요!'); m += 3; }
   else if (b.kind() !== c.order.ramen) { // 육수·미소·라유·헹군 면까지 따져서 다른 라멘이면
-    issues.push(`${RAMEN[c.order.ramen].name} 시켰는데 ${RAMEN[b.kind()].name}예요!`); m += 3;
+    issues.push(`${RAMEN[c.order.ramen].name} 시켰는데 ${josa(RAMEN[b.kind()].name, '이에요', '예요')}!`); m += 3;
   }
   else if (b.temp < 60) { issues.push(`육수가 식었어요 (${Math.round(b.temp)}°)`); m += 2; }
   else if (b.temp < 75) { issues.push(`육수가 미지근해요 (${Math.round(b.temp)}°)`); m += 1; }
@@ -3040,9 +3042,9 @@ function evaluate(c, b) {
   if (b.chashu.some(q => q !== 'good')) { issues.push(b.chashu.includes('burnt') ? '챠슈가 탔어요' : '챠슈가 덜 구워졌어요'); m += 1; }
   for (const k of Object.keys(TOPPINGS)) {
     const want = c.order.top.has(k), has = b.top.has(k);
-    if (want && !has) { issues.push(`${TOPPINGS[k]}가 빠졌어요`); m += 1; }
+    if (want && !has) { issues.push(`${josa(TOPPINGS[k], '이', '가')} 빠졌어요`); m += 1; }
     if (!want && has) {
-      issues.push(baseOf(c.order.ramen).includes(k) ? `${TOPPINGS[k]} 빼 달라고 했는데…` : `${TOPPINGS[k]}는 안 시켰어요`);
+      issues.push(baseOf(c.order.ramen).includes(k) ? `${TOPPINGS[k]} 빼 달라고 했는데…` : `${josa(TOPPINGS[k], '은', '는')} 안 시켰어요`);
       m += 1;
     }
   }
@@ -3275,7 +3277,7 @@ function hintFor(d) {
     case 'grill': return h ? busy : `누르고 있기: 챠슈 굽기${activeBowl() ? ' → 선택한 그릇에 바로' : ''}`;
     case 'topping':
       if (h) return busy;
-      if (activeBowl()?.top.has(d.key)) return `${TOPPINGS[d.key]}는 ${G.active + 1}번 그릇에 이미 올렸어요`;
+      if (activeBowl()?.top.has(d.key)) return `${josa(TOPPINGS[d.key], '은', '는')} ${G.active + 1}번 그릇에 이미 올렸어요`;
       if (G.refill[d.key] != null) return `${TOPPINGS[d.key]} 냉장고에서 꺼내는 중…`;
       if (levelCfg().stock && G.stock[d.key] <= 0) return `클릭: 냉장고에서 ${TOPPINGS[d.key]} 꺼내 채우기 (${refillSec()}초)`;
       return activeBowl() ? `클릭: ${TOPPINGS[d.key]} → ${G.active + 1}번 그릇` : `클릭: ${TOPPINGS[d.key]} 집기`;
@@ -3352,7 +3354,7 @@ function act(d) {
       if (stockOn && G.stock[d.key] <= 0) return startRefill(d.key); // 비었으면 냉장고에서 알아서 꺼내 채움
       const b = toppingTarget();
       if (!b) return toast('토핑은 육수와 면을 넣은 그릇에 올려요', 'warn');
-      if (b.top.has(d.key)) return toast(`${TOPPINGS[d.key]}는 이미 올렸어요 (방금 넣은 거라면 ↶로 빼기)`, 'warn');
+      if (b.top.has(d.key)) return toast(`${josa(TOPPINGS[d.key], '은', '는')} 이미 올렸어요 (방금 넣은 거라면 ↶로 빼기)`, 'warn');
       if (stockOn) { G.stock[d.key]--; updateTray(d.key); }
       b.top.add(d.key); b.refresh(); Sound.place(); addTo(b, 'top', TOPPINGS[d.key], d.key);
       return;
@@ -3467,7 +3469,7 @@ function autoServe() {
   if (!waiting.length) return toast('라멘을 기다리는 손님이 없어요', 'warn');
   const bowl = h ? h.bowl : activeBowl();
   if (!bowl) return toast('먼저 그릇을 탭해서 선택하세요', 'warn');
-  if (bowl.broth == null || bowl.noodles == null) return toast(`아직 덜 됐어요 — ${bowl.broth == null ? '육수' : '면'}가 없어요`, 'warn');
+  if (bowl.broth == null || bowl.noodles == null) return toast(`아직 덜 됐어요 — ${bowl.broth == null ? '육수가' : '면이'} 없어요`, 'warn');
   const best = waiting.map(c => ({ c, m: orderMismatch(c, bowl), r: c.patience / c.maxPatience }))
     .sort((a, b) => a.m - b.m || a.r - b.r)[0].c;
   if (!h) { G.bowls[G.active] = null; G.active = null; setHand({ type: 'bowl', bowl }); }
@@ -4175,7 +4177,7 @@ function visuals(dt, t) {
 function nextStep() {
   const h = G.hand;
   const back = facingBack;
-  const turn = (where, what) => (where === 'back') === back ? what : `Space로 ${where === 'back' ? '뒤돌아서' : '앞으로 돌아서'} ${what}`;
+  const turn = (where, what) => (where === 'back') === back ? what : `Space로 ${where === 'back' ? '뒤돌기' : '앞 보기'} → ${what}`; // 먼저 돌고 → 그다음 할 일
   const kae = G.customers.find(c => c.state === 'kaedama');
   const waiting = G.customers.filter(c => c.state === 'waiting').sort((a, b) => a.patience - b.patience);
   if (h) {
@@ -4205,7 +4207,7 @@ function nextStep() {
   if (b.broth == null) return turn('back', `${RAMEN[brothOf(wr)].name} 육수 냄비 클릭 (육수 뜨기)${RAMEN[wr].miso ? ' — 미소는 돈코츠 육수로!' : ''}`);
   if (b.noodles == null) {
     const target = want ? FIRM[want.firm] : '';
-    return turn('back', `면이 ${target ? target + '이 되면' : '익으면'} 바구니 클릭해서 건지기`);
+    return turn('back', target ? `면이 ${josa(target, '이', '가')} 되면 바구니 클릭해서 건지기` : '면이 익으면 바구니 클릭해서 건지기');
   }
   if (want) {
     if ((want.spice || 0) > b.spice) return turn('front', `🌶 라유 버튼 ${want.spice - b.spice}번 더 (맵기 ${want.spice})`);
@@ -4216,17 +4218,17 @@ function nextStep() {
     }
     if (b.chashu.length < want.chashu) return turn('front', `🔥 챠슈 버튼을 누르고 있다가 초록에서 떼기 (${want.chashu}장)`);
     const empty = [...want.top].find(k => !b.top.has(k) && levelCfg().stock && G.stock[k] <= 0);
-    if (empty) return turn('front', G.refill[empty] != null ? `${TOPPINGS[empty]} 채우는 중… 잠깐만요` : `${TOPPINGS[empty]}가 떨어졌어요 → ${TOPPINGS[empty]} 버튼을 눌러 채우기`);
+    if (empty) return turn('front', G.refill[empty] != null ? `${TOPPINGS[empty]} 채우는 중… 잠깐만요` : `${josa(TOPPINGS[empty], '이', '가')} 떨어졌어요 → ${TOPPINGS[empty]} 버튼을 눌러 채우기`);
     const missing = [...want.top].filter(k => !b.top.has(k)).map(k => TOPPINGS[k]);
     if (missing.length) return turn('front', `토핑 버튼: ${missing.join(', ')}`);
     const extra = [...b.top].filter(k => !want.top.has(k)).map(k => TOPPINGS[k]);
-    if (extra.length) return turn('front', `${extra.join(', ')}는 주문에 없어요 (방금 넣었으면 ↶로 빼기)`);
+    if (extra.length) return turn('front', `${josa(extra.join(', '), '은', '는')} 주문에 없어요 (방금 넣었으면 ↶로 빼기)`);
   }
   return turn('front', '그릇을 클릭해서 들고 → 손님 클릭');
 }
 function updateHud() {
   const step = G.running && !G.paused && !G.tut ? nextStep() : '';
-  document.getElementById('guide').textContent = step ? '👉 ' + step.replace(/Space로 /g, '↻ 버튼으로 ').replace(/클릭/g, '탭').replace(/ \(U\)| U로/g, ' ↶로').replace('그릇을 탭해서 들고 → 손님 탭', '🍜 내기 버튼 누르기') : '';
+  document.getElementById('guide').textContent = step ? '👉 ' + step.replace(/Space로 /g, '↻ ').replace(/클릭/g, '탭').replace(/ \(U\)| U로/g, ' ↶로').replace('그릇을 탭해서 들고 → 손님 탭', '🍜 내기 버튼 누르기') : '';
   // 빼기 버튼: 방금 넣은 것을 뺄 수 있을 때만 켜짐
   const ub = document.getElementById('mUndo'), last = G.running && !G.paused && lastUndoable();
   ub.disabled = !last;
