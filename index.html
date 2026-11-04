@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="라멘 카운터">
 <meta name="theme-color" content="#120d0a">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Yuji+Syuku&display=swap">
 <title>라멘 카운터</title>
 <style>
   :root {
@@ -267,6 +269,43 @@
   #queue { position: absolute; top: 54px; right: 12px; transform: translateY(150px); }
   .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(10,7,5,.82); padding: 16px; }
   .overlay.hidden { display: none; }
+  /* ---------- 타이틀 화면 (게임을 켜면 가장 먼저) ---------- */
+  #title { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    background: radial-gradient(ellipse 70% 60% at 50% 45%, rgba(20,11,6,.25), rgba(10,6,3,.9)); color: #fff3dc; cursor: pointer; transition: opacity .6s; overflow: hidden; }
+  #title.gone { opacity: 0; pointer-events: none; }
+  body.title-on > *:not(#app):not(#title):not(#rotate):not(#update):not(script) { visibility: hidden; }
+  .t-rod { width: min(360px, 62vw); height: 10px; border-radius: 5px; background: linear-gradient(#6a4428, #3a2214); box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+  .t-noren { display: flex; gap: 5px; margin-top: -2px; }
+  .t-noren span { width: min(82px, 14vw); height: min(104px, 24vh); background: linear-gradient(#c8392e, #9e2a22); border-radius: 0 0 4px 4px;
+    font: 400 min(58px, 13vh)/1 "Yuji Syuku", "Hiragino Mincho ProN", serif; color: #fff7ea; display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 -8px 12px rgba(0,0,0,.18), 0 6px 14px rgba(0,0,0,.4); transform-origin: top center; animation: t-sway 3.2s ease-in-out infinite; }
+  .t-noren span:nth-child(2) { animation-delay: -.8s; } .t-noren span:nth-child(3) { animation-delay: -1.6s; } .t-noren span:nth-child(4) { animation-delay: -2.4s; }
+  @keyframes t-sway { 0%, 100% { transform: rotate(-1.6deg) skewX(-1deg); } 50% { transform: rotate(1.6deg) skewX(1deg); } }
+  .t-logo { margin: 10px 0 0; font: 400 min(64px, 15vh)/1.05 "Black Han Sans", "Apple SD Gothic Neo", sans-serif; letter-spacing: .02em; color: #ffe2a8;
+    text-shadow: 0 3px 0 #8a2a1e, 0 6px 0 #4a160f, 0 10px 24px rgba(0,0,0,.6); }
+  .t-sub { margin: 4px 0 0; font-size: min(15px, 3.8vh); opacity: .85; letter-spacing: .04em; }
+  .t-bowl { position: relative; font-size: min(40px, 10vh); margin-top: 6px; line-height: 1; }
+  .t-bowl i { position: absolute; left: 50%; bottom: 85%; width: 6px; height: 26px; border-radius: 6px; background: rgba(255,255,255,.55); filter: blur(3px); animation: t-steam 2.4s ease-out infinite; }
+  .t-bowl i:nth-child(1) { margin-left: -14px; } .t-bowl i:nth-child(2) { margin-left: -3px; animation-delay: .8s; } .t-bowl i:nth-child(3) { margin-left: 8px; animation-delay: 1.6s; }
+  @keyframes t-steam { 0% { transform: translateY(6px) scaleY(.6); opacity: 0; } 30% { opacity: .9; } 100% { transform: translateY(-26px) scaleY(1.3) translateX(4px); opacity: 0; } }
+  .t-tap { margin-top: 10px; padding: 9px 26px; border-radius: 999px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,226,168,.4); font-weight: 800; font-size: min(16px, 4vh); animation: t-blink 1.6s ease-in-out infinite; }
+  @keyframes t-blink { 50% { opacity: .45; } }
+  .t-lantern { position: absolute; top: 0; width: min(74px, 11vw); height: min(96px, 24vh); transform-origin: top center; animation: t-swing 4s ease-in-out infinite; }
+  .t-lantern::before { content: ''; position: absolute; left: 50%; top: 0; width: 2px; height: 22%; background: #2a1a10; }
+  .t-lantern b { position: absolute; left: 0; right: 0; top: 22%; bottom: 0; border-radius: 45% / 40%; background: radial-gradient(circle at 50% 40%, #ff8a5a, #c8302a 60%, #7a1a14);
+    box-shadow: 0 0 30px rgba(255,110,60,.55); display: flex; align-items: center; justify-content: center; font: 400 min(30px, 7vh)/1 "Yuji Syuku", serif; color: #2a0e08;
+    border-top: 6px solid #2a1a10; border-bottom: 6px solid #2a1a10; }
+  .t-lantern.l { left: 7%; } .t-lantern.r { right: 7%; animation-delay: -2s; }
+  @keyframes t-swing { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+  .t-ver { position: absolute; right: max(14px, env(safe-area-inset-right)); bottom: 10px; font-size: 11px; opacity: .55; }
+  .t-credit { position: absolute; left: max(14px, env(safe-area-inset-left)); bottom: 10px; font-size: 11px; opacity: .45; }
+  @media (prefers-reduced-motion: reduce) { .t-noren span, .t-lantern, .t-tap, .t-bowl i { animation: none; } }
+  /* 새 버전 알림 */
+  #update { position: fixed; left: max(8px, env(safe-area-inset-left)); bottom: max(8px, env(safe-area-inset-bottom)); z-index: 45; display: flex; flex-direction: column; gap: 5px; align-items: stretch;
+    width: 96px; background: #2f7a3a; color: #fff; padding: 7px; border-radius: 12px; font-size: 11.5px; font-weight: 700; line-height: 1.3; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+  #update[hidden] { display: none; }
+  #update button { border: 0; border-radius: 8px; background: #fff; color: #2f7a3a; font: inherit; font-size: 13px; font-weight: 800; padding: 6px 4px; cursor: pointer; }
+  #title .t-credit { left: auto; right: max(14px, env(safe-area-inset-right)); bottom: 26px; }
   .card { background: var(--paper); color: var(--ink); border-radius: 12px; max-width: 620px; width: 100%; padding: 26px 28px; max-height: 92vh; overflow: auto;
     box-shadow: 0 10px 40px rgba(0,0,0,.6); }
   .card h1 { margin: 0 0 4px; font-size: 30px; }
@@ -357,7 +396,7 @@
   @keyframes tilt { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
 </style>
 </head>
-<body>
+<body class="title-on">
 <div id="app"></div>
 <div id="hud">
   <div id="topbar">
@@ -391,6 +430,19 @@
 
 <div id="coach" hidden><div id="coachTips"></div><button class="btn" id="coachClose">알겠어요</button></div>
 <div id="rotate"><div><span class="ico">📱</span>휴대폰을 <b>가로로</b> 돌려 주세요</div></div>
+
+<div id="title">
+  <div class="t-lantern l"><b>麺</b></div><div class="t-lantern r"><b>屋</b></div>
+  <div class="t-rod"></div>
+  <div class="t-noren"><span>ら</span><span>ー</span><span>め</span><span>ん</span></div>
+  <h1 class="t-logo">라멘 카운터</h1>
+  <p class="t-sub">한 그릇씩 정성껏 — 골목 라멘집에서 전국 체인까지</p>
+  <div class="t-bowl">🍜<i></i><i></i><i></i></div>
+  <div class="t-tap">👆 화면을 터치해서 시작</div>
+  <div class="t-credit">목소리 VOICEVOX</div>
+  <div class="t-ver ver"></div>
+</div>
+<div id="update" hidden><span id="updateText"></span><button id="updateBtn">업데이트</button></div>
 
 <div id="start" class="overlay">
   <div class="card paged">
@@ -503,7 +555,7 @@
 <script type="module">
 import * as THREE from 'three';
 // 게임 버전 — 베타에 올릴 때마다 올림 (시작 화면·일시정지에 표시해서 어느 버전인지 바로 확인)
-const APP_VERSION = 'v1.4', APP_DATE = '11/05';
+const APP_VERSION = 'v1.5', APP_DATE = '11/05';
 document.querySelectorAll('.ver').forEach(el => { el.textContent = `${APP_VERSION} · ${APP_DATE}`; });
 
 // ================= 설정 =================
@@ -954,6 +1006,7 @@ function textSprite(text, { bg = 'rgba(25,18,12,0.85)', fg = '#ffe9c4', scale = 
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
   s.scale.set(scale, scale / 4, 1);
+  s.userData.isText = true; // 타이틀 화면 동안은 숨김
   return s;
 }
 function label(text, x, y, z, o) { const s = textSprite(text, o); s.position.set(x, y, z); scene.add(s); return s; }
@@ -2550,6 +2603,7 @@ function newGame() {
 
 // ---------- 시점 ----------
 let yaw = 0, pitch = -0.36, turnTarget = null, pitchTarget = null, facingBack = false;
+let titleOn = true; // 타이틀 화면이 떠 있는 동안 카메라가 가게 안을 천천히 둘러봄
 const VIEW = { front: { yaw: 0, pitch: -0.36 }, back: { yaw: Math.PI - 0.1, pitch: -0.58 } }; // 뒤: 면 솥이 주문서 오른쪽 가운데 오게
 const keys = {};
 // 앞(조리대·손님) / 뒤(면 솥·육수) 두 시점 사이를 오간다
@@ -3631,6 +3685,7 @@ function startDay() {
   document.getElementById('start').classList.add('hidden');
   document.getElementById('end').classList.add('hidden');
   newGame(); yaw = 0; pitch = -0.36; if (facingBack) turnAround();
+  document.getElementById('update').hidden = true;
   G.running = true; Sound.init(); VoiceFiles.decode(); lockPointer();
   store.set('ramen-seen', Math.max(day, store.get('ramen-seen', 0)));
   store.set('ramen-content-v', 2);
@@ -3773,6 +3828,39 @@ const Promo = (() => {
   };
 })();
 document.getElementById('promoBtn').onclick = () => { Sound.init(); Promo.open(); };
+// 타이틀 화면: 손·이름표는 숨기고 가게만 보여 줌 → 아무 데나 터치하면 가게 인사와 함께 시작 화면으로
+const titleHidden = [];
+scene.traverse(o => { if (o.userData.isText && o.visible) { o.visible = false; titleHidden.push(o); } });
+holdGroup.visible = leftHold.visible = false;
+document.getElementById('title').addEventListener('pointerdown', () => {
+  if (!titleOn) return;
+  titleOn = false; yaw = 0; pitch = -0.36;
+  holdGroup.visible = leftHold.visible = true;
+  titleHidden.forEach(o => { o.visible = true; });
+  document.getElementById('title').classList.add('gone'); document.body.classList.remove('title-on');
+  Sound.init(); VoiceFiles.decode(); Sound.knob();
+  setTimeout(() => Sound.line('irasshaimase', 'いらっしゃいませー！', SHOP_VOICE), 250);
+  setTimeout(() => document.getElementById('title').remove(), 700);
+});
+// 새 버전 확인: 켤 때와 다시 돌아올 때 서버의 최신 버전과 비교 → 다르면 '업데이트' 버튼 (영업 중엔 안 띄움)
+let newerVersion = null;
+function checkUpdate() {
+  fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(t => {
+    const m = t.match(new RegExp('APP_' + "VERSION = '([^']+)'"));
+    if (m && m[1] !== APP_VERSION) { newerVersion = m[1]; showUpdate(); }
+  }).catch(() => {});
+}
+function showUpdate() {
+  const el = document.getElementById('update');
+  el.hidden = !newerVersion || !!G?.running;
+  document.getElementById('updateText').textContent = `🆕 새 버전 ${newerVersion}`;
+}
+document.getElementById('updateBtn').onclick = () => {
+  const q = new URLSearchParams(location.search); q.set('v', newerVersion);
+  location.replace(location.pathname + '?' + q); // 주소가 바뀌니 휴대폰이 저장해 둔 예전 화면 대신 새로 받아 옴
+};
+checkUpdate();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
 // 휴대폰: 화면을 누를 때마다, 앱으로 돌아올 때 소리가 멈춰 있으면 다시 켬
 document.addEventListener('pointerdown', () => { if (G?.running && !G.paused) Sound.init(); }, true);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) Sound.wake(); });
@@ -4151,6 +4239,7 @@ function update(dt) {
 }
 function visuals(dt, t) {
   animateDecor(t);
+  if (titleOn) { yaw = Math.sin(t * 0.12) * 0.5; pitch = -0.06 + Math.sin(t * 0.08) * 0.05; }
   // 시점
   if (turnTarget != null) {
     const d = turnTarget - yaw;
@@ -4315,7 +4404,7 @@ function endDay() {
   document.getElementById('endNet').innerHTML = net >= 0 ? `💰 순이익 <b>¥${net.toLocaleString()}</b> <small>(장부 탭에서 자세히)</small>` : `📉 적자 <b>¥${(-net).toLocaleString()}</b> <small>(장부 탭에서 자세히)</small>`;
   document.getElementById('endNet').classList.toggle('loss', net < 0);
   document.getElementById('endGoal').innerHTML = goalHtml();
-  renderShop('end'); renderGrade('endGrade');
+  renderShop('end'); renderGrade('endGrade'); setTimeout(showUpdate, 0); // 하루가 끝나면 새 버전 알림 다시
   document.getElementById('endComment').textContent =
     avg >= 4.3 ? '줄 서는 라멘집이 될 것 같아요! 🎉' :
     avg >= 3.3 ? '좋은 하루였어요. 조금만 더 빠르게!' :
