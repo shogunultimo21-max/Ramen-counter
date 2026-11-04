@@ -150,6 +150,17 @@
   .goal { margin: 0 0 8px; font-size: 13px; }
   .upg small.upkeep { color: var(--red); opacity: 1; }
   #startExpand .shop-grid, #endExpand .shop-grid { grid-template-columns: 1fr 1fr; }
+  .grade-pick { margin-top: 10px; text-align: left; }
+  .grade-pick h4 { margin: 0 0 6px; font-size: 14px; }
+  .grade-pick .opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .grade-pick button { border: 2px solid #e3d7c0; border-radius: 10px; background: #fffaf0; padding: 6px 4px; font: inherit; font-size: 12px; color: var(--ink); cursor: pointer; line-height: 1.3; }
+  .grade-pick button b { display: block; font-size: 13px; }
+  .grade-pick button.on { border-color: var(--red); background: #fdeee6; }
+  .theme-pick { margin-top: 8px; font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .theme-pick button { border: 2px solid #e3d7c0; border-radius: 8px; background: #fffaf0; padding: 4px 8px; font: inherit; font-size: 12px; cursor: pointer; }
+  .theme-pick button.on { border-color: var(--red); background: #fdeee6; font-weight: 800; }
+  .theme-pick i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
+  .tabs button { padding: 8px 2px; }
   .goal .track { height: 10px; border-radius: 5px; background: #e3d7c0; overflow: hidden; margin-top: 3px; }
   .goal .track i { display: block; height: 100%; background: linear-gradient(90deg, #d9a21b, #2f7a3a); }
   /* 시작·영업 종료 화면: 탭으로 넘기는 페이지 (스크롤 없이) */
@@ -386,6 +397,7 @@
       <div id="ownerInfo"></div>
       <div class="day-box" id="dayInfo"></div>
       <div id="todayMissions"></div>
+      <div class="grade-pick" id="startGrade"></div>
     </section>
     <section class="pg" data-tab="조작">
       <button class="btn coach-open" id="coachBtn">👀 게임 화면에서 조작 보기</button>
@@ -395,11 +407,14 @@
       </ol>
       <p class="credit">목소리: VOICEVOX:青山龍星 / 玄野武宏 / 剣崎雌雄 / 雀松朱司 / 麒ヶ島宗麟 / 白上虎太郎 / 四国めたん / 九州そら / 冥鳴ひまり / 春日部つむぎ / 波音リツ / No.7 / ちび式じい / もち子さん / 東北イタコ</p>
     </section>
-    <section class="pg" data-tab="업그레이드">
-      <div class="shop" id="startShop"></div>
+    <section class="pg" data-tab="주방">
+      <div class="shop" id="startKitchen"></div>
     </section>
-    <section class="pg" data-tab="장비">
-      <div class="shop" id="startGear"></div>
+    <section class="pg" data-tab="메뉴">
+      <div class="shop" id="startMenu"></div>
+    </section>
+    <section class="pg" data-tab="가게">
+      <div class="shop" id="startStore"></div>
     </section>
     <section class="pg" data-tab="확장">
       <div class="shop" id="startExpand"></div>
@@ -447,12 +462,16 @@
       <div class="day-box" id="endRep"></div>
       <button class="btn sub" id="promoBtn">📣 전단지 돌리기 — 평판 올리기 (하루 한 번)</button>
       <div class="day-box" id="endNext"></div>
+      <div class="grade-pick" id="endGrade"></div>
     </section>
-    <section class="pg" data-tab="업그레이드">
-      <div class="shop" id="endShop"></div>
+    <section class="pg" data-tab="주방">
+      <div class="shop" id="endKitchen"></div>
     </section>
-    <section class="pg" data-tab="장비">
-      <div class="shop" id="endGear"></div>
+    <section class="pg" data-tab="메뉴">
+      <div class="shop" id="endMenu"></div>
+    </section>
+    <section class="pg" data-tab="가게">
+      <div class="shop" id="endStore"></div>
     </section>
     <section class="pg" data-tab="확장">
       <div class="shop" id="endExpand"></div>
@@ -553,42 +572,57 @@ const baseOf = r => RAMEN[r].base.filter(k => toppingsOn().includes(k)); // 아�
 
 // ---------- 가게 금고 · 업그레이드 (날이 바뀌어도 저장) ----------
 // 단계형: values[단계] = 그 단계의 효과, prices[i] = i단계 → i+1단계 가격
+// 상점 4칸: 🔧 주방(빨라지고 편해짐) · 💰 메뉴(한 그릇에 더 벌기) · 🏮 가게(평판·인내심) · 🏗 확장(크게 키우기, 매일 고정비)
 const UPGRADES = {
-  bigTray: { name: '토핑 통', icon: '🥡', values: [6, 8, 10, 14, 18], prices: [2500, 5000, 9000, 14000],
-    names: ['기본 통', '큰 통', '더 큰 통', '대형 통', '특대 통'], desc: v => `토핑 통 하나에 ${v}그릇 분량` },
-  noren:   { name: '노렌·간판', icon: '🏮', values: [1, 1.15, 1.3, 1.5, 1.7], prices: [3000, 6000, 11000, 16000],
-    names: ['낡은 노렌', '새 노렌', '나무 간판', '등불 간판', '빛나는 간판'], desc: v => (v > 1 ? `손님 인내심 +${Math.round((v - 1) * 100)}%` : '손님 인내심 보통') },
-  slot4:   { name: '그릇 자리', icon: '🍜', values: [3, 4], prices: [6000],
+  // ---- 🔧 주방 ----
+  slot4:   { group: 'kitchen', name: '그릇 자리', icon: '🍜', values: [3, 4], prices: [6000],
     names: ['3자리', '4자리'], desc: v => `그릇을 ${v}개까지 놓을 수 있어요` },
-  baskets: { name: '면 솥', icon: '♨️', values: [4, 6], prices: [9000],
-    names: ['바구니 4개', '바구니 6개'], desc: v => `면을 ${v}개까지 한꺼번에 삶아요` },
-  fineBowl:{ name: '그릇', icon: '✨', values: [300, 500, 800, 1200], prices: [6000, 12000, 20000],
-    names: ['기본 그릇', '고급 그릇 (검은 칠·금테)', '명품 그릇 (청해파 무늬)', '금박 그릇'], desc: v => `만족한 손님 팁 ¥${v}` },
-  decor:   { name: '가게 꾸미기', icon: '🪴', values: [0, 1, 2, 3, 4], prices: [3000, 6000, 10000, 15000],
-    names: ['꾸밈 없음', '화분', '+ 마네키네코', '+ 족자·풍경', '+ 등불 줄'], desc: v => (v ? `분위기 좋아서 매일 평판 +${(v * 0.05).toFixed(2)}` : '꾸밈 없음') },
-  // ---- 장비 (group: 'gear') — 일을 편하게 하거나 돈을 더 벌게 ----
-  timer:    { group: 'gear', name: '면 타이머', icon: '⏰', values: [0, 1], prices: [4000],
-    names: ['없음', '면 타이머'], desc: v => (v ? '면이 카타메·보통·야와라 구간에 들어서면 띵!' : '눈으로 익힘 확인') },
-  grill2:   { group: 'gear', name: '챠슈 그릴', icon: '🔥', values: [22, 32, 42], prices: [5000, 12000],
-    names: ['기본 그릴', '숯불 그릴', '전문가 그릴'], desc: v => `초록 구간 넓이 ${v}%` },
-  fridge:   { group: 'gear', name: '대형 냉장고', icon: '❄️', values: [2, 1, 0.3], prices: [4000, 9000],
-    names: ['기본 냉장고', '큰 냉장고', '업소용 냉장고'], desc: v => (v < 1 ? '토핑을 거의 바로 채워요' : `토핑 채우는 데 ${v}초`) },
-  gyozaPan: { group: 'gear', name: '교자 철판', icon: '🥟', values: [3, 6], prices: [8000],
+  noodle:  { group: 'kitchen', name: '면 솥', icon: '♨️', values: [{ b: 4, t: 0 }, { b: 4, t: 1 }, { b: 6, t: 1 }], prices: [4000, 9000],
+    names: ['바구니 4개', '바구니 4개 + 면 타이머', '바구니 6개 + 면 타이머'], desc: v => `바구니 ${v.b}개${v.t ? ' · 익힘 구간에 띵!' : ' · 눈으로 익힘 확인'}` },
+  rail:    { group: 'kitchen', name: '토핑 레일', icon: '🥡', values: [{ n: 6, r: 2 }, { n: 8, r: 2 }, { n: 10, r: 1 }, { n: 14, r: 1 }, { n: 18, r: 0.3 }], prices: [2500, 6000, 12000, 18000],
+    names: ['기본 통', '큰 통', '큰 통 + 큰 냉장고', '대형 통 + 큰 냉장고', '특대 통 + 업소용 냉장고'], desc: v => `통 하나에 ${v.n}그릇 · 채우기 ${v.r}초` },
+  grill2:  { group: 'kitchen', name: '챠슈 그릴', icon: '🔥', values: [22, 32, 42], prices: [5000, 12000],
+    names: ['기본 석쇠', '숯불 석쇠', '전문가 석쇠'], desc: v => `초록 구간 넓이 ${v}%` },
+  gyozaPan:{ group: 'kitchen', name: '교자 철판', icon: '🥟', values: [3, 6], prices: [8000],
     names: ['작은 팬', '큰 철판'], desc: v => (v > 3 ? '6초 만에 익고, 6접시까지 빼놓기' : '8초에 익고, 3접시까지 빼놓기') },
-  drinks:   { group: 'gear', name: '음료 냉장고', icon: '🍺', values: [0, 1], prices: [7000],
-    names: ['없음', '음료 판매'], desc: v => (v ? '손님 10명 중 4명이 음료 +¥200' : '라멘만 팔아요') },
-  recipe:   { group: 'gear', name: '비법 레시피', icon: '📜', values: [1, 1.1, 1.2], prices: [15000, 30000],
+  kenbaiki:{ group: 'kitchen', name: '식권 자판기', icon: '🎫', values: [0, 1], prices: [10000],
+    names: ['없음', '식권 자판기'], desc: v => (v ? '앉자마자 주문이 들어오고 손님 인내심 +10%' : '앉아서 메뉴를 고르느라 잠깐 걸려요') },
+  // ---- 💰 메뉴·매출 ----
+  recipe:  { group: 'menu', name: '비법 레시피', icon: '📜', values: [1, 1.1, 1.2], prices: [15000, 30000],
     names: ['기본 레시피', '비법 레시피', '전설의 레시피'], desc: v => (v > 1 ? `라멘 값 +${Math.round((v - 1) * 100)}%` : '기본 가격') },
-  // ---- 가게 확장 (group: 'expand') — 비싸지만 가게가 커짐. rent·wage = 단계별 매일 나가는 돈 ----
+  fineBowl:{ group: 'menu', name: '그릇', icon: '✨', values: [300, 500, 800, 1200], prices: [6000, 12000, 20000],
+    names: ['기본 그릇', '고급 그릇 (검은 칠·금테)', '명품 그릇 (청해파 무늬)', '금박 그릇'], desc: v => `만족한 손님 팁 ¥${v}` },
+  extraTop:{ group: 'menu', name: '추가 토핑 메뉴판', icon: '🥚', values: [0, 150, 250], prices: [5000, 11000],
+    names: ['추가 무료', '추가 토핑 유료', '추가 토핑·챠슈 유료'], desc: v => (v ? `기본에 없는 토핑${v > 150 ? '·챠슈 2장' : ''}을 시키면 하나에 +¥${v}` : '추가 토핑도 값을 안 받아요') },
+  drinks:  { group: 'menu', name: '음료 냉장고', icon: '🍺', values: [0, 1], prices: [7000],
+    names: ['없음', '음료 판매'], desc: v => (v ? '손님 10명 중 4명이 음료 +¥200' : '라멘만 팔아요') },
+  rice:    { group: 'menu', name: '밥 메뉴', icon: '🍚', values: [null, { p: 150, c: 40, pct: 0.3 }, { p: 400, c: 120, pct: 0.35 }], prices: [6000, 14000],
+    names: ['없음', '공기밥', '챠슈동'], desc: v => (v ? `손님 10명 중 ${Math.round(v.pct * 10)}명이 같이 시켜요 +¥${v.p}` : '밥은 안 팔아요') },
+  // ---- 🏮 가게 ----
+  noren:   { group: 'shop', name: '노렌·간판', icon: '🏮', values: [1, 1.15, 1.3, 1.5, 1.7], prices: [3000, 6000, 11000, 16000],
+    names: ['낡은 노렌', '새 노렌', '나무 간판', '등불 간판', '빛나는 간판'], desc: v => (v > 1 ? `손님 인내심 +${Math.round((v - 1) * 100)}%` : '손님 인내심 보통') },
+  decor:   { group: 'shop', name: '가게 꾸미기', icon: '🪴', values: [0, 1, 2, 3, 4], prices: [3000, 6000, 10000, 15000],
+    names: ['꾸밈 없음', '화분', '+ 마네키네코', '+ 족자·풍경', '+ 등불 줄'], desc: v => (v ? `분위기 좋아서 매일 평판 +${(v * 0.05).toFixed(2)}` : '꾸밈 없음') },
+  bench:   { group: 'shop', name: '가게 앞 대기석', icon: '🪑', values: [1, 1.5, 2], prices: [5000, 12000],
+    names: ['없음', '대기 의자', '대기 의자 + 차양'], desc: v => (v > 1 ? `줄 선 손님이 ${v}배 오래 기다려요${v >= 2 ? ' (비 와도 괜찮아요)' : ''}` : '자리가 없으면 금방 돌아가요') },
+  theme:   { group: 'shop', name: '인테리어 테마', icon: '🎨', values: [0, 0.03, 0.05, 0.08], prices: [12000, 20000, 30000],
+    names: ['짙은 나무', '밝은 히노키', '모던 블랙', '쇼와 레트로'], desc: v => (v ? `산 테마를 골라 바꿀 수 있어요 · 매일 평판 +${v}` : '기본 짙은 나무 인테리어') },
+  // ---- 🏗 확장 (rent·wage = 단계별 매일 나가는 돈) ----
   seats:   { group: 'expand', name: '좌석 확장', icon: '🪑', values: [6, 8], prices: [30000], rent: [0, 600],
     names: ['6자리', '8자리'], desc: v => `카운터 ${v}자리` },
   staff:   { group: 'expand', name: '주방 보조', icon: '🧑‍🍳', values: [0, 1], prices: [40000], wage: [0, 1200], unlockDay: 15, // 초반엔 너무 쉬워져서 Day 15부터
     names: ['혼자', '보조 1명'], desc: v => (v ? '그릇 놓기 · 주문에 맞는 육수 붓기를 도와줘요' : '혼자 일해요') },
   evening: { group: 'expand', name: '저녁 영업', icon: '🌙', values: [210, 270], prices: [45000], rent: [0, 800],
-    names: ['점심 영업', '점심 + 저녁'], desc: v => (v > 210 ? '영업 시간이 길어져 손님이 더 와요' : '점심만 영업해요') },
-  branch:  { group: 'expand', name: '2호점', icon: '🏯', values: [0, 5000], prices: [150000],
-    names: ['없음', '2호점 개업'], desc: v => (v ? `매일 2호점 수익 +¥${v.toLocaleString()}` : '최종 목표!') },
+    names: ['점심 영업', '점심 + 저녁'], desc: v => (v > 210 ? '20시까지 영업해서 손님이 더 와요' : '점심만 영업해요 (14시까지)') },
+  branch:  { group: 'expand', name: '체인점', icon: '🏯', values: [0, 5000, 12000, 22000], prices: [150000, 300000, 500000],
+    names: ['1호점뿐', '2호점 개업', '3호점 개업', '4호점 개업'], desc: v => (v ? `매일 체인점 수익 +¥${v.toLocaleString()}` : '최종 목표: 라멘 체인!') },
 };
+// 매일 고르는 재료 등급: 비쌀수록 손님이 더 참고 팁도 많이 줌
+const GRADES = [
+  { name: '기본 재료', icon: '🥢', cost: 1, tip: 1, pat: 1, note: '평소대로' },
+  { name: '좋은 돼지뼈', icon: '🐖', cost: 1.5, tip: 1.5, pat: 1.08, note: '재료비 ×1.5 · 팁 ×1.5 · 인내심 +8%' },
+  { name: '최상급 재료', icon: '👑', cost: 2.2, tip: 2.2, pat: 1.15, note: '재료비 ×2.2 · 팁 ×2.2 · 인내심 +15%' },
+];
 const store = {
   get(k, def) { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch (e) { return def; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 저장 불가 */ } },
@@ -604,9 +638,13 @@ const repText = () => {
 };
 // 예전(한 번만 사는) 업그레이드는 같은 효과의 단계로 옮김
 const upgLv = store.get('ramen-upg2', null) ?? Object.fromEntries(store.get('ramen-upg', []).map(k => [k, { bigTray: 2, noren: 2 }[k] ?? 1]));
+// 합쳐진 항목 옮기기: 면 바구니+타이머 → 면 솥, 토핑 통+냉장고 → 토핑 레일
+if ('baskets' in upgLv || 'timer' in upgLv) { upgLv.noodle = Math.max(upgLv.noodle ?? 0, upgLv.baskets ? 2 : upgLv.timer ? 1 : 0); delete upgLv.baskets; delete upgLv.timer; }
+if ('bigTray' in upgLv || 'fridge' in upgLv) { upgLv.rail = Math.max(upgLv.rail ?? 0, upgLv.bigTray ?? 0, [0, 2, 4][upgLv.fridge ?? 0]); delete upgLv.bigTray; delete upgLv.fridge; }
+store.set('ramen-upg2', upgLv);
 const levelOf = k => upgLv[k] ?? 0;
 const upgValue = k => UPGRADES[k].values[levelOf(k)];
-const stockMax = () => upgValue('bigTray');
+const stockMax = () => upgValue('rail').n;
 const slotCount = () => upgValue('slot4');
 const tipAmount = () => upgValue('fineBowl');
 const patienceMax = () => CFG.patience * upgValue('noren');
@@ -970,33 +1008,50 @@ function woodTexture(base, { planks = 6, vertical = false, grain = 0.18 } = {}) 
   tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   return tex;
 }
-function woodMat(base, repeatX, repeatY, opts) {
-  const tex = woodTexture(base, opts); tex.repeat.set(repeatX, repeatY);
-  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.75 });
+
+// ---------- 인테리어 테마: 나무는 세 가지 톤만 (벽·천장 바탕 / 진한 테두리 / 밝은 상판) + 바닥 ----------
+const THEMES = [
+  { name: '짙은 나무',   main: 0x5a3820, accent: 0x321e10, top: 0x7a4e2c, floor: 0x3e2614, grain: 0.2 },
+  { name: '밝은 히노키', main: 0xc9a274, accent: 0x7a5432, top: 0xe0c296, floor: 0x9a7448, grain: 0.14 },
+  { name: '모던 블랙',   main: 0x2e2e32, accent: 0x141416, top: 0x8a6a48, floor: 0x3a3a3e, grain: 0.06 },
+  { name: '쇼와 레트로', main: 0xd9ccae, accent: 0x6a2a1e, top: 0xa8683a, floor: 0x5a3820, grain: 0.06 },
+];
+const themed = []; // 테마 따라 다시 칠할 재질 { m, role, opts?, rx, ry }
+function themeWood(role, rx, ry, opts) { const m = new THREE.MeshStandardMaterial({ roughness: 0.75 }); themed.push({ m, role, opts, rx, ry }); return m; }
+function themeMat(role) { const m = mat(0xffffff); themed.push({ m, role }); return m; }
+let themeNow = Math.min(store.get('ramen-theme', 0), levelOf('theme'));
+function applyTheme(i) {
+  themeNow = i; store.set('ramen-theme', i);
+  const T = THEMES[i];
+  for (const t of themed) {
+    if (t.opts) { t.m.map?.dispose(); const tex = woodTexture(T[t.role], { ...t.opts, grain: T.grain }); tex.repeat.set(t.rx, t.ry); t.m.map = tex; t.m.color.set(0xffffff); }
+    else t.m.color.setHex(T[t.role]);
+    t.m.needsUpdate = true;
+  }
 }
 
 // ---------- 방 ----------
-const woodDark = mat(0x3e2414), wood = mat(0x6e4426), woodLight = mat(0xa87a4e); // 짙은 갈색 인테리어
+const woodDark = themeMat('accent'), wood = themeMat('top'), woodLight = themeMat('top'); // 테두리 · 상판
 const steel = mat(0x8d949b, { metalness: 0.6, roughness: 0.4 });
 const steelDark = mat(0x5e6369, { metalness: 0.5, roughness: 0.45 });
 box(6, 0.02, 3.2, mat(0x9a9286), 0, 0, 0);                                     // 주방 바닥 (타일)
-box(6, 0.02, 2.4, woodMat(0x5e3a20, 6, 3, { planks: 8 }), 0, 0, -2.6);         // 홀 바닥 (나무)
-box(6, 0.02, 7, woodMat(0x553420, 4, 6, { planks: 10, vertical: true }), 0, 2.75, -1); // 천장 (나무 판자)
+box(6, 0.02, 2.4, themeWood('floor', 6, 3, { planks: 8 }), 0, 0, -2.6);         // 홀 바닥 (나무)
+box(6, 0.02, 7, themeWood('main', 4, 6, { planks: 10, vertical: true }), 0, 2.75, -1); // 천장 (나무 판자)
 for (const z of [-3.0, -1.9, -0.8, 0.4]) box(6, 0.12, 0.12, woodDark, 0, 2.68, z);   // 천장 보
 box(6, 2.8, 0.1, mat(0xe2dacb), 0, 1.4, 1.66);                                 // 주방 뒷벽 (흰 타일)
 for (let i = 0; i < 12; i++) box(0.005, 1.0, 0.01, mat(0xcfc8ba), -2.75 + i * 0.5, 1.7, 1.6);
 for (let j = 0; j < 3; j++) box(6, 0.005, 0.01, mat(0xcfc8ba), 0, 1.35 + j * 0.35, 1.6);
-const wallWood = () => woodMat(0x5e3a22, 5, 1, { planks: 10, vertical: true, grain: 0.2 });
+const wallWood = () => themeWood('main', 5, 1, { planks: 10, vertical: true });
 box(0.1, 2.8, 7, wallWood(), -2.9, 1.4, -1);    // 왼쪽 벽 (세로 판자)
 box(0.1, 2.8, 7, wallWood(), 2.9, 1.4, -1);     // 오른쪽 벽
 for (const x of [-2.84, 2.84]) {                // 벽 아래 진한 나무 판 + 몰딩
-  box(0.03, 0.9, 7, woodMat(0x4a2c18, 6, 1, { planks: 14, vertical: true }), x, 0.45, -1);
+  box(0.03, 0.9, 7, themeWood('accent', 6, 1, { planks: 14, vertical: true }), x, 0.45, -1);
   box(0.05, 0.05, 7, woodDark, x, 0.92, -1);
 }
 
 // ---------- 가게 앞벽: 창문 + 입구 ----------
 const FRONT_Z = -3.6, DOOR_X0 = 1.75, DOOR_X1 = 2.75, DOOR_H = 2.05;
-const frontWood = () => woodMat(0x5e3a22, 4, 1, { planks: 10, vertical: true, grain: 0.2 });
+const frontWood = () => themeWood('main', 4, 1, { planks: 10, vertical: true });
 // 창문 구멍(x -1.9 ~ 0.7, y 1.12 ~ 2.18)과 입구 구멍을 남기고 벽을 조각으로 세움
 box(DOOR_X0 - 0.7, 2.8, 0.1, frontWood(), (0.7 + DOOR_X0) / 2, 1.4, FRONT_Z);          // 창문~입구 사이
 box(-1.9 + 2.9, 2.8, 0.1, frontWood(), (-2.9 - 1.9) / 2, 1.4, FRONT_Z);                // 왼쪽 끝~창문
@@ -1004,7 +1059,7 @@ box(2.6, 1.12, 0.1, frontWood(), -0.6, 0.56, FRONT_Z);                          
 box(2.6, 2.8 - 2.18, 0.1, frontWood(), -0.6, (2.18 + 2.8) / 2, FRONT_Z);                // 창문 위
 box(2.9 - DOOR_X1, 2.8, 0.1, frontWood(), (DOOR_X1 + 2.9) / 2, 1.4, FRONT_Z);           // 입구 오른쪽
 box(DOOR_X1 - DOOR_X0, 2.8 - DOOR_H, 0.1, frontWood(), (DOOR_X0 + DOOR_X1) / 2, (DOOR_H + 2.8) / 2, FRONT_Z); // 입구 위
-box(4.7, 0.9, 0.03, woodMat(0x4a2c18, 6, 1, { planks: 14, vertical: true }), -0.55, 0.45, FRONT_Z + 0.06);
+box(4.7, 0.9, 0.03, themeWood('accent', 6, 1, { planks: 14, vertical: true }), -0.55, 0.45, FRONT_Z + 0.06);
 // 창틀 (격자)
 for (const x of [-1.9, -1.25, -0.6, 0.05, 0.7]) box(0.05, 1.06, 0.06, woodDark, x, 1.65, FRONT_Z);
 for (const y of [1.12, 1.65, 2.18]) box(2.65, 0.05, 0.06, woodDark, -0.6, y, FRONT_Z);
@@ -1012,17 +1067,18 @@ for (const y of [1.12, 1.65, 2.18]) box(2.65, 0.05, 0.06, woodDark, -0.6, y, FRO
 box(0.08, DOOR_H, 0.14, woodDark, DOOR_X0 - 0.04, DOOR_H / 2, FRONT_Z);
 box(0.08, DOOR_H, 0.14, woodDark, DOOR_X1 + 0.04, DOOR_H / 2, FRONT_Z);
 box(DOOR_X1 - DOOR_X0 + 0.16, 0.1, 0.16, woodDark, (DOOR_X0 + DOOR_X1) / 2, DOOR_H + 0.05, FRONT_Z);
-box(DOOR_X1 - DOOR_X0, 0.03, 0.4, mat(0x6a4a30), (DOOR_X0 + DOOR_X1) / 2, 0.01, FRONT_Z);   // 문턱
+box(DOOR_X1 - DOOR_X0, 0.03, 0.4, woodDark, (DOOR_X0 + DOOR_X1) / 2, 0.01, FRONT_Z);   // 문턱
 // 미닫이 문 (손님이 다가오면 열림)
 const slideDoor = new THREE.Group(); scene.add(slideDoor);
 {
   const w = DOOR_X1 - DOOR_X0;
-  box(w, 0.9, 0.04, woodMat(0x6e4426, 1, 1, { planks: 3, vertical: true }), 0, 0.45, 0, slideDoor); // 아래쪽 나무 판
+  box(w, 0.9, 0.04, themeWood('top', 1, 1, { planks: 3, vertical: true }), 0, 0.45, 0, slideDoor); // 아래쪽 나무 판
   const glass = box(w - 0.1, DOOR_H - 0.95, 0.01, new THREE.MeshStandardMaterial({ color: 0xcfe6f0, transparent: true, opacity: 0.22, roughness: 0.1 }), 0, 0.92 + (DOOR_H - 0.95) / 2, 0, slideDoor);
   glass.castShadow = false;
   for (const x of [-w / 2 + 0.03, w / 2 - 0.03, 0]) box(0.04, DOOR_H - 0.05, 0.05, woodDark, x, DOOR_H / 2, 0, slideDoor);
   for (const y of [0.9, 1.4, DOOR_H - 0.05]) box(w, 0.04, 0.05, woodDark, 0, y, 0, slideDoor);
 }
+applyTheme(themeNow);
 const DOOR_CLOSED_X = (DOOR_X0 + DOOR_X1) / 2, DOOR_OPEN_X = DOOR_CLOSED_X - (DOOR_X1 - DOOR_X0) + 0.05;
 slideDoor.position.set(DOOR_CLOSED_X, 0, FRONT_Z + 0.12);
 let doorOpen = false;
@@ -1089,6 +1145,42 @@ function norenLayout() {
   cyl(0.09, 0.09, 0.03, 10, mat(0x1a1a1a), DOOR_X0 - 0.3, 2.13, FRONT_Z + 0.38);
   const pl = new THREE.PointLight(0xff7a4a, 1.5, 2.5, 1.5); pl.position.set(DOOR_X0 - 0.3, 2.3, FRONT_Z + 0.55); scene.add(pl);
 }
+// 식권 자판기 (입구 안쪽 오른쪽 벽) · 가게 앞 대기 의자 · 창문 위 차양 — 사면 보임
+const kenbaiki = new THREE.Group(); kenbaiki.position.set(2.66, 0, -3.2); scene.add(kenbaiki);
+{
+  box(0.35, 1.0, 0.52, mat(0xc8302a, { roughness: 0.4 }), 0, 0.5, 0, kenbaiki);              // 아래 빨간 몸통
+  box(0.35, 0.62, 0.52, mat(0xeeeae2, { roughness: 0.35 }), 0, 1.31, 0, kenbaiki);           // 위 흰 몸통
+  const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.52), new THREE.MeshStandardMaterial({ roughness: 0.5, map: canvasTex(256, g => {
+    g.fillStyle = '#f6f2ea'; g.fillRect(0, 0, 256, 256);
+    g.fillStyle = '#b8322a'; g.fillRect(0, 0, 256, 40); g.fillStyle = '#fff'; g.font = 'bold 26px sans-serif'; g.textAlign = 'center'; g.fillText('食券', 128, 30);
+    const items = ['豚骨', '醤油', '味噌', '塩', '担々', 'つけ麺', '替玉', '味玉', 'ご飯', '餃子', 'ビール', '烏龍茶'];
+    items.forEach((t, i) => { const x = 8 + (i % 3) * 82, y = 50 + Math.floor(i / 3) * 50;
+      g.fillStyle = i < 6 ? '#f2c94c' : '#9ad0f0'; g.fillRect(x, y, 76, 42); g.fillStyle = '#2a1a10'; g.font = 'bold 20px sans-serif'; g.fillText(t, x + 38, y + 28); });
+  }) }));
+  panel.position.set(-0.177, 1.3, 0); panel.rotation.y = -Math.PI / 2; kenbaiki.add(panel);                // 메뉴 버튼판 (방 쪽)
+  box(0.02, 0.05, 0.12, mat(0x222222), -0.18, 0.92, 0.12, kenbaiki);                         // 지폐 넣는 곳
+  box(0.03, 0.08, 0.2, mat(0x1a1a1a), -0.18, 0.55, 0, kenbaiki);                              // 식권 나오는 곳
+}
+const benchOut = new THREE.Group(); benchOut.position.set(3.0, 0, -4.45); scene.add(benchOut);
+{
+  const wd = mat(0x6a4428, { roughness: 0.7 });
+  box(0.38, 0.05, 1.1, wd, 0, 0.45, 0, benchOut);
+  for (const z of [-0.45, 0.45]) box(0.32, 0.43, 0.05, mat(0x2a2a2a), 0, 0.215, z, benchOut);
+  box(0.05, 0.4, 1.1, wd, 0.17, 0.75, 0, benchOut);                                            // 등받이
+}
+const awning = new THREE.Group(); scene.add(awning);
+{
+  const tex = canvasTex(128, g => { for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#f4efe4' : '#b8322a'; g.fillRect(i * 16, 0, 16, 128); } });
+  const cloth = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 0.75), new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 0.9 }));
+  cloth.position.set(-0.6, 2.38, FRONT_Z - 0.32); cloth.rotation.x = -Math.PI / 2 + 0.55; awning.add(cloth);       // 비스듬한 천
+  const val = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 0.14), cloth.material); val.position.set(-0.6, 2.13, FRONT_Z - 0.62); awning.add(val); // 앞 늘어진 단
+}
+function propsLayout() {
+  kenbaiki.visible = !!upgValue('kenbaiki');
+  benchOut.visible = upgValue('bench') > 1;
+  awning.visible = upgValue('bench') >= 2;
+}
+propsLayout();
 // 바깥 거리 — 창문과 입구로 보임. 가게 시계에 맞춰 낮(점심) → 노을 → 밤으로 바뀜 (비 오는 날은 흐림)
 const STREET_SHOPS = Array.from({ length: 9 }, (_, i) => ({ x: i * 120 - 20, h: 180 + Math.random() * 120, c: i % 3, lit: Array.from({ length: 6 }, () => Math.random()) }));
 const STREET_LOOK = {
@@ -1778,7 +1870,7 @@ const BASKET_GRID = {
 };
 const basketHolder = new THREE.Group(); noodlePot.add(basketHolder); // 칸막이 철망 (자리를 눈으로 보이게)
 function basketLayout() {
-  const n = upgValue('baskets'), grid = BASKET_GRID[n];
+  const n = upgValue('noodle').b, grid = BASKET_GRID[n];
   baskets.forEach((b, i) => {
     b.group.visible = i < n;
     if (i >= n) return;
@@ -2419,6 +2511,7 @@ function newGame() {
     event: 'normal', repBonus: 0, criticCame: false, // 오늘의 행사 · 평론가 등으로 오늘 바뀐 평판
     refill: {}, pop: {}, lastAdd: null, // 보충 중인 토핑(남은 초) · 그릇 위 "+파" 표시 · 되돌릴 수 있는 방금 넣은 것
     costIngr: 0, staffT: 2, // 오늘 쓴 재료비 · 보조가 다음에 움직일 때까지
+    grade: clamp(store.get('ramen-grade', 0), 0, GRADES.length - 1), extraSales: 0, riceSales: 0, // 오늘 재료 등급 · 추가 토핑 · 밥 매출
     xpToday: 0, combo: 0, missionCash: 0, missions: [], // 오늘 얻은 경험치 · 연속 만족 · 미션 보상 · 오늘의 미션
     gyozaPan: { t: null }, gyozaPlates: 0, // 교자 굽는 시간 (null = 비어 있음) · 옆에 빼놓은 접시 수
     day, stock: Object.fromEntries(Object.keys(TOPPINGS).map(k => [k, stockMax()])),
@@ -2428,7 +2521,7 @@ function newGame() {
   shoyuPot.visible = shoyuLabel.visible = lv.menu.includes('shoyu');
   shioPot.visible = shioLabel.visible = lv.menu.includes('shio');
   for (const [k, f] of Object.entries(fridges)) f.tag.visible = lv.stock && toppingsOn().includes(k);
-  trayLayout(); slotLayout(); restackBowls(); norenLayout(); decorLayout(); buildKit(); misoJar.visible = misoLabel.visible = lv.menu.includes('miso');
+  trayLayout(); slotLayout(); restackBowls(); norenLayout(); decorLayout(); propsLayout(); buildKit(); misoJar.visible = misoLabel.visible = lv.menu.includes('miso');
   Object.keys(TOPPINGS).forEach(updateTray);
   baskets.forEach(b => { b.cooking = false; b.t = 0; b.noodles.visible = false; });
   basketLayout();
@@ -2825,7 +2918,8 @@ function regularOf(name) {
   regs[name] = { look, order: { ...order, top: [...order.top] } }; store.set('ramen-regulars', regs);
   return { look, order };
 }
-const custPatience = c => patienceMax() * (c.special?.patMul ?? 1) * (ev().patience ?? 1);
+const grade = () => GRADES[G.grade ?? 0];
+const custPatience = c => patienceMax() * (c.special?.patMul ?? 1) * (ev().patience ?? 1) * (upgValue('kenbaiki') ? 1.1 : 1) * grade().pat;
 // 평론가 결과는 오늘 평판에 바로 더해짐
 function criticVerdict(c) {
   if (c.special?.type !== 'critic') return;
@@ -2930,7 +3024,7 @@ function serve(c, bowl) {
   c.result = res; c.state = 'eating'; c.eatT = rand(16, 24);
   onServed(c, bowl, res); // 경험치 · 미션 · 콤보
   c.gotGyoza = bowl.gyoza === 'good';
-  G.costIngr += Math.round(RAMEN[c.order.ramen].price * INGREDIENT_RATE) + (bowl.gyoza ? GYOZA_COST : 0); // 낸 그릇만큼 재료비
+  G.costIngr += Math.round(RAMEN[c.order.ramen].price * INGREDIENT_RATE * grade().cost) + (bowl.gyoza ? GYOZA_COST : 0); // 낸 그릇만큼 재료비 (재료 등급만큼)
   c.ticket?.remove(); c.ticket = null;
   const seat = G.seats[c.seat];
   seat.bowl = bowl;
@@ -2985,7 +3079,7 @@ function updateCustomers(dt) {
     c.bob += dt;
     if (c.state === 'queue') {
       c.queueT += dt;
-      if (c.queueT > CFG.queuePatience) {
+      if (c.queueT > CFG.queuePatience * upgValue('bench')) { // 대기석이 있으면 더 오래 기다림
         G.queue.splice(G.queue.indexOf(c), 1);
         G.results.angry++; G.scores.push(1); c.result = 'angry'; criticVerdict(c);
         toast('😠 자리가 없어서 기다리던 손님이 돌아갔어요', 'bad'); Sound.angry();
@@ -2996,7 +3090,7 @@ function updateCustomers(dt) {
     const m = c.mesh;
     if (c.state === 'walking') {
       if (moveAlong(m, c.path, 1.5, dt)) {
-        c.state = 'ordering'; c.orderT = 1.5; m.rotation.y = 0;
+        c.state = 'ordering'; c.orderT = upgValue('kenbaiki') ? 0.2 : 1.5; m.rotation.y = 0; // 식권 자판기면 앉자마자 주문
       }
       m.position.y = Math.abs(Math.sin(c.bob * 9)) * 0.025;
     } else if (c.state === 'leaving') {
@@ -3030,8 +3124,15 @@ function updateCustomers(dt) {
             'すみません、替え玉' + { katame: 'カタメで！', futsu: 'お願いします！', yawa: 'やわめで！' }[kf]);
         } else if (c.eatT <= 0) {
           const price = Math.round(RAMEN[c.order.ramen].price * upgValue('recipe') / 10) * 10; // 비법 레시피면 값이 오름
-          G.money += price + (c.gotGyoza ? GYOZA_PRICE : 0) + (c.result === 'happy' ? Math.round(tipAmount() * (c.special?.tipMul ?? 1) * (ev().tip ?? 1) * (c.comboMul ?? 1)) : 0);
+          G.money += price + (c.gotGyoza ? GYOZA_PRICE : 0) + (c.result === 'happy' ? Math.round(tipAmount() * (c.special?.tipMul ?? 1) * (ev().tip ?? 1) * (c.comboMul ?? 1) * grade().tip) : 0);
+          const extra = upgValue('extraTop'); // 추가 토핑(기본에 없는 것) · 챠슈 2장을 유료로
+          if (extra) {
+            const base = baseOf(c.order.ramen), n = [...c.order.top].filter(k => !base.includes(k)).length + (extra > 150 && c.order.chashu > 1 ? 1 : 0);
+            G.money += n * extra; G.extraSales = (G.extraSales ?? 0) + n * extra;
+          }
           if (upgValue('drinks') && Math.random() < 0.4) { G.money += 200; G.costIngr += 60; } // 음료도 한 병
+          const rice = upgValue('rice'); // 공기밥 · 챠슈동
+          if (rice && Math.random() < rice.pct) { G.money += rice.p; G.costIngr += rice.c; G.riceSales = (G.riceSales ?? 0) + rice.p; }
           G.seats[c.seat].bowl?.empty();
           if (c.result === 'happy') customerSay(c, '😋 잘 먹었습니다!', 'happy', 'gochisousama', 'ごちそうさまでした！');
           else customerSay(c, c.result === 'normal' ? '🙂 잘 먹었어요' : '😠 …', c.result);
@@ -3342,7 +3443,7 @@ function undoBowl() {
 }
 // 토핑 보충: 냉장고에서 꺼내 통을 채우는 데 2초 (그동안 다른 일 해도 됨)
 const grillWindow = () => { const w = upgValue('grill2') / 100, mid = 0.61; return [mid - w / 2, mid + w / 2]; };
-const refillSec = () => upgValue('fridge'); // 냉장고 장비에 따라 2초 → 1초 → 0.3초
+const refillSec = () => upgValue('rail').r; // 토핑 레일 단계에 따라 2초 → 1초 → 0.3초
 // 교자: 8초면 다 구워지고, 18초가 넘으면 탐 · 한 접시 ¥400
 const GYOZA_BURN = 18, GYOZA_PRICE = 400;
 const gyozaHold = () => upgValue('gyozaPan'); // 옆에 빼놓을 수 있는 접시 수 (철판 장비면 6)
@@ -3473,11 +3574,11 @@ function startInfoHtml() {
 }
 // 상점 (시작 화면·영업 종료 화면): 업그레이드 / 가게 확장 탭. 단계 점(●○), 지금 효과 → 다음 단계 효과
 // prefix = 'start' | 'end' → #startShop · #startExpand 등을 함께 다시 그림 (금고가 같이 바뀌므로)
+const SHOP_TABS = [['Kitchen', 'kitchen', '🔧 주방 — 빨라지고 편해져요'], ['Menu', 'menu', '💰 메뉴·매출 — 한 그릇에 더 벌어요'], ['Store', 'shop', '🏮 가게 — 평판·손님 인내심'], ['Expand', 'expand', '🏗 가게 확장 — 비싸지만 크게 키워요']];
 function renderShop(prefix) {
-  for (const [id, group] of [[prefix + 'Shop', undefined], [prefix + 'Gear', 'gear'], [prefix + 'Expand', 'expand']]) {
-    const el = document.getElementById(id);
-    const title = { expand: '🏗 가게 확장', gear: '🧰 주방 장비' }[group] ?? '🏪 가게 업그레이드';
-    el.innerHTML = `<h3>${title} <span>금고 ¥${bank.toLocaleString()}</span></h3>` + (group ? goalHtml() : '') + '<div class="shop-grid">' +
+  for (const [id, group, title] of SHOP_TABS) {
+    const el = document.getElementById(prefix + id);
+    el.innerHTML = `<h3>${title} <span>금고 ¥${bank.toLocaleString()}</span></h3>` + (group === 'expand' ? goalHtml() : '') + '<div class="shop-grid">' +
       Object.entries(UPGRADES).filter(([, u]) => u.group === group).map(([k, u]) => {
         const locked = day < (u.unlockDay ?? 0);
         const lv = levelOf(k), max = u.prices.length, price = u.prices[lv], done = lv >= max, can = !done && !locked && bank >= price;
@@ -3488,11 +3589,28 @@ function renderShop(prefix) {
         return `<button class="upg${done ? ' owned' : ''}" data-k="${k}" ${!can ? 'disabled' : ''}>
           <b>${u.icon} ${u.name} <span class="pips">${pips}</span></b>${now}${next}${upkeep ? `<small class="upkeep">매일 −¥${upkeep.toLocaleString()}</small>` : ''}
           <span class="price">${done ? '✓ 최고 단계' : locked ? `🔒 Day ${u.unlockDay}부터 · ¥${price.toLocaleString()}` : `¥${price.toLocaleString()}${can ? '' : ' (돈 부족)'}`}</span></button>`;
-      }).join('') + '</div>';
+      }).join('') + '</div>' + (group === 'shop' && levelOf('theme') ? themePickHtml() : '');
     el.querySelectorAll('.upg').forEach(b => b.onclick = () => {
-      if (buyUpgrade(b.dataset.k)) { Sound.init(); Sound.happy(); renderShop(prefix); }
+      if (!buyUpgrade(b.dataset.k)) return;
+      Sound.init(); Sound.happy();
+      if (b.dataset.k === 'theme') applyTheme(levelOf('theme')); // 새 테마를 사면 바로 입혀 봄
+      propsLayout(); renderShop(prefix);
     });
+    el.querySelectorAll('[data-theme]').forEach(b => b.onclick = () => { applyTheme(+b.dataset.theme); Sound.init(); Sound.knob(); renderShop(prefix); });
   }
+}
+// 산 테마 중에서 골라 입히기
+function themePickHtml() {
+  const hex = c => '#' + c.toString(16).padStart(6, '0');
+  return '<div class="theme-pick">🎨 지금 입힌 테마:' + THEMES.slice(0, levelOf('theme') + 1).map((T, i) =>
+    `<button data-theme="${i}" class="${i === themeNow ? 'on' : ''}"><i style="background:${hex(T.main)}"></i><i style="background:${hex(T.accent)}"></i>${T.name}</button>`).join('') + '</div>';
+}
+// 오늘(내일) 쓸 재료 등급 고르기 — 다음 날에도 그대로 유지
+function renderGrade(id) {
+  const el = document.getElementById(id), cur = clamp(store.get('ramen-grade', 0), 0, GRADES.length - 1);
+  el.innerHTML = `<h4>🥩 ${id === 'endGrade' ? '내일' : '오늘'} 쓸 재료</h4><div class="opts">` + GRADES.map((g, i) =>
+    `<button data-g="${i}" class="${i === cur ? 'on' : ''}"><b>${g.icon} ${g.name}</b>${g.note}</button>`).join('') + '</div>';
+  el.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { store.set('ramen-grade', +b.dataset.g); Sound.init(); Sound.knob(); renderGrade(id); });
 }
 // 다음 확장 목표까지 진행 막대 (아직 안 산 확장 중 가장 싼 것)
 function goalHtml() {
@@ -3659,7 +3777,7 @@ document.getElementById('missionChip').onclick = e => {
   const p = document.getElementById('missionPanel'); p.hidden = !p.hidden;
   clearTimeout(p._t); if (!p.hidden) p._t = setTimeout(() => { p.hidden = true; }, 4000);
 };
-renderShop('start');
+renderShop('start'); renderGrade('startGrade');
 document.getElementById('startBtn').textContent = day > 1 ? `Day ${day} 영업 시작` : '영업 시작';
 document.getElementById('startBtn').onclick = () => { goFullscreen(); startDay(); };
 document.getElementById('resetBtn').style.display = day > 1 ? '' : 'none';
@@ -3705,7 +3823,7 @@ function updateBasketPad() {
   pad.hidden = !show; kit.hidden = show;
   if (!show) return;
   placeBasketPad(pad);
-  const n = upgValue('baskets'), rinseOn = levelCfg().menu.includes('tsukemen');
+  const n = upgValue('noodle').b, rinseOn = levelCfg().menu.includes('tsukemen');
   if (pad.childElementCount !== n + (rinseOn ? 1 : 0)) {
     pad.style.gridTemplateColumns = `repeat(${BASKET_GRID[n].cols}, auto)`;
     pad.innerHTML = baskets.slice(0, n).map((b, i) => `<button class="bk-btn" data-i="${i}"><b>${i + 1}</b><span></span></button>`).join('')
@@ -3919,7 +4037,7 @@ function update(dt) {
   // 면 솥
   for (const b of baskets) if (b.cooking) {
     b.t += dt;
-    if (upgValue('timer')) { // 면 타이머: 익힘 구간에 들어서는 순간 띵
+    if (upgValue('noodle').t) { // 면 타이머: 익힘 구간에 들어서는 순간 띵
       const f = firmOf(b.t);
       if (f !== b.lastFirm && ['katame', 'futsu', 'yawa'].includes(f)) Sound.ding();
       b.lastFirm = f;
@@ -4094,9 +4212,10 @@ function endDay() {
   const grow = settleProgress(net); // 마감 미션 확인 · 경험치를 레벨에 반영
   bank += net + G.missionCash + grow.bonus; store.set('ramen-bank', bank);
   const row = (label, v, cls = '') => `<div class="ledger-row ${cls}"><span>${label}</span><b>${v < 0 ? '−' : ''}¥${Math.abs(v).toLocaleString()}</b></div>`;
-  document.getElementById('endMoney').innerHTML = `<div class="ledger">${row('매출', G.money)}${row('재료비', -G.costIngr)}${row('월세', -rent)}${wage ? row('직원 급여', -wage) : ''}${branch ? row('2호점 수익', branch) : ''}`
+  document.getElementById('endMoney').innerHTML = `<div class="ledger">${row('매출', G.money)}${row('재료비', -G.costIngr)}${row('월세', -rent)}${wage ? row('직원 급여', -wage) : ''}${branch ? row('체인점 수익', branch) : ''}`
     + `${row(net >= 0 ? '순이익' : '적자', net, net >= 0 ? 'net' : 'net loss')}`
-    + `${G.missionCash ? row('⭐ 미션 보상', G.missionCash) : ''}${grow.bonus ? row('🎉 레벨업 보너스', grow.bonus) : ''}</div>`;
+    + `${G.missionCash ? row('⭐ 미션 보상', G.missionCash) : ''}${grow.bonus ? row('🎉 레벨업 보너스', grow.bonus) : ''}</div>`
+    + `<small>${grade().icon} 재료: ${grade().name}${G.extraSales ? ` · 추가 토핑 ¥${G.extraSales.toLocaleString()}` : ''}${G.riceSales ? ` · 밥 ¥${G.riceSales.toLocaleString()}` : ''}${G.extraSales || G.riceSales ? ' (매출에 포함)' : ''}</small>`;
   // 성장 탭: 미션 결과 · 얻은 경험치 · 레벨
   const lvUp = grow.after > grow.before;
   document.getElementById('endGrowth').innerHTML = `<h3>⭐ 오늘의 미션 ${G.missions.filter(m => m.done).length}/${G.missions.length}</h3>${missionsHtml(G.missions) || '<p>첫날은 미션이 없어요.</p>'}`
@@ -4106,7 +4225,7 @@ function endDay() {
   document.getElementById('endNet').innerHTML = net >= 0 ? `💰 순이익 <b>¥${net.toLocaleString()}</b> <small>(장부 탭에서 자세히)</small>` : `📉 적자 <b>¥${(-net).toLocaleString()}</b> <small>(장부 탭에서 자세히)</small>`;
   document.getElementById('endNet').classList.toggle('loss', net < 0);
   document.getElementById('endGoal').innerHTML = goalHtml();
-  renderShop('end');
+  renderShop('end'); renderGrade('endGrade');
   document.getElementById('endComment').textContent =
     avg >= 4.3 ? '줄 서는 라멘집이 될 것 같아요! 🎉' :
     avg >= 3.3 ? '좋은 하루였어요. 조금만 더 빠르게!' :
@@ -4114,7 +4233,7 @@ function endDay() {
     '오늘은 힘들었어요… 내일은 더 잘할 수 있어요!';
   // 내일 열리는 요소 미리 보기
   // 가게 평판: 오늘 평점이 40% 반영 + 가게 꾸미기 보너스
-  if (G.scores.length) { const before = rep; setRep(rep * 0.6 + avg * 0.4 + upgValue('decor') * 0.05 + G.repBonus); G.repBefore = before; }
+  if (G.scores.length) { const before = rep; setRep(rep * 0.6 + avg * 0.4 + upgValue('decor') * 0.05 + upgValue('theme') + G.repBonus); G.repBefore = before; }
   showRep();
   const next = day + 1;
   document.getElementById('endNext').innerHTML = '내일은… ' + dayInfoHtml(next);
