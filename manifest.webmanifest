@@ -1,6 +1,6 @@
 {
-  "name": "라멘 카운터",
-  "short_name": "라멘 카운터",
+  "name": "인생라멘",
+  "short_name": "인생라멘",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "landscape",

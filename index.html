@@ -6,12 +6,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="라멘 카운터">
+<meta name="apple-mobile-web-app-title" content="인생라멘">
 <meta name="theme-color" content="#120d0a">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Yuji+Syuku&display=swap">
-<title>라멘 카운터</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&family=Yuji+Syuku&display=swap">
+<title>인생라멘</title>
 <style>
   :root {
     --paper: #f6efe1;
@@ -123,6 +123,8 @@
   .coach-hint { text-align: center; font-size: 13px; opacity: .75; margin: 6px 0 10px; }
   .credit { font-size: 11px; opacity: .55; line-height: 1.5; margin-top: 10px; }
   .ver { font-size: 12px; font-weight: 600; opacity: .5; letter-spacing: .02em; }
+  h1.brand { font-family: "Song Myung", "AppleMyungjo", serif; font-weight: 400; letter-spacing: .04em; }
+  h1.brand small { font-family: "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif; }
   p.ver { margin: -6px 0 10px; }
   .credit summary { cursor: pointer; list-style: none; } /* 음성 출처는 이용 규칙상 남겨 두되 접어 둠 */
   .flow { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; counter-reset: f; justify-content: center; }
@@ -281,7 +283,7 @@
     box-shadow: inset 0 -8px 12px rgba(0,0,0,.18), 0 6px 14px rgba(0,0,0,.4); transform-origin: top center; animation: t-sway 3.2s ease-in-out infinite; }
   .t-noren span:nth-child(2) { animation-delay: -.8s; } .t-noren span:nth-child(3) { animation-delay: -1.6s; } .t-noren span:nth-child(4) { animation-delay: -2.4s; }
   @keyframes t-sway { 0%, 100% { transform: rotate(-1.6deg) skewX(-1deg); } 50% { transform: rotate(1.6deg) skewX(1deg); } }
-  .t-logo { margin: 10px 0 0; font: 400 min(64px, 15vh)/1.05 "Black Han Sans", "Apple SD Gothic Neo", sans-serif; letter-spacing: .02em; color: #ffe2a8;
+  .t-logo { margin: 10px 0 0; font: 400 min(72px, 17vh)/1.05 "Song Myung", "AppleMyungjo", serif; letter-spacing: .04em; color: #ffe2a8; /* 붓으로 쓴 명조 */
     text-shadow: 0 3px 0 #8a2a1e, 0 6px 0 #4a160f, 0 10px 24px rgba(0,0,0,.6); }
   .t-sub { margin: 4px 0 0; font-size: min(15px, 3.8vh); opacity: .85; letter-spacing: .04em; }
   .t-bowl { position: relative; font-size: min(40px, 10vh); margin-top: 6px; line-height: 1; }
@@ -435,8 +437,8 @@
   <div class="t-lantern l"><b>麺</b></div><div class="t-lantern r"><b>屋</b></div>
   <div class="t-rod"></div>
   <div class="t-noren"><span>ら</span><span>ー</span><span>め</span><span>ん</span></div>
-  <h1 class="t-logo">라멘 카운터</h1>
-  <p class="t-sub">한 그릇씩 정성껏 — 골목 라멘집에서 전국 체인까지</p>
+  <h1 class="t-logo">인생라멘</h1>
+  <p class="t-sub">내 인생 최고의 한 그릇 — 골목 라멘집에서 전국 체인까지</p>
   <div class="t-bowl">🍜<i></i><i></i><i></i></div>
   <div class="t-tap">👆 화면을 터치해서 시작</div>
   <div class="t-credit">목소리 VOICEVOX</div>
@@ -448,7 +450,7 @@
   <div class="card paged">
     <div class="tabs"></div>
     <section class="pg" data-tab="오늘">
-      <h1>라멘 <span>카운터</span> <small class="ver"></small></h1>
+      <h1 class="brand">인생<span>라멘</span> <small class="ver"></small></h1>
       <div id="ownerInfo"></div>
       <div class="day-box" id="dayInfo"></div>
       <div id="todayMissions"></div>
@@ -555,7 +557,7 @@
 <script type="module">
 import * as THREE from 'three';
 // 게임 버전 — 베타에 올릴 때마다 올림 (시작 화면·일시정지에 표시해서 어느 버전인지 바로 확인)
-const APP_VERSION = 'v1.5', APP_DATE = '11/05';
+const APP_VERSION = 'v1.6', APP_DATE = '11/05';
 document.querySelectorAll('.ver').forEach(el => { el.textContent = `${APP_VERSION} · ${APP_DATE}`; });
 
 // ================= 설정 =================
@@ -3773,7 +3775,7 @@ const Promo = (() => {
   const PEOPLE = ['🚶', '🚶‍♀️', '🧑‍💼', '👩‍💼', '🧓', '👵', '🧑‍🎓', '👨‍🍳', '🏃', '🏃‍♀️'];
   let walkers = [], hits = 0, timeLeft = 0, raf = 0, last = 0, spawnT = 0, running = false;
   function reset() {
-    street.innerHTML = '<div class="shop">🍜 라멘 카운터</div>';
+    street.innerHTML = '<div class="shop">🍜 인생라멘</div>';
     walkers = []; hits = 0; timeLeft = 15; spawnT = 0;
     document.getElementById('promoCount').textContent = '0';
     document.getElementById('promoTime').textContent = '15';
