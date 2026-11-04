@@ -2853,7 +2853,7 @@ const TUT = [
   { text: '<b>↻ 앞 보기</b>를 누르고 <b>그릇</b>을 탭해서 면을 넣어요.', done: () => anyBowl(b => b.noodles != null) },
   { text: '아래 <b>🔥 챠슈</b> 버튼을 누르고 있다가, 게이지가 <b style="color:#2f7a3a">초록</b>일 때 떼요.', done: () => anyBowl(b => b.chashu.length > 0) },
   { text: '아래 토핑 버튼 <b>파 · 목이버섯 · 김</b>을 하나씩 눌러요.', done: () => anyBowl(b => ['negi', 'kikurage', 'nori'].every(k => b.top.has(k))) },
-  { text: '다 됐어요! 오른쪽 <b>🍜 내기</b>를 누르면 손님에게 나가요.', done: () => G.tutCustomer && G.tutCustomer.state !== 'waiting' && G.tutCustomer.state !== 'walking' && G.tutCustomer.state !== 'queue' },
+  { text: '다 됐어요! 오른쪽 <b>🍜 내기</b>를 누르면 손님에게 나가요.', done: () => G.tutCustomer && !['waiting', 'walking', 'queue', 'ticketWait', 'buying'].includes(G.tutCustomer.state) },
 ];
 const tutDone = () => store.get('ramen-tut-done', false);
 function startTutorial() {
@@ -2966,6 +2966,8 @@ function spawnCustomer(forced = null, group = null) { // forced: { order, specia
   if (!group || group.first) Sound.line('irasshaimase', 'いらっしゃいませー！', SHOP_VOICE); // 일행은 인사 한 번
 }
 function seatCustomer(i) { return G.seats[i].c; }
+const TICKET_SPOT = new THREE.Vector3(2.2, 0, -3.2);       // 자판기 바로 앞 (자판기는 x 2.66)
+const TICKET_WAIT = new THREE.Vector3(2.05, 0, -2.85);     // 앞사람이 뽑는 동안 서서 기다리는 자리
 function tryAssignSeats() {
   while (G.queue.length) {
     // 맨 앞 손님(일행이면 일행 전체)이 앉을 자리를 찾음 — 줄 순서는 지킴
@@ -2995,7 +2997,9 @@ function tryAssignSeats() {
       const i = seats[j];
       G.seats[i].c = c; c.seat = i; c.state = 'walking';
       c.mesh.visible = true; c.mesh.position.copy(OUTSIDE); c.mesh.position.z -= j * 0.6; // 일행은 한 줄로 따라 들어옴
-      c.path = [DOOR.clone(), new THREE.Vector3(SEAT_X[i], 0, AISLE_Z), new THREE.Vector3(SEAT_X[i], 0, SEAT_Z)];
+      // 식권 자판기가 있으면: 문 → 자판기 앞에서 식권 뽑기 → 자리
+      c.needTicket = !!upgValue('kenbaiki');
+      c.path = c.needTicket ? [DOOR.clone(), TICKET_SPOT.clone()] : [DOOR.clone(), new THREE.Vector3(SEAT_X[i], 0, AISLE_Z), new THREE.Vector3(SEAT_X[i], 0, SEAT_Z)];
       c.desc = { kind: 'customer', seat: i, lift: 1.3 };
       interact(c.mesh, c.desc);
     });
@@ -3135,9 +3139,27 @@ function updateCustomers(dt) {
     const m = c.mesh;
     if (c.state === 'walking') {
       if (moveAlong(m, c.path, 1.5, dt)) {
-        c.state = 'ordering'; c.orderT = upgValue('kenbaiki') ? 0.2 : 1.5; m.rotation.y = 0; // 식권 자판기면 앉자마자 주문
+        if (c.needTicket) { c.state = 'ticketWait'; m.position.copy(G.machineUser ? TICKET_WAIT : TICKET_SPOT); } // 자판기 앞 도착
+        else { c.state = 'ordering'; c.orderT = c.hasTicket ? 0.2 : 1.5; m.rotation.y = 0; c.ticketPaper?.removeFromParent(); } // 식권을 냈으면 바로 주문
       }
       m.position.y = Math.abs(Math.sin(c.bob * 9)) * 0.025;
+    } else if (c.state === 'ticketWait') { // 앞사람이 다 뽑으면 차례
+      m.position.y = 0;
+      if (!G.machineUser) {
+        G.machineUser = c; c.state = 'buying'; c.buyT = 1.4; m.position.copy(TICKET_SPOT); m.rotation.y = Math.PI / 2; // 자판기 쪽을 봄
+        Sound.knob(); setTimeout(() => Sound.knob(), 350);
+      }
+    } else if (c.state === 'buying') { // 버튼 누르고 식권 뽑는 중
+      c.buyT -= dt;
+      m.userData.head.rotation.x = 0.25;
+      if (c.buyT <= 0) {
+        G.machineUser = null; c.needTicket = false; c.hasTicket = true; m.userData.head.rotation.x = 0;
+        Sound.knob(); // 식권 나오는 소리 (주문 띵 소리와 헷갈리지 않게 짧게)
+        const paper = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.08), new THREE.MeshStandardMaterial({ color: 0xf6f0dc, side: THREE.DoubleSide })); // 손에 든 식권
+        paper.position.set(0.2, 0.95, 0.12); paper.rotation.x = -0.6; m.add(paper); c.ticketPaper = paper;
+        c.path = [new THREE.Vector3(SEAT_X[c.seat], 0, AISLE_Z), new THREE.Vector3(SEAT_X[c.seat], 0, SEAT_Z)];
+        c.state = 'walking';
+      }
     } else if (c.state === 'leaving') {
       m.position.y = Math.abs(Math.sin(c.bob * 9)) * 0.025;
       if (moveAlong(m, c.path, 1.6, dt)) { scene.remove(m); G.customers.splice(G.customers.indexOf(c), 1); }
@@ -3295,6 +3317,7 @@ function hintFor(d) {
       if (c.state === 'waiting') return h?.type === 'bowl' ? '클릭: 라멘 내기' : `${c.seat + 1}번 손님 — 주문 기다리는 중`;
       if (c.state === 'kaedama') return h?.type === 'noodles' ? '클릭: 카에다마 넣어 주기' : '카에다마! 면을 삶아서 가져오세요';
       if (c.state === 'ordering') return '메뉴 고르는 중';
+      if (c.state === 'ticketWait' || c.state === 'buying') return '🎫 식권 사는 중';
       if (c.state === 'eating') return '맛있게 먹는 중';
       return '';
     }
@@ -4014,7 +4037,7 @@ function updateLabels() {
     if (c.seat < 0 || c.state === 'leaving' || c.state === 'queue') continue;
     c.mesh.getWorldPosition(wp); wp.y += 1.62;
     let html = '', cls = 'wl bubble';
-    if (c.state === 'walking') continue;
+    if (c.state === 'walking' || c.state === 'ticketWait' || c.state === 'buying') continue;
     if (c.state === 'ordering') html = '📝';
     else if (c.state === 'waiting') {
       const r = Math.max(0, c.patience / c.maxPatience);
