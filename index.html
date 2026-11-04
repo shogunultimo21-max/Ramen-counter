@@ -2213,11 +2213,15 @@ function buildHeld(h) {
     case 'tare': { cyl(0.006, 0.006, 0.18, 5, mat(0xc4a27a), 0, 0.06, -0.04, g).rotation.x = 1.2; cyl(0.03, 0.025, 0.02, 10, mat(0x4a2a14), 0, 0.02, -0.12, g); break; }
     case 'broth': { // 육수 국자 (실제 크기: 국자 지름 7cm · 손잡이 25cm) — 손잡이가 주먹을 가로지르고 국자는 엄지 쪽 아래로
       g.userData.inHand = true; g.userData.lift = new THREE.Vector3(-0.02, 0.09, -0.02);
-      g.userData.pose = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.45, 0.35, -0.3)); // 국자 쪽이 살짝 들리게
+      g.userData.pose = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.45, 0.35, -0.15)); // 국자가 수평에 가깝게
       const steelM = mat(0xc8ccd0, { metalness: 0.8, roughness: 0.22, side: THREE.DoubleSide });
-      const handle = cyl(0.0045, 0.0045, 0.24, 8, steelM, FIST.x - 0.06, FIST.y, FIST.z, g); handle.rotation.z = Math.PI / 2;
-      const neck = cyl(0.004, 0.004, 0.06, 8, steelM, FIST.x - 0.185, FIST.y - 0.028, FIST.z, g); neck.rotation.z = -0.5; // 끝에서 아래로 꺾임
-      const cup = new THREE.Group(); cup.position.set(FIST.x - 0.225, FIST.y - 0.06, FIST.z); g.add(cup);
+      // 실제 국자처럼 곧은 손잡이가 비스듬히 내려가 국자 테두리에 바로 붙음 (꺾인 목 없음)
+      const dir = new THREE.Vector3(-1, -0.35, 0).normalize(), L = 0.25, back = 0.04; // back: 새끼손가락 쪽으로 삐져나온 길이
+      const handle = cyl(0.0045, 0.0045, L, 8, steelM, 0, 0, 0, g);
+      handle.position.copy(FIST).addScaledVector(dir, L / 2 - back);
+      handle.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+      const end = FIST.clone().addScaledVector(dir, L - back);
+      const cup = new THREE.Group(); cup.position.set(end.x - 0.034, end.y, end.z); g.add(cup); // 손잡이 끝 = 국자 테두리
       cup.add(new THREE.Mesh(new THREE.SphereGeometry(0.035, 20, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), steelM));
       const rim = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.0025, 6, 24), steelM); rim.rotation.x = Math.PI / 2; cup.add(rim);
       cyl(0.032, 0.032, 0.003, 20, smat({ shoyu: 0x7a3c12, shio: 0xe8c26a }[h.ramen] ?? 0xe2c896, { roughness: 0.15 }), 0, -0.007, 0, cup); // 담긴 육수
