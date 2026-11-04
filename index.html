@@ -119,6 +119,7 @@
   /* 조작 안내: 실제 게임 화면 위에 말풍선으로 */
   .coach-open { margin-top: 4px; }
   .coach-hint { text-align: center; font-size: 13px; opacity: .75; margin: 6px 0 10px; }
+  .credit { font-size: 11px; opacity: .55; line-height: 1.5; margin-top: 10px; }
   .flow { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; counter-reset: f; justify-content: center; }
   .flow li { counter-increment: f; background: #fff3d1; border-radius: 8px; padding: 5px 9px; font-size: 13px; }
   .flow li::before { content: counter(f) '. '; font-weight: 800; color: var(--red); }
@@ -392,6 +393,7 @@
       <ol class="flow">
         <li><b>그릇</b> 놓기</li><li>↻ 뒤돌아 <b>면</b> 삶기</li><li><b>육수</b> 붓기</li><li>면 넣기</li><li>🔥 <b>챠슈</b> · 토핑</li><li>✅ 완성 → 🍜 <b>내기</b></li>
       </ol>
+      <p class="credit">목소리: VOICEVOX:青山龍星 / 玄野武宏 / 剣崎雌雄 / 雀松朱司 / 麒ヶ島宗麟 / 白上虎太郎 / 四国めたん / 九州そら / 冥鳴ひまり / 春日部つむぎ / 波音リツ / No.7 / ちび式じい / もち子さん / 東北イタコ</p>
     </section>
     <section class="pg" data-tab="업그레이드">
       <div class="shop" id="startShop"></div>
@@ -784,10 +786,10 @@ const Sound = (() => {
     },
     // 대사 재생: 음성 파일(VoiceFiles)이 있으면 그걸, 없으면 읽어 주기 음성
     line(key, text, who = {}) {
-      const buf = ctx && VoiceFiles.get(key, who.gender);
+      const buf = ctx && VoiceFiles.get(key, who.vv);
       if (!buf) return this.say(text, who);
       const src = ctx.createBufferSource(); src.buffer = buf;
-      src.playbackRate.value = who.fileRate ?? 1; // 재생 속도로 사람마다 목소리 높낮이가 살짝 다르게
+      src.playbackRate.value = who.fileRate ?? 1; // 같은 목소리라도 사람마다 높낮이가 아주 살짝 다르게
       const g = ctx.createGain(); g.gain.value = 1.3;
       src.connect(g).connect(master); src.start();
     },
@@ -797,10 +799,12 @@ const Sound = (() => {
 })();
 
 // 음성 파일 미리 불러오기. 우선순위: 직접 녹음한 voices/<key>.mp3 (README.txt 참고)
-// → 미리 만든 음성 voices/tts/<key>.mp4 (셰프) · <key>_m / _f.mp4 (손님 성별). 없으면 조용히 건너뜀
+// → VOICEVOX로 만든 음성 voices/vv/<key>_<목소리>.mp4 (tools/make_voices.py). 없으면 브라우저 읽어 주기
 // <audio> 여러 개를 한꺼번에 불러오면 브라우저가 일부를 끝까지 안 불러올 수 있어서, 파일을 내려받아 메모리에 풀어 둔다
 const VOICE_KEYS = ['irasshaimase', 'arigatou', 'itadakimasu', 'umai', 'gochisousama', 'kaedama_katame', 'kaedama_futsu', 'kaedama_yawa'];
 const SHOP_KEYS = ['irasshaimase', 'arigatou'];
+// VOICEVOX 목소리 그룹별 인원 (tools/make_voices.py의 CAST와 같게): 셰프 · 남자 · 학생 · 여자 · 할아버지 · 할머니
+const VV_CAST = { chef: 1, m: 4, st: 1, f: 6, om: 2, of: 2 };
 const VoiceFiles = (() => {
   const raw = {}, ok = {};
   const load = (id, src) => fetch(src).then(r => (r.ok ? r.arrayBuffer() : null)).then(ab => { if (ab) { raw[id] = ab; decode(); } }).catch(() => {});
@@ -814,12 +818,14 @@ const VoiceFiles = (() => {
   }
   for (const key of VOICE_KEYS) {
     load(key, `voices/${key}.mp3`);
-    if (SHOP_KEYS.includes(key)) load('tts/' + key, `voices/tts/${key}.mp4`);
-    else for (const g of ['m', 'f']) load(`tts/${key}_${g}`, `voices/tts/${key}_${g}.mp4`);
+    for (const [g, n] of Object.entries(VV_CAST)) {
+      if ((g === 'chef') !== SHOP_KEYS.includes(key)) continue; // 인사는 셰프만, 손님 대사는 손님만
+      for (let i = 0; i < n; i++) load(`vv/${key}_${g}${i}`, `voices/vv/${key}_${g}${i}.mp4`);
+    }
   }
   return {
     decode,
-    get: (key, gender) => ok[key] || ok['tts/' + key] || (gender && ok[`tts/${key}_${gender}`]) || null,
+    get: (key, vv) => ok[key] || (vv && ok[`vv/${key}_${vv}`]) || null,
     loaded: () => Object.keys(ok),
   };
 })();
@@ -856,7 +862,7 @@ const Voices = (() => {
 // 가게(셰프) 인사는 항상 같은 목소리 (가장 좋은 음성을 한 번 정하면 계속 사용)
 let shopVoice = null;
 const SHOP_VOICE = {
-  pitch: 1, rate: 1.08, fileRate: 1,
+  pitch: 1, rate: 1.08, fileRate: 1, vv: 'chef0',
   get voice() { return shopVoice ??= Voices.best(); },
 };
 
@@ -2323,9 +2329,10 @@ function customerVoice(L) {
   const old = L.kind === 'grandpa' || L.kind === 'grandma';
   const own = Voices.byGender(L.female);
   const pitch = own ? rand(0.92, 1.08) : L.female ? rand(1.15, 1.3) : rand(0.75, 0.9);
-  // gender: 미리 만든 남/녀 음성 파일 선택. fileRate는 같은 음성도 사람마다 살짝 다르게 (어르신은 낮고 느리게)
-  return { gender: L.female ? 'f' : 'm', voice: own ?? Voices.random(), pitch: old ? pitch * 0.9 : pitch, rate: old ? rand(0.85, 0.92) : rand(0.98, 1.12),
-    fileRate: rand(0.95, 1.06) * (old ? 0.9 : 1) };
+  // vv: 생김새에 맞는 VOICEVOX 목소리 하나를 골라 그 손님은 끝까지 같은 목소리로
+  const group = L.kind === 'grandpa' ? 'om' : L.kind === 'grandma' ? 'of' : L.kind === 'student' ? 'st' : L.female ? 'f' : 'm';
+  return { vv: group + Math.floor(Math.random() * VV_CAST[group]), voice: own ?? Voices.random(), pitch: old ? pitch * 0.9 : pitch, rate: old ? rand(0.85, 0.92) : rand(0.98, 1.12),
+    fileRate: rand(0.97, 1.03) };
 }
 function randomLook() {
   const entries = Object.entries(CUSTOMER_KINDS);
