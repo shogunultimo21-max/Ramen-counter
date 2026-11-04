@@ -2067,23 +2067,30 @@ camHand.setCurl(0.35); holdGroup.add(camHand.group);
 const torchRig = new THREE.Group(); holdGroup.add(torchRig);
 const grillAim = new THREE.Vector3(0.78, 1.08, -0.9); // 그릴 위 고기 자리
 {
-  const t = new THREE.Group(); torchRig.add(t); // 노즐이 +z 방향
-  const can = new THREE.Mesh(new THREE.CylinderGeometry(0.031, 0.031, 0.17, 24), smat(0xd8562a, { roughness: 0.35, metalness: 0.2 }));
-  can.rotation.x = Math.PI / 2; can.position.z = -0.1; t.add(can);
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.031, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), smat(0xd8562a, { roughness: 0.35 }));
-  cap.rotation.x = -Math.PI / 2; cap.position.z = -0.185; t.add(cap);
-  const head = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.033, 0.05, 20), smat(0x1e1e1e, { roughness: 0.4 }));
-  head.rotation.x = Math.PI / 2; head.position.z = 0.0; t.add(head);
-  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.015, 0.09, 16), smat(0xb8bcc0, { metalness: 0.8, roughness: 0.25 }));
-  nozzle.rotation.x = Math.PI / 2; nozzle.position.set(0, 0.012, 0.065); t.add(nozzle);
-  const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.04, 0.02), smat(0xb8322a)); trigger.position.set(0, -0.04, -0.005); t.add(trigger);
-  const flame = new THREE.Group(); flame.position.set(0, 0.012, 0.11); t.add(flame);
+  // 휴대용 가스토치: 아래로 세운 부탄가스 캔 + 위에 주황 머리 + 앞으로 뻗은 긴 은색 노즐 (노즐이 +z 방향)
+  const t = new THREE.Group(); torchRig.add(t);
+  const red = smat(0xc81e28, { roughness: 0.35, metalness: 0.25 }), silver = smat(0xc4c8cc, { metalness: 0.85, roughness: 0.22 });
+  const orange = smat(0xe8521c, { roughness: 0.45 }), black = smat(0x1c1c1c, { roughness: 0.5 });
+  const cyl = (rt, rb, h, m, y, seg = 24) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m); o.position.y = y; t.add(o); return o; };
+  cyl(0.034, 0.034, 0.15, red, -0.115);                       // 캔 몸통
+  cyl(0.0345, 0.0345, 0.045, smat(0xf2ede4, { roughness: 0.5 }), -0.1); // 흰 라벨 띠
+  cyl(0.035, 0.035, 0.012, red, -0.1);                        // 라벨 가운데 빨간 줄
+  cyl(0.034, 0.035, 0.008, silver, -0.192);                   // 캔 바닥 테
+  cyl(0.02, 0.034, 0.018, silver, -0.031);                    // 캔 어깨
+  cyl(0.019, 0.019, 0.012, black, -0.017);                    // 검은 연결 링
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.034, 0.075), orange); head.position.set(0, 0.006, -0.004); t.add(head); // 주황 머리
+  const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.022, 12), orange); knob.rotation.x = Math.PI / 2; knob.position.set(0, 0.008, -0.05); t.add(knob); // 뒤쪽 조절 손잡이
+  const sticker = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.012, 0.022), smat(0xf2c81e)); sticker.position.set(0, 0.012, 0.012); t.add(sticker); // 노란 스티커
+  const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.022, 0.016), orange); trigger.position.set(0, -0.016, 0.026); trigger.rotation.x = -0.4; t.add(trigger); // 점화 레버
+  const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.016, 0.02, 16), black); collar.rotation.x = Math.PI / 2; collar.position.set(0, 0.012, 0.042); t.add(collar);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.012, 0.13, 18), silver); nozzle.rotation.x = Math.PI / 2; nozzle.position.set(0, 0.012, 0.115); t.add(nozzle); // 긴 은색 노즐
+  const flame = new THREE.Group(); flame.position.set(0, 0.012, 0.18); t.add(flame);
   const outer = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.11, 14), new THREE.MeshBasicMaterial({ color: 0xff9a3a, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }));
   const inner = new THREE.Mesh(new THREE.ConeGeometry(0.011, 0.06, 14), new THREE.MeshBasicMaterial({ color: 0x5aa8ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
   outer.rotation.x = inner.rotation.x = Math.PI / 2; outer.position.z = 0.055; inner.position.z = 0.03;
   flame.add(outer, inner);
   torchRig.userData.flame = flame;
-  torchRig.position.set(0.03, 0.03, -0.17); // 오른손에 쥠 — 방향은 매 프레임 그릴 쪽으로 (visuals)
+  torchRig.position.set(0.065, -0.005, -0.17); // 오른손이 캔 몸통을 쥠 — 방향은 매 프레임 그릴 쪽으로 (visuals)
   torchRig.traverse(o => { if (o.isMesh) o.castShadow = false; });
   torchRig.visible = false;
 }
