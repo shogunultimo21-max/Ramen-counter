@@ -120,6 +120,8 @@
   .coach-open { margin-top: 4px; }
   .coach-hint { text-align: center; font-size: 13px; opacity: .75; margin: 6px 0 10px; }
   .credit { font-size: 11px; opacity: .55; line-height: 1.5; margin-top: 10px; }
+  .ver { font-size: 12px; font-weight: 600; opacity: .5; letter-spacing: .02em; }
+  p.ver { margin: -6px 0 10px; }
   .credit summary { cursor: pointer; list-style: none; } /* 음성 출처는 이용 규칙상 남겨 두되 접어 둠 */
   .flow { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; counter-reset: f; justify-content: center; }
   .flow li { counter-increment: f; background: #fff3d1; border-radius: 8px; padding: 5px 9px; font-size: 13px; }
@@ -394,7 +396,7 @@
   <div class="card paged">
     <div class="tabs"></div>
     <section class="pg" data-tab="오늘">
-      <h1>라멘 <span>카운터</span></h1>
+      <h1>라멘 <span>카운터</span> <small class="ver"></small></h1>
       <div id="ownerInfo"></div>
       <div class="day-box" id="dayInfo"></div>
       <div id="todayMissions"></div>
@@ -430,6 +432,7 @@
 <div id="pause" class="overlay hidden">
   <div class="card" style="max-width:380px;text-align:center">
     <h1>일시정지</h1>
+    <p class="ver"></p>
     <p>주방은 잠시 멈춰 있어요.</p>
     <button class="btn" id="resumeBtn">계속하기</button>
   </div>
@@ -499,6 +502,9 @@
 </script>
 <script type="module">
 import * as THREE from 'three';
+// 게임 버전 — 베타에 올릴 때마다 올림 (시작 화면·일시정지에 표시해서 어느 버전인지 바로 확인)
+const APP_VERSION = 'v1.4', APP_DATE = '11/05';
+document.querySelectorAll('.ver').forEach(el => { el.textContent = `${APP_VERSION} · ${APP_DATE}`; });
 
 // ================= 설정 =================
 const CFG = {
