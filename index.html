@@ -2129,6 +2129,15 @@ function makeHand() {
 const camHand = makeHand();
 camHand.group.position.set(0.0, -0.04, 0.06); camHand.group.rotation.set(0.35, 0.3, 0.15);
 camHand.setCurl(0.35); holdGroup.add(camHand.group);
+// 토치를 쥘 때: 오른손을 토치 캔 오른쪽에 붙여 악수하듯 감싸 쥐고(엄지 위, 손바닥이 캔 쪽), 토치와 함께 그릴을 향해 돌아감
+const HAND_REST = { pos: camHand.group.position.clone(), rot: camHand.group.rotation.clone() };
+const GRIP_Q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2)
+  .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI));
+function gripTorch(on) {
+  const body = torchRig.userData.body, g = camHand.group;
+  if (on && g.parent !== body) { body.add(g); g.position.set(-0.052, -0.11, -0.03); g.quaternion.copy(GRIP_Q); }
+  else if (!on && g.parent !== holdGroup) { holdGroup.add(g); g.position.copy(HAND_REST.pos); g.rotation.copy(HAND_REST.rot); }
+}
 
 // 챠슈 구울 때: 그릴 위에서 토치를 쥔 손 (월드 공간, 고기를 향해 불꽃)
 // 챠슈 굽는 토치: 셰프 오른손(내 손)에 쥐고 앞쪽 그릴을 향해 (세상 속 다른 손이 아니라 1인칭으로)
@@ -2157,8 +2166,8 @@ const grillAim = new THREE.Vector3(0.78, 1.0, -0.9); // 석쇠 위 고기 자리
   const inner = new THREE.Mesh(new THREE.ConeGeometry(0.011, 0.06, 14), new THREE.MeshBasicMaterial({ color: 0x5aa8ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
   outer.rotation.x = inner.rotation.x = Math.PI / 2; outer.position.z = 0.055; inner.position.z = 0.03;
   flame.add(outer, inner);
-  torchRig.userData.flame = flame;
-  torchRig.position.set(0.065, -0.005, -0.17); // 오른손이 캔 몸통을 쥠 — 방향은 매 프레임 그릴 쪽으로 (visuals)
+  torchRig.userData.flame = flame; torchRig.userData.body = t;
+  torchRig.position.set(0.06, 0.035, -0.24); // 오른손이 캔 몸통을 쥠 — 방향은 매 프레임 그릴 쪽으로 (visuals)
   torchRig.traverse(o => { if (o.isMesh) o.castShadow = false; });
   torchRig.visible = false;
 }
@@ -3858,7 +3867,8 @@ function visuals(dt, t) {
   const gt = G.grill.t;
   grillBars.forEach(b => b.material.emissiveIntensity = G.grill.holding ? 0.9 + Math.sin(t * 30) * 0.2 : 0);
   grillLight.intensity = G.grill.holding ? 1.6 : 0;
-  torchRig.visible = G.grill.holding; camHand.setCurl(G.grill.holding ? 1.0 : G.hand ? 0.95 : 0.35); // 굽는 동안엔 오른손이 토치를 꽉 쥠
+  torchRig.visible = G.grill.holding; gripTorch(G.grill.holding);
+  camHand.setCurl(G.grill.holding ? 0.8 : G.hand ? 0.95 : 0.35); // 굽는 동안엔 손가락이 캔을 감싸 쥠
   if (torchRig.visible) torchRig.lookAt(grillAim); // 노즐(+z)이 그릴 위 고기를 향하게
   if (torchRig.visible) torchRig.userData.flame.scale.set(0.9 + Math.random() * 0.2, 0.9 + Math.random() * 0.2, 0.8 + Math.random() * 0.45);
   if (G.grill.holding) setChashuQuality(grillMeat, gt < 0.5 ? 'raw' : gt <= 0.72 ? 'good' : 'burnt');
