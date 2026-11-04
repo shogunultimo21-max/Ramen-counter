@@ -591,7 +591,7 @@ const UPGRADES = {
   // ---- 💰 메뉴·매출 ----
   recipe:  { group: 'menu', name: '비법 레시피', icon: '📜', values: [1, 1.1, 1.2], prices: [15000, 30000],
     names: ['기본 레시피', '비법 레시피', '전설의 레시피'], desc: v => (v > 1 ? `라멘 값 +${Math.round((v - 1) * 100)}%` : '기본 가격') },
-  fineBowl:{ group: 'menu', name: '그릇', icon: '✨', values: [300, 500, 800, 1200], prices: [6000, 12000, 20000],
+  fineBowl:{ group: 'menu', name: '그릇', icon: '✨', values: [150, 250, 400, 600], prices: [6000, 12000, 20000],
     names: ['기본 그릇', '고급 그릇 (검은 칠·금테)', '명품 그릇 (청해파 무늬)', '금박 그릇'], desc: v => `만족한 손님 팁 ¥${v}` },
   extraTop:{ group: 'menu', name: '추가 토핑 메뉴판', icon: '🥚', values: [0, 150, 250], prices: [5000, 11000],
     names: ['추가 무료', '추가 토핑 유료', '추가 토핑·챠슈 유료'], desc: v => (v ? `기본에 없는 토핑${v > 150 ? '·챠슈 2장' : ''}을 시키면 하나에 +¥${v}` : '추가 토핑도 값을 안 받아요') },
@@ -606,23 +606,23 @@ const UPGRADES = {
     names: ['꾸밈 없음', '화분', '+ 마네키네코', '+ 족자·풍경', '+ 등불 줄'], desc: v => (v ? `분위기 좋아서 매일 평판 +${(v * 0.05).toFixed(2)}` : '꾸밈 없음') },
   bench:   { group: 'shop', name: '가게 앞 대기석', icon: '🪑', values: [1, 1.5, 2], prices: [5000, 12000],
     names: ['없음', '대기 의자', '대기 의자 + 차양'], desc: v => (v > 1 ? `줄 선 손님이 ${v}배 오래 기다려요${v >= 2 ? ' (비 와도 괜찮아요)' : ''}` : '자리가 없으면 금방 돌아가요') },
-  theme:   { group: 'shop', name: '인테리어 테마', icon: '🎨', values: [0, 0.03, 0.05, 0.08], prices: [12000, 20000, 30000],
+  theme:   { group: 'shop', name: '인테리어 테마', icon: '🎨', values: [0, 0.03, 0.05, 0.08], prices: [15000, 25000, 40000],
     names: ['짙은 나무', '밝은 히노키', '모던 블랙', '쇼와 레트로'], desc: v => (v ? `산 테마를 골라 바꿀 수 있어요 · 매일 평판 +${v}` : '기본 짙은 나무 인테리어') },
   // ---- 🏗 확장 (rent·wage = 단계별 매일 나가는 돈) ----
-  seats:   { group: 'expand', name: '좌석 확장', icon: '🪑', values: [6, 8], prices: [30000], rent: [0, 600],
+  seats:   { group: 'expand', name: '좌석 확장', icon: '🪑', values: [6, 8], prices: [50000], rent: [0, 600],
     names: ['6자리', '8자리'], desc: v => `카운터 ${v}자리` },
-  staff:   { group: 'expand', name: '주방 보조', icon: '🧑‍🍳', values: [0, 1], prices: [40000], wage: [0, 1200], unlockDay: 15, // 초반엔 너무 쉬워져서 Day 15부터
+  staff:   { group: 'expand', name: '주방 보조', icon: '🧑‍🍳', values: [0, 1], prices: [60000], wage: [0, 1200], unlockDay: 15, // 초반엔 너무 쉬워져서 Day 15부터
     names: ['혼자', '보조 1명'], desc: v => (v ? '그릇 놓기 · 주문에 맞는 육수 붓기를 도와줘요' : '혼자 일해요') },
-  evening: { group: 'expand', name: '저녁 영업', icon: '🌙', values: [210, 270], prices: [45000], rent: [0, 800],
+  evening: { group: 'expand', name: '저녁 영업', icon: '🌙', values: [210, 270], prices: [70000], rent: [0, 800],
     names: ['점심 영업', '점심 + 저녁'], desc: v => (v > 210 ? '20시까지 영업해서 손님이 더 와요' : '점심만 영업해요 (14시까지)') },
-  branch:  { group: 'expand', name: '체인점', icon: '🏯', values: [0, 5000, 12000, 22000], prices: [150000, 300000, 500000],
+  branch:  { group: 'expand', name: '체인점', icon: '🏯', values: [0, 4000, 8000, 13000], prices: [150000, 250000, 400000],
     names: ['1호점뿐', '2호점 개업', '3호점 개업', '4호점 개업'], desc: v => (v ? `매일 체인점 수익 +¥${v.toLocaleString()}` : '최종 목표: 라멘 체인!') },
 };
 // 매일 고르는 재료 등급: 비쌀수록 손님이 더 참고 팁도 많이 줌
 const GRADES = [
   { name: '기본 재료', icon: '🥢', cost: 1, tip: 1, pat: 1, note: '평소대로' },
-  { name: '좋은 돼지뼈', icon: '🐖', cost: 1.5, tip: 1.5, pat: 1.08, note: '재료비 ×1.5 · 팁 ×1.5 · 인내심 +8%' },
-  { name: '최상급 재료', icon: '👑', cost: 2.2, tip: 2.2, pat: 1.15, note: '재료비 ×2.2 · 팁 ×2.2 · 인내심 +15%' },
+  { name: '좋은 돼지뼈', icon: '🐖', cost: 1.4, tip: 1.3, pat: 1.08, note: '재료비 ×1.4 · 팁 ×1.3 · 인내심 +8%' },
+  { name: '최상급 재료', icon: '👑', cost: 1.9, tip: 1.6, pat: 1.15, note: '재료비 ×1.9 · 팁 ×1.6 · 인내심 +15%' },
 ];
 const store = {
   get(k, def) { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch (e) { return def; } },
@@ -2730,8 +2730,16 @@ function tickStaff(dt) {
 const MAX_LV = 30;
 const TITLES = [[1, '골목 라멘집 사장'], [4, '동네에서 소문난 집'], [7, '점심마다 줄 서는 집'], [10, '맛집 블로그에 나온 집'],
   [13, 'TV에 나온 라멘집'], [16, '라멘 가이드 ★'], [19, '라멘 가이드 ★★'], [22, '라멘 가이드 ★★★'], [25, '전국 라멘 명가'], [28, '라멘의 전설']];
+const xpFor = lv => 150 + lv * 80; // lv → lv+1에 필요한 경험치 (Lv.30까지 대략 40~50일)
 let xp = store.get('ramen-xp', 0);
-const xpFor = lv => 120 + lv * 60; // lv → lv+1에 필요한 경험치
+// 예전(더 빨리 오르던) 경험치는 지금 레벨·진행률 그대로 새 기준으로 옮김
+if (store.get('ramen-xp-v', 1) < 2) {
+  const oldFor = lv => 120 + lv * 60;
+  let lv = 1, rest = xp; while (lv < 30 && rest >= oldFor(lv)) { rest -= oldFor(lv); lv++; }
+  let nx = 0; for (let l = 1; l < lv; l++) nx += xpFor(l);
+  xp = Math.round(nx + (lv < 30 ? rest / oldFor(lv) * xpFor(lv) : 0));
+  store.set('ramen-xp', xp); store.set('ramen-xp-v', 2);
+}
 function levelInfo(total = xp) {
   let lv = 1, rest = total;
   while (lv < MAX_LV && rest >= xpFor(lv)) { rest -= xpFor(lv); lv++; }
@@ -2763,7 +2771,7 @@ const MISSION_POOL = [
   { id: 'combo', make: (d) => { const n = Math.min(6, 3 + Math.floor(d / 6)); return { target: n, text: `🔥 콤보 ×${n} 달성` }; } },
   { id: 'gyoza', ok: () => !!levelCfg().gyoza, make: () => ({ target: 3, text: '🥟 교자 3접시 곁들이기' }) },
   { id: 'kaedama', make: () => ({ target: 2, text: '🍜 카에다마 2번 내기' }) },
-  { id: 'profit', ok: () => levelCfg().stock, make: (d) => { const n = 4000 + d * 400; return { target: n, atEnd: true, text: `💰 순이익 ¥${n.toLocaleString()} 이상` }; } },
+  { id: 'profit', ok: () => levelCfg().stock, make: (d) => { const n = Math.round((3000 + d * 900) / 500) * 500; return { target: n, atEnd: true, text: `💰 순이익 ¥${n.toLocaleString()} 이상` }; } },
 ];
 const MISSION_XP = 60, MISSION_CASH = 800, ALL_MISSION_CASH = 2000;
 function makeMissions(d) {
@@ -2801,16 +2809,17 @@ function updateMissionChip() {
   document.getElementById('missionPanel').innerHTML = '<b>오늘의 미션</b>' + missionsHtml(list);
 }
 
-// 콤보: 연속으로 만족한 손님 → 팁 ×1.25, ×1.5 … (최대 ×3). 만족 못 하면 끊김
+// 콤보: 연속으로 만족한 손님 → 팁 ×1.15, ×1.3 … (콤보 6부터 최대 ×1.75). 만족 못 하면 끊김
+const comboTip = () => 1 + 0.15 * (Math.min(G.combo, 6) - 1);
 function comboOnServe(c, res) {
   if (res === 'happy') G.combo++; else G.combo = 0;
-  c.comboMul = res === 'happy' ? 1 + 0.25 * (Math.min(G.combo, 9) - 1) : 1;
+  c.comboMul = res === 'happy' ? comboTip() : 1;
   if (G.combo >= 2) { showCombo(); missionStep('combo', G.combo, () => true, true); }
   updateComboChip();
 }
 function showCombo() {
   const el = document.getElementById('comboPop');
-  el.innerHTML = `🔥 콤보 ×${G.combo}!<small>팁 ×${(1 + 0.25 * (Math.min(G.combo, 9) - 1)).toFixed(2)}</small>`;
+  el.innerHTML = `🔥 콤보 ×${G.combo}!<small>팁 ×${comboTip().toFixed(2)}</small>`;
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
   Sound.kaedama();
 }
@@ -2820,7 +2829,7 @@ function updateComboChip() {
 }
 // 손님 결과마다: 경험치 · 미션 · 콤보
 function onServed(c, bowl, res) {
-  G.xpToday += res === 'happy' ? 30 + Math.min(G.combo, 9) * 5 : res === 'normal' ? 12 : 3;
+  G.xpToday += res === 'happy' ? 20 + Math.min(G.combo, 6) * 2 : res === 'normal' ? 8 : 2;
   comboOnServe(c, res);
   if (res === 'happy') {
     missionStep('happy');
