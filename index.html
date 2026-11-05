@@ -192,8 +192,8 @@
   body.mobile .card.hub { padding: 9px 12px 8px; } body.mobile .hub-name h1 { font-size: 22px; } body.mobile .hub-grid { grid-template-columns: 1fr 170px; gap: 9px; }
   body.mobile .tile b { font-size: 15px; } body.mobile .card.hub #startBtn { font-size: 17px; padding: 10px; }
   /* 전국 지도 */
-  .map-wrap { flex: 1; min-height: 0; display: grid; grid-template-rows: 1.45fr 1fr; gap: 8px; } /* 위: 가로로 넓은 지도 · 아래: 정보 */
-  #japanMap { min-height: 0; background: radial-gradient(ellipse at 50% 40%, #cfe6f2, #a9cfe3); border-radius: 14px; overflow: hidden; }
+  .map-wrap { flex: 1; min-height: 0; display: grid; grid-template-rows: auto 1fr; gap: 8px; } /* 위: 지도(딱 맞는 크기) · 아래: 정보 */
+  #japanMap { height: min(160px, 40vh); aspect-ratio: 520 / 250; max-width: 100%; justify-self: center; background: radial-gradient(ellipse at 50% 40%, #cfe6f2, #a9cfe3); border-radius: 14px; overflow: hidden; } /* 지도 그림 비율 그대로 → 빈 바다 없이 */
   #jpSvg { width: 100%; height: 100%; display: block; }
   #jpSvg .sea-lines path { fill: none; stroke: rgba(255,255,255,.35); stroke-width: 1; }
   #jpSvg .land path { fill: #e9dcbc; stroke: #a88a5a; stroke-width: 1.2; stroke-linejoin: round; }
