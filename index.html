@@ -192,7 +192,7 @@
   body.mobile .card.hub { padding: 9px 12px 8px; } body.mobile .hub-name h1 { font-size: 22px; } body.mobile .hub-grid { grid-template-columns: 1fr 170px; gap: 9px; }
   body.mobile .tile b { font-size: 15px; } body.mobile .card.hub #startBtn { font-size: 17px; padding: 10px; }
   /* 전국 지도 */
-  .map-wrap { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; }
+  .map-wrap { flex: 1; min-height: 0; display: grid; grid-template-rows: 1.45fr 1fr; gap: 8px; } /* 위: 가로로 넓은 지도 · 아래: 정보 */
   #japanMap { min-height: 0; background: radial-gradient(ellipse at 50% 40%, #cfe6f2, #a9cfe3); border-radius: 14px; overflow: hidden; }
   #jpSvg { width: 100%; height: 100%; display: block; }
   #jpSvg .sea-lines path { fill: none; stroke: rgba(255,255,255,.35); stroke-width: 1; }
@@ -205,7 +205,10 @@
   #jpSvg .emo { font-size: 14px; } #jpSvg .nm { font-size: 11.5px; font-weight: 800; fill: #3a2a1a; paint-order: stroke; stroke: #fffaf0; stroke-width: 3px; }
   #jpSvg #traveler { font-size: 22px; } #travelPath { fill: none; stroke: var(--red); stroke-width: 2.5; opacity: 0; }
   @keyframes pinPulse { 50% { r: 13; } }
-  #regionInfo { min-height: 0; overflow-y: auto; text-align: left; }
+  #regionInfo { min-height: 0; overflow-y: auto; text-align: left; display: grid; grid-template-columns: minmax(170px, 0.8fr) 1.4fr; gap: 6px 10px; align-content: start; }
+  #regionInfo .rg-head { grid-row: span 3; } #regionInfo h4 { margin: 0; font-size: 13px; } #regionInfo .quests li { font-size: 12.5px; padding: 3px 8px; }
+  .quests li, #regionInfo .quests li, #endGrowth .quests li { margin: 0; } .quests { gap: 3px; }
+  #jpSvg .lead { stroke: #8a6a3a; stroke-width: 1; stroke-dasharray: 2 2; } #jpSvg .true { fill: #8a6a3a; }
   .rg-head { display: flex; flex-direction: column; gap: 1px; background: #fff6e6; border-radius: 10px; padding: 8px 10px; }
   .rg-head b { font-size: 16px; } .rg-head small { font-size: 12px; opacity: .8; } .rg-head .st { font-size: 12.5px; font-weight: 800; color: var(--red); }
   .rg-desc { font-size: 13px; margin: 8px 0; } #travelGo { width: 100%; margin-top: 6px; }
@@ -3159,7 +3162,12 @@ function regionHeaderHtml() {
 }
 // ---------- 전국 지도: 일본 지도 위에 지역 핀, 누르면 오른쪽에 정보, 이동하면 신칸센·비행기가 날아감 ----------
 // 경도·위도 → 지도 좌표 (대충 그린 일본 윤곽)
-const JP = (lon, lat) => [((lon - 128.6) * 23.5).toFixed(1), ((45.8 - lat) * 23.5).toFixed(1)];
+// 일본은 남서→북동으로 비스듬해서, 30° 눕혀 가로로 넓게 그림 (위쪽 절반을 지도가 꽉 채우게)
+const JP_TILT = 30 * Math.PI / 180;
+const JP = (lon, lat) => {
+  const x = (lon - 137) * 23.5, y = (38.5 - lat) * 23.5;
+  return [(x * Math.cos(JP_TILT) - y * Math.sin(JP_TILT) + 260).toFixed(1), (x * Math.sin(JP_TILT) + y * Math.cos(JP_TILT) + 110).toFixed(1)];
+};
 const JP_LAND = [
   [[139.8,41.5],[140.0,42.3],[139.9,42.8],[140.5,43.3],[141.3,43.2],[141.6,43.9],[141.7,44.4],[141.9,45.4],[142.5,45.3],[143.5,44.3],[144.9,43.9],[145.3,44.3],[145.6,43.3],[144.9,42.9],[143.3,42.0],[141.7,42.6],[141.0,42.3],[140.4,41.5]],
   [[140.9,41.5],[141.5,41.3],[141.5,40.0],[142.0,39.5],[141.6,38.4],[141.0,38.2],[140.9,37.0],[140.6,36.4],[140.9,35.7],[140.1,35.0],[139.8,35.3],[139.2,35.1],[138.8,34.6],[138.2,34.6],[137.3,34.6],[136.9,34.3],[136.8,33.5],[135.8,33.5],[135.1,33.9],[135.4,34.6],[134.4,34.7],[133.5,34.5],[132.4,34.3],[131.9,33.95],[130.9,33.95],[131.0,34.4],[131.8,34.7],[132.6,35.4],[133.4,35.5],[134.4,35.6],[135.4,35.6],[135.9,35.7],[136.1,36.2],[136.7,36.8],[136.9,37.4],[137.3,37.3],[137.4,36.8],[138.3,37.2],[138.9,37.8],[139.5,38.4],[139.9,39.1],[140.0,39.9],[139.9,40.6],[140.3,41.2]],
@@ -3167,20 +3175,23 @@ const JP_LAND = [
   [[129.8,33.3],[130.3,33.6],[130.9,33.9],[131.6,33.6],[131.9,33.1],[131.7,32.5],[131.4,31.4],[130.7,31.0],[130.2,31.3],[130.3,32.1],[130.6,32.6],[130.2,32.8],[129.8,32.7]],
 ];
 const CITY = { tokyo: [139.7, 35.7], fukuoka: [130.4, 33.6], sapporo: [141.35, 43.06], yokohama: [139.62, 35.44], osaka: [135.5, 34.7] };
-const LABEL_SIDE = { tokyo: [13, -6, 'start'], yokohama: [12, 15, 'start'], fukuoka: [6, 26, 'middle'], sapporo: [14, 4, 'start'], osaka: [-4, 25, 'middle'] }; // 이름표 위치 (지도 밖으로 안 잘리게)
+// 도쿄와 요코하마는 너무 가까워서 요코하마 핀은 바다 쪽으로 빼고 가는 선으로 실제 위치를 가리킴
+const PIN_AT = { yokohama: [140.25, 34.35] };
+const LABEL_SIDE = { tokyo: [0, -16, 'middle'], yokohama: [15, 5, 'start'], fukuoka: [0, 26, 'middle'], sapporo: [15, 5, 'start'], osaka: [0, 26, 'middle'] }; // 이름표 위치 (핀·지도와 안 겹치게)
 let mapPick = REGION_ID;
 const regionOpen = r => !REGIONS[r].soon && (!REGIONS[r].after || isConquered(REGIONS[r].after));
 function renderRegion() {
   const land = JP_LAND.map(pts => `<path d="M${pts.map(([lo, la]) => JP(lo, la).join(',')).join('L')}Z"/>`).join('');
   const pins = Object.keys(REGIONS).map(r => {
-    const [x, y] = JP(...CITY[r]), R = REGIONS[r], here = r === REGION_ID, won = isConquered(r), open = regionOpen(r);
-    const [dx, dy, anchor] = LABEL_SIDE[r];
+    const [x, y] = JP(...(PIN_AT[r] ?? CITY[r])), R = REGIONS[r], here = r === REGION_ID, won = isConquered(r), open = regionOpen(r);
+    const [dx, dy, anchor] = LABEL_SIDE[r], [cx, cy] = JP(...CITY[r]);
     return `<g class="pin${here ? ' here' : ''}${won ? ' won' : ''}${!open && !here ? ' off' : ''}${r === mapPick ? ' pick' : ''}" data-r="${r}">`
+      + (PIN_AT[r] ? `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" class="lead"/><circle cx="${cx}" cy="${cy}" r="2.5" class="true"/>` : '')
       + `<circle cx="${x}" cy="${y}" r="17" class="hit"/><circle cx="${x}" cy="${y}" r="11" class="dot"/>`
       + `<text x="${x}" y="${+y + 5}" text-anchor="middle" class="emo">${won ? '👑' : R.icon}</text>`
       + `<text x="${+x + dx}" y="${+y + dy}" text-anchor="${anchor}" class="nm">${R.name.split(' ')[0]}</text></g>`;
   }).join('');
-  document.getElementById('japanMap').innerHTML = `<svg viewBox="0 0 410 350" id="jpSvg"><g class="sea-lines">${[60, 120, 180, 240, 300].map(y => `<path d="M0,${y} Q205,${y - 12} 410,${y}"/>`).join('')}</g><g class="land">${land}</g><path id="travelPath" d=""/>${pins}<text id="traveler" class="emo" x="-50" y="-50">🚄</text></svg>`;
+  document.getElementById('japanMap').innerHTML = `<svg viewBox="10 12 520 250" preserveAspectRatio="xMidYMid meet" id="jpSvg"><g class="sea-lines">${[45, 95, 145, 195].map(y => `<path d="M0,${y} Q260,${y - 12} 520,${y}"/>`).join('')}</g><g class="land">${land}</g><path id="travelPath" d=""/>${pins}<text id="traveler" class="emo" x="-50" y="-50">🚄</text></svg>`;
   document.querySelectorAll('#jpSvg .pin').forEach(g => g.addEventListener('click', () => { mapPick = g.dataset.r; Sound.knob(); renderRegion(); }));
   regionPanel(mapPick);
 }
