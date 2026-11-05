@@ -159,7 +159,76 @@
   #startExpand .shop-grid, #endExpand .shop-grid { grid-template-columns: 1fr 1fr; }
   .grade-pick { margin-top: 10px; text-align: left; }
   /* 전국 라멘 제패: 지역 탭 */
-  .region-tag { font-size: 12.5px; font-weight: 700; color: var(--red); margin: -4px 0 6px; }
+  .region-tag { font-size: 12.5px; font-weight: 700; color: var(--red); }
+  /* ---------- 홈(가게 사무실) · 하위 화면 ---------- */
+  .card.hub { width: min(860px, 100%); height: min(100%, 600px); display: flex; flex-direction: column; padding: 14px 16px 12px; }
+  .card.hub .view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+  .card.hub .view[hidden] { display: none; }
+  .hub-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .hub-name { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0; }
+  .hub-name h1 { margin: 0; font-size: 26px; }
+  .shop-title { font-size: 14px; color: var(--ink); } .shop-title b { color: var(--red); }
+  .hub-right { display: flex; align-items: center; gap: 8px; flex: none; }
+  .icon-btn { border: 0; background: #e3d7c0; border-radius: 10px; width: 36px; height: 36px; font-size: 18px; cursor: pointer; }
+  .hub-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 200px; gap: 12px; }
+  .hub-today { min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; text-align: left; padding-right: 2px; }
+  .hub-today h3 { margin: 4px 0 2px; font-size: 14px; } .hub-today .day-box { margin: 0; }
+  .hub-today .grade-pick { margin-top: 2px; } .hub-today #promoBtn { margin: 0; } .rep-line { font-size: 12.5px; opacity: .85; }
+  .hub-tiles { display: flex; flex-direction: column; gap: 8px; }
+  .tile { flex: 1; border: 0; border-radius: 14px; background: linear-gradient(160deg, #fff6e2, #f0dfbf); box-shadow: 0 3px 0 #c9ab7a; color: var(--ink);
+    font: inherit; text-align: left; padding: 8px 14px; cursor: pointer; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+  .tile b { font-size: 17px; } .tile small { font-size: 12px; opacity: .75; }
+  .tile:active { transform: translateY(2px); box-shadow: 0 1px 0 #c9ab7a; }
+  .card.hub .foot { margin-top: 0; } .card.hub #startBtn { font-size: 19px; padding: 13px; }
+  .view-head { display: flex; align-items: center; gap: 10px; }
+  .view-head h2 { margin: 0; font-size: 19px; flex: 1; text-align: left; } .view-head .bank { font-weight: 800; color: #2f7a3a; font-size: 14px; }
+  .view-head .back { border: 0; border-radius: 10px; background: var(--red); color: #fff; font: inherit; font-weight: 800; padding: 7px 12px; cursor: pointer; }
+  .card.hub .pages { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .card.hub .pages .pg { flex: 1; min-height: 0; overflow-y: auto; }
+  .card.hub .scroll { flex: 1; min-height: 0; overflow-y: auto; }
+  .settings { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+  .settings .danger { background: #f8e6df; border-radius: 12px; padding: 10px 12px; font-size: 13px; }
+  .settings .danger p { margin: 0 0 8px; } #resetAsk { margin-top: 8px; } #resetAsk .row { display: flex; gap: 8px; margin-top: 6px; } #resetAsk .btn { flex: 1; }
+  body.mobile .card.hub { padding: 9px 12px 8px; } body.mobile .hub-name h1 { font-size: 22px; } body.mobile .hub-grid { grid-template-columns: 1fr 170px; gap: 9px; }
+  body.mobile .tile b { font-size: 15px; } body.mobile .card.hub #startBtn { font-size: 17px; padding: 10px; }
+  /* 전국 지도 */
+  .map-wrap { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; }
+  #japanMap { min-height: 0; background: radial-gradient(ellipse at 50% 40%, #cfe6f2, #a9cfe3); border-radius: 14px; overflow: hidden; }
+  #jpSvg { width: 100%; height: 100%; display: block; }
+  #jpSvg .sea-lines path { fill: none; stroke: rgba(255,255,255,.35); stroke-width: 1; }
+  #jpSvg .land path { fill: #e9dcbc; stroke: #a88a5a; stroke-width: 1.2; stroke-linejoin: round; }
+  #jpSvg .pin { cursor: pointer; } #jpSvg .pin .hit { fill: transparent; }
+  #jpSvg .pin .dot { fill: #fffaf0; stroke: #8a6a3a; stroke-width: 2; }
+  #jpSvg .pin.here .dot { fill: #fdeee6; stroke: var(--red); stroke-width: 3; animation: pinPulse 1.4s ease-in-out infinite; }
+  #jpSvg .pin.won .dot { stroke: #d9a21b; stroke-width: 3; } #jpSvg .pin.off { opacity: .45; }
+  #jpSvg .pin.pick .dot { stroke-width: 4; }
+  #jpSvg .emo { font-size: 14px; } #jpSvg .nm { font-size: 11.5px; font-weight: 800; fill: #3a2a1a; paint-order: stroke; stroke: #fffaf0; stroke-width: 3px; }
+  #jpSvg #traveler { font-size: 22px; } #travelPath { fill: none; stroke: var(--red); stroke-width: 2.5; opacity: 0; }
+  @keyframes pinPulse { 50% { r: 13; } }
+  #regionInfo { min-height: 0; overflow-y: auto; text-align: left; }
+  .rg-head { display: flex; flex-direction: column; gap: 1px; background: #fff6e6; border-radius: 10px; padding: 8px 10px; }
+  .rg-head b { font-size: 16px; } .rg-head small { font-size: 12px; opacity: .8; } .rg-head .st { font-size: 12.5px; font-weight: 800; color: var(--red); }
+  .rg-desc { font-size: 13px; margin: 8px 0; } #travelGo { width: 100%; margin-top: 6px; }
+  /* 가게 차리기 */
+  .name-card { width: min(440px, 100%); display: flex; flex-direction: column; gap: 9px; text-align: left; }
+  .name-card h1 { font-size: 21px; margin: 0 0 4px; text-align: center; }
+  .name-card label { display: flex; flex-direction: column; gap: 4px; font-weight: 800; font-size: 14px; }
+  .name-card input { font: inherit; font-size: 17px; padding: 9px 12px; border-radius: 10px; border: 2px solid #d9c7a4; background: #fffaf0; color: var(--ink); }
+  .name-card input:focus { outline: none; border-color: var(--red); }
+  .name-preview { margin: 2px 0; font-size: 14px; color: var(--red); font-weight: 700; text-align: center; min-height: 1.3em; }
+  body.mobile .name-card { gap: 6px; } body.mobile .name-card input { padding: 7px 10px; font-size: 16px; }
+  /* 영업 종료: 차례로 넘기기 */
+  .card.steps .tabs { display: none; }
+  .card.steps .foot { align-items: center; } .step-dots { display: flex; gap: 6px; flex: none; }
+  .step-dots i { width: 8px; height: 8px; border-radius: 50%; background: #d9c7a4; } .step-dots i.on { background: var(--red); }
+  .card.steps .pg:not([hidden]) > * { animation: stepIn .45s both; }
+  .card.steps .pg:not([hidden]) > *:nth-child(2) { animation-delay: .12s; } .card.steps .pg:not([hidden]) > *:nth-child(3) { animation-delay: .24s; }
+  .card.steps .pg:not([hidden]) > *:nth-child(4) { animation-delay: .36s; } .card.steps .pg:not([hidden]) > *:nth-child(n+5) { animation-delay: .48s; }
+  .card.steps .ledger-row { animation: stepIn .35s both; }
+  .card.steps .ledger-row:nth-child(2) { animation-delay: .1s; } .card.steps .ledger-row:nth-child(3) { animation-delay: .2s; } .card.steps .ledger-row:nth-child(4) { animation-delay: .3s; }
+  .card.steps .ledger-row:nth-child(5) { animation-delay: .4s; } .card.steps .ledger-row:nth-child(n+6) { animation-delay: .5s; }
+  @keyframes stepIn { from { opacity: 0; transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce) { .card.steps .pg > *, .card.steps .ledger-row { animation: none !important; } }
   .region-head { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 13px; background: #fff6e6; border-radius: 10px; padding: 7px 10px; }
   .region-head .rank { margin-left: auto; font-weight: 800; color: var(--red); } .region-head .fame { font-weight: 800; color: #b07a10; }
   #regionInfo h4, #endGrowth h3 { margin: 10px 0 5px; font-size: 14px; }
@@ -466,44 +535,82 @@
 </div>
 <div id="update" hidden><span id="updateText"></span><button id="updateBtn">업데이트</button></div>
 
+<!-- 처음 한 번: 가게 차리기 (사장님 이름 · 가게 이름) -->
+<div id="nameSetup" class="overlay hidden">
+  <div class="card name-card">
+    <h1>🏮 오늘, 나의 라멘집을 엽니다</h1>
+    <label>사장님 이름<input id="ownerName" maxlength="8" placeholder="예: 준" autocomplete="off"></label>
+    <label>가게 이름<input id="shopName" maxlength="12" placeholder="예: 준이네 라멘" autocomplete="off"></label>
+    <p class="name-preview" id="namePreview"></p>
+    <button class="btn" id="nameOk">가게 열기</button>
+  </div>
+</div>
+
 <div id="start" class="overlay">
-  <div class="card paged">
-    <div class="tabs"></div>
-    <section class="pg" data-tab="오늘">
-      <h1 class="brand">인생<span>라멘</span> <small class="ver"></small></h1>
-      <div id="regionTag" class="region-tag"></div>
+  <div class="card hub">
+    <!-- 홈: 가게 사무실 -->
+    <section class="view" data-view="home">
+      <header class="hub-head">
+        <div class="hub-name"><h1 class="brand">인생<span>라멘</span></h1><div id="shopTitle" class="shop-title"></div></div>
+        <div class="hub-right"><span id="regionTag" class="region-tag"></span><button class="icon-btn" data-open="settings" title="설정">⚙</button></div>
+      </header>
       <div id="ownerInfo"></div>
-      <div class="day-box" id="dayInfo"></div>
-      <div id="todayMissions"></div>
-      <div class="grade-pick" id="startGrade"></div>
+      <div class="hub-grid">
+        <div class="hub-today">
+          <div class="day-box" id="dayInfo"></div>
+          <div id="todayMissions"></div>
+          <div class="grade-pick" id="startGrade"></div>
+          <div class="rep-line" id="endRep"></div>
+          <button class="btn sub" id="promoBtn">📣 전단지 돌리기 — 평판 올리기 (하루 한 번)</button>
+        </div>
+        <div class="hub-tiles">
+          <button class="tile" data-open="map"><b>🗾 전국 지도</b><small id="tileMap"></small></button>
+          <button class="tile" data-open="shop"><b>🏪 상점</b><small id="tileShop"></small></button>
+          <button class="tile" data-open="guide"><b>📖 조작법</b><small>화면에서 하나씩 짚어 줘요</small></button>
+        </div>
+      </div>
+      <div class="foot"><button class="btn" id="startBtn">영업 시작</button></div>
     </section>
-    <section class="pg" data-tab="지역">
-      <div id="regionInfo"></div>
+    <!-- 상점 -->
+    <section class="view" data-view="shop" hidden>
+      <header class="view-head"><button class="back">← 홈</button><h2>🏪 상점</h2><span class="bank" id="shopBank"></span></header>
+      <div class="pages" id="shopPages">
+        <div class="tabs"></div>
+        <section class="pg" data-tab="🔧 주방"><div class="shop" id="startKitchen"></div></section>
+        <section class="pg" data-tab="💰 메뉴"><div class="shop" id="startMenu"></div></section>
+        <section class="pg" data-tab="🏮 가게"><div class="shop" id="startStore"></div></section>
+        <section class="pg" data-tab="🏗 확장"><div class="shop" id="startExpand"></div></section>
+      </div>
     </section>
-    <section class="pg" data-tab="조작">
-      <button class="btn coach-open" id="coachBtn">👀 게임 화면에서 조작 보기</button>
-      <p class="coach-hint">실제 화면 위에 어디를 누르는지 하나씩 짚어 줘요.</p>
-      <ol class="flow">
-        <li><b>그릇</b> 놓기</li><li>↻ 뒤돌아 <b>면</b> 삶기</li><li><b>육수</b> 붓기</li><li>면 넣기</li><li>🔥 <b>챠슈</b> · 토핑</li><li>✅ 완성 → 🍜 <b>내기</b></li>
-      </ol>
-      <details class="credit"><summary>ⓘ 크레딧</summary>목소리: VOICEVOX:青山龍星 / 玄野武宏 / 剣崎雌雄 / 雀松朱司 / 麒ヶ島宗麟 / 白上虎太郎 / 四国めたん / 九州そら / 冥鳴ひまり / 春日部つむぎ / 波音リツ / No.7 / ちび式じい / もち子さん / 東北イタコ</details>
+    <!-- 전국 지도 -->
+    <section class="view" data-view="map" hidden>
+      <header class="view-head"><button class="back">← 홈</button><h2>🗾 전국 라멘 제패</h2><span class="bank" id="mapFame"></span></header>
+      <div class="map-wrap"><div id="japanMap"></div><div id="regionInfo"></div></div>
     </section>
-    <section class="pg" data-tab="주방">
-      <div class="shop" id="startKitchen"></div>
+    <!-- 조작법 -->
+    <section class="view" data-view="guide" hidden>
+      <header class="view-head"><button class="back">← 홈</button><h2>📖 조작법</h2></header>
+      <div class="scroll">
+        <button class="btn coach-open" id="coachBtn">👀 게임 화면에서 조작 보기</button>
+        <p class="coach-hint">실제 화면 위에 어디를 누르는지 하나씩 짚어 줘요.</p>
+        <ol class="flow">
+          <li><b>그릇</b> 놓기</li><li>↻ 뒤돌아 <b>면</b> 삶기</li><li><b>육수</b> 붓기</li><li>면 넣기</li><li>🔥 <b>챠슈</b> · 토핑</li><li>✅ 완성 → 🍜 <b>내기</b></li>
+        </ol>
+        <details class="credit"><summary>ⓘ 크레딧</summary>목소리: VOICEVOX:青山龍星 / 玄野武宏 / 剣崎雌雄 / 雀松朱司 / 麒ヶ島宗麟 / 白上虎太郎 / 四国めたん / 九州そら / 冥鳴ひまり / 春日部つむぎ / 波音リツ / No.7 / ちび式じい / もち子さん / 東北イタコ</details>
+      </div>
     </section>
-    <section class="pg" data-tab="메뉴">
-      <div class="shop" id="startMenu"></div>
+    <!-- 설정 -->
+    <section class="view" data-view="settings" hidden>
+      <header class="view-head"><button class="back">← 홈</button><h2>⚙ 설정</h2><small class="ver"></small></header>
+      <div class="scroll settings">
+        <button class="btn sub" id="renameBtn">✏️ 사장님·가게 이름 바꾸기</button>
+        <div class="danger">
+          <p>이 지역 가게를 Day 1부터 다시 시작해요 (금고·업그레이드도 처음으로). 사장 레벨·명성 별은 그대로예요.</p>
+          <button class="btn sub" id="resetBtn">처음부터 다시</button>
+          <div id="resetAsk" hidden><b>정말 처음부터 할까요?</b><div class="row"><button class="btn sub" id="resetNo">취소</button><button class="btn" id="resetYes">처음부터</button></div></div>
+        </div>
+      </div>
     </section>
-    <section class="pg" data-tab="가게">
-      <div class="shop" id="startStore"></div>
-    </section>
-    <section class="pg" data-tab="확장">
-      <div class="shop" id="startExpand"></div>
-    </section>
-    <div class="foot">
-      <button class="btn sub" id="resetBtn">처음부터</button>
-      <button class="btn" id="startBtn">영업 시작</button>
-    </div>
   </div>
 </div>
 
@@ -517,7 +624,7 @@
 </div>
 
 <div id="end" class="overlay hidden">
-  <div class="card paged" style="text-align:center">
+  <div class="card paged steps" style="text-align:center">
     <div class="tabs"></div>
     <section class="pg" data-tab="결과">
       <h1>영업 종료</h1>
@@ -528,39 +635,22 @@
         <div>😐 보통<b id="endNormal">0</b></div>
         <div>😠 화남<b id="endAngry">0</b></div>
       </div>
-      <p id="endNet" class="end-net"></p>
-      <p id="endGrowLine" class="grow-line"></p>
       <p id="endComment" style="font-weight:700"></p>
-    </section>
-    <section class="pg" data-tab="성장">
-      <div id="endGrowth"></div>
+      <p id="endNet" class="end-net" hidden></p>
+      <p id="endGrowLine" class="grow-line" hidden></p>
     </section>
     <section class="pg" data-tab="장부">
       <h3>💰 오늘 장부</h3>
       <div id="endMoney"></div>
       <div class="goal-wrap" id="endGoal"></div>
     </section>
-    <section class="pg" data-tab="내일">
-      <div class="day-box" id="endRep"></div>
-      <button class="btn sub" id="promoBtn">📣 전단지 돌리기 — 평판 올리기 (하루 한 번)</button>
-      <div class="day-box" id="endNext"></div>
-      <div class="grade-pick" id="endGrade"></div>
-    </section>
-    <section class="pg" data-tab="주방">
-      <div class="shop" id="endKitchen"></div>
-    </section>
-    <section class="pg" data-tab="메뉴">
-      <div class="shop" id="endMenu"></div>
-    </section>
-    <section class="pg" data-tab="가게">
-      <div class="shop" id="endStore"></div>
-    </section>
-    <section class="pg" data-tab="확장">
-      <div class="shop" id="endExpand"></div>
+    <section class="pg" data-tab="성장">
+      <div id="endGrowth"></div>
     </section>
     <div class="foot">
       <button class="btn sub" id="againBtn">오늘 다시</button>
-      <button class="btn" id="nextBtn">다음 날 영업 시작</button>
+      <span class="step-dots" id="stepDots"></span>
+      <button class="btn" id="nextBtn">다음 ▶</button>
     </div>
   </div>
 </div>
@@ -581,7 +671,7 @@
 <script type="module">
 import * as THREE from 'three';
 // 게임 버전 — 베타에 올릴 때마다 올림 (시작 화면·일시정지에 표시해서 어느 버전인지 바로 확인)
-const APP_VERSION = 'v1.8', APP_DATE = '11/06';
+const APP_VERSION = 'v1.9', APP_DATE = '11/06';
 document.querySelectorAll('.ver').forEach(el => { el.textContent = `${APP_VERSION} · ${APP_DATE}`; });
 
 // ================= 전국 라멘 제패: 지역 =================
@@ -600,6 +690,11 @@ const HAKATA = REGION_ID === 'fukuoka';
 // 지역별로 따로 저장하는 값 (도쿄는 예전 이름 그대로라서 지금까지의 진행이 그대로 도쿄 가게)
 const REGION_KEYS = new Set(['ramen-day', 'ramen-bank', 'ramen-rep', 'ramen-upg2', 'ramen-regulars', 'ramen-promo-day', 'ramen-grade', 'ramen-theme', 'ramen-seen', 'ramen-stats', 'ramen-quests']);
 const rkey = k => (REGION_ID !== 'tokyo' && REGION_KEYS.has(k) ? `${k}@${REGION_ID}` : k);
+// 사장님 이름 · 가게 이름 (처음 한 번 정함, 설정에서 바꿀 수 있음) — 다른 지역은 '○○ 하카타점'처럼 지점
+const BRANCH = { tokyo: '', fukuoka: '하카타점', sapporo: '삿포로점', yokohama: '요코하마점', osaka: '오사카점' };
+const ownerInfo = () => { try { return JSON.parse(localStorage.getItem('ramen-owner')); } catch (e) { return null; } };
+const ownerName = () => ownerInfo()?.name || '사장';
+const shopName = () => (ownerInfo()?.shop || '인생라멘') + (BRANCH[REGION_ID] ? ' ' + BRANCH[REGION_ID] : '');
 
 // ================= 설정 =================
 const CFG = {
@@ -1238,16 +1333,21 @@ const norenPanels = [];
 }
 // 창문 위 나무 간판 (2단계~), 창문 양옆 등불 (3단계~), 간판에 불 (4단계)
 const signBoard = new THREE.Group(); scene.add(signBoard);
-const signMat = (() => {
+// 가게 간판: 내가 정한 가게 이름이 걸림
+function signTexture(text) {
   const c = document.createElement('canvas'); c.width = 1024; c.height = 200;
   const g = c.getContext('2d');
   g.fillStyle = '#7a4a26'; g.fillRect(0, 0, 1024, 200);
   for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(60,30,10,${0.15 + Math.random() * 0.2})`; g.beginPath(); g.moveTo(0, Math.random() * 200); g.lineTo(1024, Math.random() * 200); g.stroke(); }
-  g.fillStyle = '#f6e3b8'; g.font = 'bold 130px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText('らーめん 一番', 512, 104);
+  g.fillStyle = '#f6e3b8'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  let size = 120; do { g.font = `bold ${size}px "Song Myung", "AppleMyungjo", serif`; size -= 6; } while (g.measureText(text).width > 940 && size > 40);
+  g.fillText(text, 512, 104);
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, emissive: 0xffc070, emissiveMap: tex, emissiveIntensity: 0 });
-})();
+  return tex;
+}
+const signMat = (() => { const tex = signTexture(shopName()); return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, emissive: 0xffc070, emissiveMap: tex, emissiveIntensity: 0 }); })();
+function updateSign() { const old = signMat.map; signMat.map = signMat.emissiveMap = signTexture(shopName()); signMat.needsUpdate = true; old?.dispose(); }
+document.fonts?.ready.then(updateSign); // 붓글씨 글꼴을 받은 뒤 다시 그림
 {
   const board = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.43), signMat); board.position.set(-0.6, 2.47, FRONT_Z + 0.07); signBoard.add(board);
   box(2.3, 0.04, 0.06, woodDark, -0.6, 2.7, FRONT_Z + 0.08, signBoard); box(2.3, 0.04, 0.06, woodDark, -0.6, 2.24, FRONT_Z + 0.08, signBoard);
@@ -1264,7 +1364,7 @@ for (const x of [-2.15, 0.95]) {
 function norenLayout() {
   const lv = levelOf('noren');
   for (const p of norenPanels) p.material.map = lv >= 1 ? NOREN_TEX.fresh : NOREN_TEX.old;
-  signBoard.visible = lv >= 2; signLanterns.visible = lv >= 3;
+  signBoard.visible = true; signLanterns.visible = lv >= 3; // 간판은 늘 (내 가게 이름)
   signMat.emissiveIntensity = lv >= 4 ? 0.55 : 0; signLight.intensity = lv >= 4 ? 2.2 : 0;
 }
 // 입구 옆 빨간 등 (초칭)
@@ -3057,29 +3157,66 @@ function regionHeaderHtml() {
   return `<div class="region-head"><b>${REGION.icon} ${REGION.name}</b> · 간판 라멘 <b>${REGION.ramen}</b>`
     + `<span class="rank">${isConquered() ? '👑 지역 1위 (제패!)' : `🏅 지역 랭킹 ${regionRank()}위`}</span><span class="fame">⭐ 명성 별 ${fame()}</span></div>`;
 }
-// 시작 화면 '지역' 탭: 이 지역 퀘스트 + 여정 지도(지역 이동)
+// ---------- 전국 지도: 일본 지도 위에 지역 핀, 누르면 오른쪽에 정보, 이동하면 신칸센·비행기가 날아감 ----------
+// 경도·위도 → 지도 좌표 (대충 그린 일본 윤곽)
+const JP = (lon, lat) => [((lon - 128.6) * 23.5).toFixed(1), ((45.8 - lat) * 23.5).toFixed(1)];
+const JP_LAND = [
+  [[139.8,41.5],[140.0,42.3],[139.9,42.8],[140.5,43.3],[141.3,43.2],[141.6,43.9],[141.7,44.4],[141.9,45.4],[142.5,45.3],[143.5,44.3],[144.9,43.9],[145.3,44.3],[145.6,43.3],[144.9,42.9],[143.3,42.0],[141.7,42.6],[141.0,42.3],[140.4,41.5]],
+  [[140.9,41.5],[141.5,41.3],[141.5,40.0],[142.0,39.5],[141.6,38.4],[141.0,38.2],[140.9,37.0],[140.6,36.4],[140.9,35.7],[140.1,35.0],[139.8,35.3],[139.2,35.1],[138.8,34.6],[138.2,34.6],[137.3,34.6],[136.9,34.3],[136.8,33.5],[135.8,33.5],[135.1,33.9],[135.4,34.6],[134.4,34.7],[133.5,34.5],[132.4,34.3],[131.9,33.95],[130.9,33.95],[131.0,34.4],[131.8,34.7],[132.6,35.4],[133.4,35.5],[134.4,35.6],[135.4,35.6],[135.9,35.7],[136.1,36.2],[136.7,36.8],[136.9,37.4],[137.3,37.3],[137.4,36.8],[138.3,37.2],[138.9,37.8],[139.5,38.4],[139.9,39.1],[140.0,39.9],[139.9,40.6],[140.3,41.2]],
+  [[132.4,33.0],[132.6,33.6],[133.0,34.0],[133.6,34.3],[134.4,34.2],[134.7,33.8],[134.2,33.3],[133.6,33.4],[133.2,33.0],[132.9,32.7]],
+  [[129.8,33.3],[130.3,33.6],[130.9,33.9],[131.6,33.6],[131.9,33.1],[131.7,32.5],[131.4,31.4],[130.7,31.0],[130.2,31.3],[130.3,32.1],[130.6,32.6],[130.2,32.8],[129.8,32.7]],
+];
+const CITY = { tokyo: [139.7, 35.7], fukuoka: [130.4, 33.6], sapporo: [141.35, 43.06], yokohama: [139.62, 35.44], osaka: [135.5, 34.7] };
+const LABEL_SIDE = { tokyo: [13, -6, 'start'], yokohama: [12, 15, 'start'], fukuoka: [6, 26, 'middle'], sapporo: [14, 4, 'start'], osaka: [-4, 25, 'middle'] }; // 이름표 위치 (지도 밖으로 안 잘리게)
+let mapPick = REGION_ID;
+const regionOpen = r => !REGIONS[r].soon && (!REGIONS[r].after || isConquered(REGIONS[r].after));
 function renderRegion() {
-  const el = document.getElementById('regionInfo');
-  const order = Object.keys(REGIONS);
-  const route = order.map(r => {
-    const R = REGIONS[r], here = r === REGION_ID, won = isConquered(r), open = !R.soon && (!R.after || isConquered(R.after));
-    const status = here ? '📍 지금 여기' : won ? '👑 제패' : R.soon ? '🚧 준비 중' : open ? '' : `🔒 ${REGIONS[R.after].name} 제패 필요`;
-    const btn = !here && open ? `<button class="go" data-go="${r}">${won || store.get(`ramen-day@${r}`, 0) || r === 'tokyo' ? '가기' : '진출하기'}</button>` : '';
-    return `<div class="stop${here ? ' here' : ''}${!open && !here ? ' off' : ''}"><div class="pin">${R.icon}</div><b>${R.name}</b><small>${R.ramen}</small><small class="st">${status}</small>${btn}</div>`;
-  }).join('<div class="road"></div>');
-  el.innerHTML = regionHeaderHtml() + '<h4>📍 지역 퀘스트</h4>' + questsHtml()
-    + `<p class="q-reward">퀘스트마다 ⭐+${QUEST_FAME} · ¥${QUEST_CASH.toLocaleString()} / 대결 승리 ⭐+${FINAL_FAME} · ¥${FINAL_CASH.toLocaleString()} · 제패한 지역은 매일 +¥${TERRITORY_INCOME.toLocaleString()}</p>`
-    + '<h4>🗾 전국 라멘 제패 여정</h4><div class="route">' + route + '</div>'
-    + `<p class="q-reward">⭐ 명성 별 하나마다 새 지역 가게의 시작 자금 +¥5,000 · 시작 평판 +0.1</p><div id="travelAsk" hidden></div>`;
-  el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
-    const r = b.dataset.go, ask = document.getElementById('travelAsk');
-    ask.hidden = false;
-    ask.innerHTML = `${REGIONS[r].icon} <b>${josa(REGIONS[r].name, '으로', '로')}</b> 갈까요? 지금 가게(${REGION.name})는 그대로 남아 있고 언제든 돌아올 수 있어요.`
-      + '<div class="row"><button class="btn sub" id="travelNo">취소</button><button class="btn" id="travelYes">이동하기</button></div>';
-    document.getElementById('travelNo').onclick = () => { ask.hidden = true; };
-    document.getElementById('travelYes').onclick = () => { try { localStorage.setItem('ramen-region', JSON.stringify(r)); } catch (e) { /* 저장 불가 */ } location.reload(); };
-    ask.scrollIntoView({ block: 'nearest' });
-  });
+  const land = JP_LAND.map(pts => `<path d="M${pts.map(([lo, la]) => JP(lo, la).join(',')).join('L')}Z"/>`).join('');
+  const pins = Object.keys(REGIONS).map(r => {
+    const [x, y] = JP(...CITY[r]), R = REGIONS[r], here = r === REGION_ID, won = isConquered(r), open = regionOpen(r);
+    const [dx, dy, anchor] = LABEL_SIDE[r];
+    return `<g class="pin${here ? ' here' : ''}${won ? ' won' : ''}${!open && !here ? ' off' : ''}${r === mapPick ? ' pick' : ''}" data-r="${r}">`
+      + `<circle cx="${x}" cy="${y}" r="17" class="hit"/><circle cx="${x}" cy="${y}" r="11" class="dot"/>`
+      + `<text x="${x}" y="${+y + 5}" text-anchor="middle" class="emo">${won ? '👑' : R.icon}</text>`
+      + `<text x="${+x + dx}" y="${+y + dy}" text-anchor="${anchor}" class="nm">${R.name.split(' ')[0]}</text></g>`;
+  }).join('');
+  document.getElementById('japanMap').innerHTML = `<svg viewBox="0 0 410 350" id="jpSvg"><g class="sea-lines">${[60, 120, 180, 240, 300].map(y => `<path d="M0,${y} Q205,${y - 12} 410,${y}"/>`).join('')}</g><g class="land">${land}</g><path id="travelPath" d=""/>${pins}<text id="traveler" class="emo" x="-50" y="-50">🚄</text></svg>`;
+  document.querySelectorAll('#jpSvg .pin').forEach(g => g.addEventListener('click', () => { mapPick = g.dataset.r; Sound.knob(); renderRegion(); }));
+  regionPanel(mapPick);
+}
+// 오른쪽 정보: 지금 지역이면 퀘스트, 다른 지역이면 설명과 이동 버튼
+function regionPanel(r) {
+  const el = document.getElementById('regionInfo'), R = REGIONS[r], here = r === REGION_ID, won = isConquered(r), open = regionOpen(r);
+  const status = here ? `📍 지금 여기 · ${won ? '👑 제패' : `랭킹 ${regionRank()}위`}` : won ? '👑 제패한 지역 (매일 수익 +¥3,000)' : R.soon ? '🚧 준비 중' : open ? '진출할 수 있어요!' : `🔒 ${REGIONS[R.after].name} 제패 필요`;
+  let html = `<div class="rg-head"><b>${R.icon} ${R.name}</b><small>간판 라멘 · ${R.ramen}</small><span class="st">${status}</span></div>`;
+  if (here) {
+    html += '<h4>📍 지역 퀘스트</h4>' + questsHtml()
+      + `<p class="q-reward">퀘스트마다 ⭐+${QUEST_FAME} · ¥${QUEST_CASH.toLocaleString()} · 대결 승리 ⭐+${FINAL_FAME} · ¥${FINAL_CASH.toLocaleString()}</p>`;
+  } else {
+    html += `<p class="rg-desc">${R.desc}</p>`;
+    if (open) html += `<p class="q-reward">⭐ 명성 별 ${fame()}개 → 새 가게 시작 자금 ¥${(10000 + fame() * 5000).toLocaleString()}</p><button class="btn" id="travelGo">${r === 'tokyo' || won || store.get(`ramen-day@${r}`, 0) ? '🚄 가기' : '🚄 진출하기'}</button>`;
+  }
+  el.innerHTML = html;
+  document.getElementById('travelGo')?.addEventListener('click', () => travelTo(r));
+}
+// 지도 위로 점선이 그려지고 신칸센(같은 섬) · 비행기(바다 건너)가 날아간 뒤 그 지역 가게로
+function travelTo(r) {
+  const btn = document.getElementById('travelGo'); if (btn) { btn.disabled = true; btn.textContent = '이동 중…'; }
+  const [x0, y0] = JP(...CITY[REGION_ID]).map(Number), [x1, y1] = JP(...CITY[r]).map(Number);
+  const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 40 - Math.abs(x1 - x0) * 0.15;
+  const path = document.getElementById('travelPath'); path.setAttribute('d', `M${x0},${y0} Q${mx},${my} ${x1},${y1}`);
+  const len = path.getTotalLength(); path.style.strokeDasharray = `5 5`; path.style.opacity = 1;
+  const plane = ['sapporo', 'fukuoka'].includes(r) !== ['sapporo', 'fukuoka'].includes(REGION_ID) || [r, REGION_ID].includes('sapporo');
+  const t = document.getElementById('traveler'); t.textContent = plane ? '✈️' : '🚄';
+  Sound.init(); Sound.door();
+  const start = performance.now(), dur = 2000;
+  const step = now => {
+    const k = Math.min(1, (now - start) / dur), e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+    const p = path.getPointAtLength(len * e); t.setAttribute('x', p.x); t.setAttribute('y', p.y + 5);
+    if (k < 1) requestAnimationFrame(step);
+    else { Sound.happy(); try { localStorage.setItem('ramen-region', JSON.stringify(r)); } catch (e2) { /* 저장 불가 */ } setTimeout(() => location.reload(), 450); }
+  };
+  requestAnimationFrame(step);
 }
 
 // ---------- Day 1 튜토리얼: 첫 손님 한 그릇을 단계별로 따라 하기 ----------
@@ -3444,7 +3581,7 @@ function updateCustomers(dt) {
           const rice = upgValue('rice'); // 공기밥 · 챠슈동
           if (rice && Math.random() < rice.pct) { G.money += rice.p; G.costIngr += rice.c; G.riceSales = (G.riceSales ?? 0) + rice.p; }
           G.seats[c.seat].bowl?.empty();
-          if (c.result === 'happy') customerSay(c, '😋 잘 먹었습니다!', 'happy', 'gochisousama', 'ごちそうさまでした！');
+          if (c.result === 'happy') customerSay(c, Math.random() < 0.3 ? `😋 ${ownerName()} 사장님, 최고예요!` : '😋 잘 먹었습니다!', 'happy', 'gochisousama', 'ごちそうさまでした！');
           else customerSay(c, c.result === 'normal' ? '🙂 잘 먹었어요' : '😠 …', c.result);
           Sound.line('arigatou', 'ありがとうございましたー！', SHOP_VOICE);
           customerLeaves(c);
@@ -3476,7 +3613,7 @@ function updateSeats(dt) {
       createTicket(c); Sound.ding();
       const what = `${RAMEN[c.order.ramen].name} ${josa(FIRM[c.order.firm], '으로', '로')}`;
       const t = c.special?.type;
-      customerSay(c, t === 'regular' ? `⭐ 사장님, 늘 먹던 걸로요! (${what})` : t === 'hurry' ? `⏱ ${what}, 빨리 부탁해요! 시간이 없어서…` :
+      customerSay(c, t === 'regular' ? `⭐ ${ownerName()} 사장님, 늘 먹던 걸로요! (${what})` : t === 'hurry' ? `⏱ ${what}, 빨리 부탁해요! 시간이 없어서…` :
         t === 'critic' ? `📰 (수첩을 꺼내며) ${what} 주시죠.` : `📝 ${what} 주세요!`, '');
     }
   }
@@ -3935,7 +4072,7 @@ function goalHtml() {
 // ---------- 가게 평판 · 홍보 미니게임 ----------
 function setRep(v) { rep = clamp(v, 1, 5); store.set('ramen-rep', rep); }
 function showRep() {
-  const b = G.repBefore, diff = b != null ? rep - b : 0;
+  const b = G?.repBefore, diff = b != null ? rep - b : 0;
   const change = b != null ? ` <small>(${b.toFixed(1)} → ${rep.toFixed(1)}${diff >= 0.05 ? ' ▲' : diff <= -0.05 ? ' ▼' : ''})</small>` : '';
   document.getElementById('endRep').innerHTML = repText() + change;
   const canPromo = rep < 3.5 && store.get('ramen-promo-day', 0) !== day;
@@ -4014,6 +4151,7 @@ document.getElementById('title').addEventListener('pointerdown', () => {
   document.getElementById('title').classList.add('gone'); document.body.classList.remove('title-on');
   Sound.init(); VoiceFiles.decode(); Sound.knob();
   setTimeout(() => Sound.line('irasshaimase', 'いらっしゃいませー！', SHOP_VOICE), 250);
+  if (!ownerInfo()) openNameSetup(); // 처음이면 가게부터 차림
   setTimeout(() => document.getElementById('title').remove(), 700);
 });
 // 새 버전 확인: 켤 때와 다시 돌아올 때 서버의 최신 버전과 비교 → 다르면 '업데이트' 버튼 (영업 중엔 안 띄움)
@@ -4049,13 +4187,14 @@ musicBtn.onclick = e => {
   Sound.music(musicOn);
 };
 // 시작·영업 종료 화면: 위 탭이나 좌우로 밀어서 페이지 넘기기
-function setupPager(card) {
+function setupPager(card, onShow = () => {}) {
   const pages = [...card.querySelectorAll('.pg')], tabs = card.querySelector('.tabs');
   tabs.innerHTML = pages.map((p, i) => `<button data-i="${i}">${p.dataset.tab}</button>`).join('');
   const show = n => {
     const i = clamp(n, 0, pages.length - 1); card.pageIndex = i;
     pages.forEach((p, k) => { p.hidden = k !== i; });
     tabs.querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === i));
+    onShow(i, pages.length);
   };
   tabs.querySelectorAll('button').forEach(b => b.addEventListener('click', () => show(+b.dataset.i)));
   let sx = null, sy = 0;
@@ -4068,8 +4207,12 @@ function setupPager(card) {
   show(0);
   return show;
 }
-const startPage = setupPager(document.querySelector('#start .card'));
-const endPage = setupPager(document.querySelector('#end .card'));
+const shopPage = setupPager(document.getElementById('shopPages'));
+// 영업 종료: 결과 → 장부 → 성장을 차례로 (다음 ▶ 또는 옆으로 밀기), 마지막은 홈으로
+const endPage = setupPager(document.querySelector('#end .card'), (i, n) => {
+  document.getElementById('nextBtn').textContent = i < n - 1 ? '다음 ▶' : '🏠 홈으로';
+  document.getElementById('stepDots').innerHTML = Array.from({ length: n }, (_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('');
+});
 // ---------- 조작 안내: 시작 화면을 잠깐 내리고 실제 게임 화면의 버튼·물건 위에 말풍선 ----------
 // side: 말풍선이 대상의 어느 쪽에 붙는지 (above · below · left · right)
 const COACH_TIPS = [
@@ -4112,24 +4255,63 @@ document.getElementById('coachClose').onclick = () => {
   document.getElementById('coach').hidden = true;
   document.getElementById('start').classList.remove('hidden');
 };
-document.getElementById('dayInfo').innerHTML = startInfoHtml();
-// 시작 화면: 사장 레벨 · 오늘의 미션 미리 보기
-document.getElementById('ownerInfo').innerHTML = levelBarHtml();
-{ const ms = makeMissions(day); document.getElementById('todayMissions').innerHTML = ms.length ? '<h3>⭐ 오늘의 미션</h3>' + missionsHtml(ms) : ''; }
+// ---------- 홈(가게 사무실): 오늘 할 일 + 지도 · 상점 · 조작법 · 설정 화면으로 ----------
+function openView(v) {
+  document.querySelectorAll('#start .view').forEach(el => { el.hidden = el.dataset.view !== v; });
+  if (v === 'map') renderRegion();
+}
+document.querySelectorAll('#start [data-open]').forEach(b => b.addEventListener('click', () => { Sound.init(); Sound.knob(); openView(b.dataset.open); }));
+document.querySelectorAll('#start .back').forEach(b => b.addEventListener('click', () => { Sound.knob(); refreshHome(); openView('home'); }));
+function refreshHome() {
+  document.getElementById('shopTitle').innerHTML = `🏮 <b>${shopName()}</b> · ${ownerName()} 사장님`;
+  document.getElementById('regionTag').innerHTML = `${REGION.icon} ${REGION.name} · ${isConquered() ? '👑 제패' : `랭킹 ${regionRank()}위`}`;
+  document.getElementById('ownerInfo').innerHTML = levelBarHtml();
+  document.getElementById('dayInfo').innerHTML = startInfoHtml();
+  const ms = makeMissions(day); document.getElementById('todayMissions').innerHTML = ms.length ? '<h3>⭐ 오늘의 미션</h3>' + missionsHtml(ms) : '';
+  renderShop('start'); renderGrade('startGrade'); showRep();
+  document.getElementById('tileMap').textContent = `${isConquered() ? '👑 제패' : `랭킹 ${regionRank()}위`} · ⭐ ${fame()}`;
+  document.getElementById('tileShop').textContent = `금고 ¥${bank.toLocaleString()}`;
+  document.getElementById('shopBank').textContent = `금고 ¥${bank.toLocaleString()}`;
+  document.getElementById('mapFame').textContent = `⭐ 명성 별 ${fame()}`;
+  document.getElementById('startBtn').textContent = day > 1 ? `🍜 Day ${day} 영업 시작` : '🍜 영업 시작';
+}
 // ⭐ 칩을 누르면 미션 목록이 잠깐 펼쳐짐
 document.getElementById('missionChip').onclick = e => {
   e.currentTarget.blur();
   const p = document.getElementById('missionPanel'); p.hidden = !p.hidden;
   clearTimeout(p._t); if (!p.hidden) p._t = setTimeout(() => { p.hidden = true; }, 4000);
 };
-renderShop('start'); renderGrade('startGrade'); renderRegion();
-document.getElementById('regionTag').innerHTML = `📍 ${REGION.icon} ${REGION.name} 가게 · ${isConquered() ? '👑 제패' : `랭킹 ${regionRank()}위`} · ⭐ ${fame()}`;
-document.getElementById('startBtn').textContent = day > 1 ? `Day ${day} 영업 시작` : '영업 시작';
+refreshHome();
 document.getElementById('startBtn').onclick = () => { goFullscreen(); startDay(); };
-document.getElementById('resetBtn').style.display = day > 1 ? '' : 'none';
-document.getElementById('resetBtn').onclick = () => { // 금고·업그레이드까지 처음부터
+document.getElementById('resetBtn').onclick = () => { document.getElementById('resetAsk').hidden = false; };
+document.getElementById('resetNo').onclick = () => { document.getElementById('resetAsk').hidden = true; };
+document.getElementById('resetYes').onclick = () => { // 이 지역 가게를 금고·업그레이드까지 처음부터
   day = 1; saveDay(); bank = 0; for (const k in upgLv) delete upgLv[k]; store.set('ramen-bank', 0); store.set('ramen-upg', []); store.set('ramen-upg2', {}); store.set('ramen-seen', 1); store.set('ramen-tut-done', false); setRep(3); startDay();
 };
+// 가게 차리기: 사장님 이름 → 가게 이름을 '○○네 라멘'으로 추천 (직접 바꾸면 그대로)
+{
+  const nameIn = document.getElementById('ownerName'), shopIn = document.getElementById('shopName'), prev = document.getElementById('namePreview');
+  let shopTouched = false;
+  const update = () => {
+    if (!shopTouched) shopIn.value = nameIn.value.trim() ? `${josa(nameIn.value.trim(), '이네', '네')} 라멘` : ''; // 준 → 준이네, 민호 → 민호네
+    prev.textContent = nameIn.value.trim() ? `🏮「${shopIn.value.trim() || '인생라멘'}」 개업! — ${nameIn.value.trim()} 사장님` : '이름을 적으면 가게 간판에 걸려요';
+  };
+  nameIn.addEventListener('input', update);
+  shopIn.addEventListener('input', () => { shopTouched = shopIn.value.trim() !== ''; update(); });
+  window.openNameSetup = () => {
+    const o = ownerInfo(); nameIn.value = o?.name ?? ''; shopIn.value = o?.shop ?? ''; shopTouched = !!o?.shop; update();
+    document.getElementById('start').classList.add('hidden'); document.getElementById('nameSetup').classList.remove('hidden');
+  };
+  document.getElementById('nameOk').onclick = () => {
+    const name = nameIn.value.trim();
+    if (!name) { nameIn.focus(); prev.textContent = '사장님 이름을 적어 주세요'; return; }
+    try { localStorage.setItem('ramen-owner', JSON.stringify({ name, shop: shopIn.value.trim() || `${josa(name, '이네', '네')} 라멘` })); } catch (e) { /* 저장 불가 */ }
+    nameIn.blur(); shopIn.blur(); Sound.init(); Sound.happy();
+    document.getElementById('nameSetup').classList.add('hidden'); document.getElementById('start').classList.remove('hidden');
+    updateSign(); refreshHome(); openView('home');
+  };
+  document.getElementById('renameBtn').onclick = () => openNameSetup();
+}
 document.getElementById('resumeBtn').onclick = () => { pause(false); lockPointer(); };
 // ---------- 아래 재료 버튼 줄: 토핑 · 챠슈(누르고 있기) · 미소 ----------
 // 버튼 그림은 캔버스로 직접 그림 (한눈에 알아보게 단순하고 크게)
@@ -4260,7 +4442,13 @@ function goFullscreen() {
   } catch (e) { /* 지원 안 함 */ }
 }
 document.getElementById('againBtn').onclick = startDay;
-document.getElementById('nextBtn').onclick = () => { day++; saveDay(); startDay(); };
+document.getElementById('nextBtn').onclick = () => {
+  const card = document.querySelector('#end .card');
+  if (card.pageIndex < 2) { endPage(card.pageIndex + 1); return; }
+  day++; saveDay(); // 홈으로: 다음 날 준비 (상점 · 지도 · 재료를 고르고 영업 시작)
+  document.getElementById('end').classList.add('hidden');
+  refreshHome(); openView('home'); document.getElementById('start').classList.remove('hidden');
+};
 canvas.addEventListener('click', () => { if (G.running && !G.paused && !dragMode && document.pointerLockElement !== canvas) lockPointer(); });
 addEventListener('keydown', e => { if (e.code === 'Escape' && dragMode && G.running && !G.ended) pause(!G.paused); });
 
@@ -4582,7 +4770,7 @@ function endDay() {
   document.getElementById('endNet').innerHTML = net >= 0 ? `💰 순이익 <b>¥${net.toLocaleString()}</b> <small>(장부 탭에서 자세히)</small>` : `📉 적자 <b>¥${(-net).toLocaleString()}</b> <small>(장부 탭에서 자세히)</small>`;
   document.getElementById('endNet').classList.toggle('loss', net < 0);
   document.getElementById('endGoal').innerHTML = goalHtml();
-  renderShop('end'); renderGrade('endGrade'); setTimeout(showUpdate, 0); // 하루가 끝나면 새 버전 알림 다시
+  setTimeout(showUpdate, 0); // 하루가 끝나면 새 버전 알림 다시
   document.getElementById('endComment').textContent =
     avg >= 4.3 ? '줄 서는 라멘집이 될 것 같아요! 🎉' :
     avg >= 3.3 ? '좋은 하루였어요. 조금만 더 빠르게!' :
@@ -4600,13 +4788,10 @@ function endDay() {
   document.getElementById('endGrowth').insertAdjacentHTML('beforeend', '<h3>📍 지역 퀘스트</h3>' + regionHeaderHtml() + questsHtml(null, qx.fresh)
     + (qx.stars ? `<p class="new-title">⭐ 명성 별 +${qx.stars}</p>` : '')
     + (won ? `<p class="new-title">👑 ${REGION.name} 제패! 다음 지역이 열렸어요 — 시작 화면 <b>지역</b> 탭에서 진출하세요</p>` : ''));
-  qx.fresh.forEach(q => toast(q.final ? `👑 ${REGION.name} 제패! 지역 랭킹 1위` : `📍 지역 퀘스트 완료! ${q.text}`, 'good'));
+  qx.fresh.forEach(q => toast(q.final ? `👑 ${ownerName()} 사장님, ${REGION.name} 제패! 지역 랭킹 1위` : `📍 지역 퀘스트 완료! ${q.text}`, 'good'));
   if (qx.fresh.length) document.getElementById('endGrowLine').textContent += ` · 📍 퀘스트 ${qx.fresh.length}개 완료`;
   renderRegion();
-  const next = day + 1;
-  document.getElementById('endNext').innerHTML = '내일은… ' + dayInfoHtml(next);
-  document.getElementById('nextBtn').textContent = `Day ${next} 영업 시작 →`;
-  document.querySelector('#end h1').textContent = `Day ${day} 영업 종료`;
+  document.querySelector('#end h1').textContent = `${shopName()} · Day ${day} 영업 종료`;
   endPage(0); // 결과 페이지부터
   document.getElementById('end').classList.remove('hidden');
 }
