@@ -158,6 +158,24 @@
   .upg small.upkeep { color: var(--red); opacity: 1; }
   #startExpand .shop-grid, #endExpand .shop-grid { grid-template-columns: 1fr 1fr; }
   .grade-pick { margin-top: 10px; text-align: left; }
+  /* 전국 라멘 제패: 지역 탭 */
+  .region-tag { font-size: 12.5px; font-weight: 700; color: var(--red); margin: -4px 0 6px; }
+  .region-head { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 13px; background: #fff6e6; border-radius: 10px; padding: 7px 10px; }
+  .region-head .rank { margin-left: auto; font-weight: 800; color: var(--red); } .region-head .fame { font-weight: 800; color: #b07a10; }
+  #regionInfo h4, #endGrowth h3 { margin: 10px 0 5px; font-size: 14px; }
+  .quests { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; text-align: left; }
+  .quests li { background: #f4ead7; border-radius: 8px; padding: 4px 9px; font-size: 13px; margin: 0; line-height: 1.35; }
+  .quests li.done { background: #e2f0d6; color: #2f6a2a; } .quests li.locked { opacity: .55; } .quests li.final { border: 2px dashed #d9a21b; }
+  .quests li.new { background: #fff1b8; } .quests li small { opacity: .7; margin-left: 4px; }
+  .q-reward { font-size: 11.5px; opacity: .7; margin: 5px 0 0; text-align: left; }
+  .route { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding: 4px 0 6px; }
+  .route .road { flex: 0 0 14px; align-self: center; height: 3px; background: repeating-linear-gradient(90deg, #c8a878 0 5px, transparent 5px 9px); }
+  .route .stop { flex: 0 0 110px; background: #fffaf0; border: 2px solid #e3d7c0; border-radius: 12px; padding: 7px 6px; text-align: center; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+  .route .stop.here { border-color: var(--red); background: #fdeee6; } .route .stop.off { opacity: .5; }
+  .route .pin { font-size: 22px; line-height: 1.1; } .route small { font-size: 11px; opacity: .8; } .route .st { color: var(--red); font-weight: 700; opacity: 1; }
+  .route .go { margin-top: 3px; border: 0; border-radius: 8px; background: var(--red); color: #fff; font: inherit; font-weight: 800; font-size: 12px; padding: 5px 4px; cursor: pointer; }
+  #travelAsk { margin-top: 8px; background: #fff1b8; border-radius: 10px; padding: 9px 11px; font-size: 13px; text-align: left; }
+  #travelAsk .row { display: flex; gap: 8px; margin-top: 7px; } #travelAsk .btn { flex: 1; padding: 9px; font-size: 14px; }
   .grade-pick h4 { margin: 0 0 6px; font-size: 14px; }
   .grade-pick .opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .grade-pick button { border: 2px solid #e3d7c0; border-radius: 10px; background: #fffaf0; padding: 6px 4px; font: inherit; font-size: 12px; color: var(--ink); cursor: pointer; line-height: 1.3; }
@@ -453,10 +471,14 @@
     <div class="tabs"></div>
     <section class="pg" data-tab="오늘">
       <h1 class="brand">인생<span>라멘</span> <small class="ver"></small></h1>
+      <div id="regionTag" class="region-tag"></div>
       <div id="ownerInfo"></div>
       <div class="day-box" id="dayInfo"></div>
       <div id="todayMissions"></div>
       <div class="grade-pick" id="startGrade"></div>
+    </section>
+    <section class="pg" data-tab="지역">
+      <div id="regionInfo"></div>
     </section>
     <section class="pg" data-tab="조작">
       <button class="btn coach-open" id="coachBtn">👀 게임 화면에서 조작 보기</button>
@@ -559,8 +581,25 @@
 <script type="module">
 import * as THREE from 'three';
 // 게임 버전 — 베타에 올릴 때마다 올림 (시작 화면·일시정지에 표시해서 어느 버전인지 바로 확인)
-const APP_VERSION = 'v1.7', APP_DATE = '11/06';
+const APP_VERSION = 'v1.8', APP_DATE = '11/06';
 document.querySelectorAll('.ver').forEach(el => { el.textContent = `${APP_VERSION} · ${APP_DATE}`; });
+
+// ================= 전국 라멘 제패: 지역 =================
+// 지역마다 가게가 따로 있음 (날짜·금고·평판·업그레이드 등은 지역별로 저장, 사장 레벨·명성 별은 함께)
+// 지역을 옮기면 페이지를 다시 불러와서 그 지역 가게로 시작
+const REGIONS = {
+  tokyo:    { name: '도쿄 골목', icon: '🏮', ramen: '쇼유·돈코츠·미소 등', desc: '골목 작은 가게에서 시작하는 첫 무대' },
+  fukuoka:  { name: '후쿠오카 하카타', icon: '🐖', ramen: '하카타 돈코츠', desc: '아주 가는 면이 몇 초 만에 익어요. 카에다마 손님이 아주 많아요!', after: 'tokyo' },
+  sapporo:  { name: '삿포로', icon: '❄️', ramen: '미소 버터콘', desc: '준비 중이에요', soon: true },
+  yokohama: { name: '요코하마', icon: '⚓', ramen: '이에케', desc: '준비 중이에요', soon: true },
+  osaka:    { name: '오사카', icon: '🐔', ramen: '토리 파이탄', desc: '준비 중이에요', soon: true },
+};
+const REGION_ID = (() => { try { const r = JSON.parse(localStorage.getItem('ramen-region')); return REGIONS[r] && !REGIONS[r].soon ? r : 'tokyo'; } catch (e) { return 'tokyo'; } })();
+const REGION = REGIONS[REGION_ID];
+const HAKATA = REGION_ID === 'fukuoka';
+// 지역별로 따로 저장하는 값 (도쿄는 예전 이름 그대로라서 지금까지의 진행이 그대로 도쿄 가게)
+const REGION_KEYS = new Set(['ramen-day', 'ramen-bank', 'ramen-rep', 'ramen-upg2', 'ramen-regulars', 'ramen-promo-day', 'ramen-grade', 'ramen-theme', 'ramen-seen', 'ramen-stats', 'ramen-quests']);
+const rkey = k => (REGION_ID !== 'tokyo' && REGION_KEYS.has(k) ? `${k}@${REGION_ID}` : k);
 
 // ================= 설정 =================
 const CFG = {
@@ -621,8 +660,29 @@ const LEVELS = [
   { title: '츠케멘 개시', menu: ['tonkotsu', 'shoyu', 'miso', 'shio', 'tantan', 'tsukemen'], stock: true, spawn: 0.66, tops: ['menma', 'corn', 'minchi'], gyoza: true,
     note: '새 메뉴 <b>츠케멘</b>! 면을 건진 다음 <b>💧 찬물 헹구기</b>를 누르고 그릇에 넣어요. 육수는 돈코츠예요. 다른 라멘 면은 헹구면 안 돼요!' },
 ];
-let day = (() => { try { return Math.max(1, parseInt(localStorage.getItem('ramen-day'), 10) || 1); } catch (e) { return 1; } })();
-function saveDay() { try { localStorage.setItem('ramen-day', String(day)); } catch (e) { /* 저장 불가 */ } }
+// 하카타: 아주 가는 면(몇 초 만에 익음) · 하카타식 굳기 이름 · 메뉴는 돈코츠 한 가지를 파고듦
+if (HAKATA) {
+  CFG.noodle = { katame: [2, 6], futsu: [6, 10], yawa: [10, 15] };
+  RAMEN.tonkotsu.name = '하카타 돈코츠'; RAMEN.tonkotsu.base = ['negi', 'kikurage'];
+  LEVELS.splice(0, LEVELS.length,
+    { title: '하카타 개업', menu: ['tonkotsu'], stock: true, spawn: 0.9,
+      note: '하카타에 새 가게를 열었어요! 면이 <b>아주 가늘어서 몇 초 만에</b> 익어요. 굳기는 <b>하리가네(아주 단단) · 바리카타 · 카타</b>. 면을 넣었으면 솥 앞에서 기다렸다가 바로 건지세요!' },
+    { title: '베니쇼가 입고', menu: ['tonkotsu'], stock: true, spawn: 0.85, tops: ['shoga'],
+      note: '새 토핑 <b>베니쇼가</b>(붉은 생강 절임)! 하카타 사람들은 돈코츠에 꼭 올려 먹어요.' },
+    { title: '야타이 러시', menu: ['tonkotsu'], stock: true, spawn: 0.72, tops: ['shoga'],
+      note: '포장마차 거리에 사람이 몰려요. 카에다마(면 추가) 손님이 계속 와요!' },
+    { title: '타카나 입고', menu: ['tonkotsu'], stock: true, spawn: 0.72, tops: ['shoga', 'takana'],
+      note: '새 토핑 <b>카라시 타카나</b>(매운 갓 절임)! 매콤한 걸 좋아하는 손님이 추가해요.' },
+    { title: '한입 교자', menu: ['tonkotsu'], stock: true, spawn: 0.7, tops: ['shoga', 'takana', 'ajitama'], gyoza: true,
+      note: '하카타 명물 <b>한입 교자</b>를 같이 팔아요. 🥟 교자 굽기로 굽고 곁들이기로 올려요.' },
+    { title: '카에다마 축제', menu: ['tonkotsu'], stock: true, spawn: 0.66, tops: ['shoga', 'takana', 'ajitama'], gyoza: true,
+      note: '오늘은 카에다마 손님이 특히 많아요! 면 솥을 쉬지 않게 돌려 보세요.' },
+    { title: '하카타의 밤', menu: ['tonkotsu'], stock: true, spawn: 0.64, tops: ['shoga', 'takana', 'ajitama', 'menma'], gyoza: true,
+      note: '멘마도 들어왔어요. 지역 퀘스트를 깨고 <b>하카타 명가 대결</b>에 도전하세요!' },
+  );
+}
+let day = (() => { try { return Math.max(1, parseInt(localStorage.getItem(rkey('ramen-day')), 10) || 1); } catch (e) { return 1; } })();
+function saveDay() { try { localStorage.setItem(rkey('ramen-day'), String(day)); } catch (e) { /* 저장 불가 */ } }
 // 마지막 레벨 뒤로는 하루마다 손님이 조금씩 더 자주 옴
 const levelCfg = (d = day) => {
   const last = LEVELS[LEVELS.length - 1];
@@ -630,7 +690,7 @@ const levelCfg = (d = day) => {
   return { ...last, title: '단골 가게', spawn: Math.max(0.5, last.spawn - (d - LEVELS.length) * 0.02),
     note: '이제 모든 메뉴가 열렸어요. 날이 갈수록 손님이 조금씩 늘어요!' };
 };
-const toppingsOn = (d = day) => ['negi', 'kikurage', 'nori', 'ajitama', ...(levelCfg(d).tops ?? [])];
+const toppingsOn = (d = day) => [...new Set([...(HAKATA ? ['negi', 'kikurage', 'nori'] : ['negi', 'kikurage', 'nori', 'ajitama']), ...(levelCfg(d).tops ?? [])])];
 const baseOf = r => RAMEN[r].base.filter(k => toppingsOn().includes(k)); // 아직 안 열린 토핑은 기본에서 빠짐
 
 // ---------- 가게 금고 · 업그레이드 (날이 바뀌어도 저장) ----------
@@ -687,12 +747,15 @@ const GRADES = [
   { name: '최상급 재료', icon: '👑', cost: 1.9, tip: 1.6, pat: 1.15, note: '재료비 ×1.9 · 팁 ×1.6 · 인내심 +15%' },
 ];
 const store = {
-  get(k, def) { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch (e) { return def; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 저장 불가 */ } },
+  get(k, def) { try { return JSON.parse(localStorage.getItem(rkey(k))) ?? def; } catch (e) { return def; } },
+  set(k, v) { try { localStorage.setItem(rkey(k), JSON.stringify(v)); } catch (e) { /* 저장 불가 */ } },
 };
-let bank = store.get('ramen-bank', 0);
+// 명성 별: 지역 퀘스트·제패로 모으고, 새 지역 가게를 더 빨리 키우게 해 줌
+const fame = () => store.get('ramen-fame', 0);
+const conquered = () => store.get('ramen-conquered', []);
+let bank = store.get('ramen-bank', REGION_ID === 'tokyo' ? 0 : 10000 + fame() * 5000); // 새 지역은 명성 별만큼 시작 자금
 // 가게 평판 (★1~5): 하루 평점이 조금씩 반영되고, 높을수록 손님이 자주 옴
-let rep = store.get('ramen-rep', 3);
+let rep = store.get('ramen-rep', REGION_ID === 'tokyo' ? 3 : Math.min(4, 3 + fame() * 0.1));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 // 한국어 조사: 마지막 글자에 받침이 있으면 a, 없으면 b — josa('김', '이', '가') → '김이', josa('파', '이', '가') → '파가'
 const josa = (w, a, b) => { const c = String(w).charCodeAt(String(w).length - 1); return w + (c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? a : b); };
@@ -726,11 +789,11 @@ function buyUpgrade(k) {
   store.set('ramen-bank', bank); store.set('ramen-upg2', upgLv);
   return true;
 }
-const FIRM = { katame: '카타메', futsu: '보통', yawa: '야와라카메' };
-const FIRM_ALL = { raw: '덜 익음', katame: '카타메', futsu: '보통', yawa: '야와라카메', nobi: '불어 버림' };
+const FIRM = HAKATA ? { katame: '하리가네', futsu: '바리카타', yawa: '카타' } : { katame: '카타메', futsu: '보통', yawa: '야와라카메' };
+const FIRM_ALL = { raw: '덜 익음', ...FIRM, nobi: '불어 버림' };
 const FIRM_COLOR = { raw: 0xece6d0, katame: 0xf5dc7a, futsu: 0xe9b544, yawa: 0xd68f2a, nobi: 0x9a6a3a };
 const FIRM_IDX = { raw: -1, katame: 0, futsu: 1, yawa: 2, nobi: 3 };
-const TOPPINGS = { negi: '파', kikurage: '목이버섯', nori: '김', ajitama: '아지타마고', menma: '멘마', corn: '콘', minchi: '다진고기' };
+const TOPPINGS = { negi: '파', kikurage: '목이버섯', nori: '김', ajitama: '아지타마고', menma: '멘마', corn: '콘', minchi: '다진고기', shoga: '베니쇼가', takana: '타카나' };
 const SEAT_X = [-1.5, -0.9, -0.3, 0.3, 0.9, 1.5]; // seatLayout()이 좌석 수에 맞춰 다시 채움
 const SEAT_Z = -2.12, AISLE_Z = -2.72;
 const DOOR = new THREE.Vector3(2.25, 0, -3.1);       // 입구 안쪽
@@ -1082,6 +1145,7 @@ const THEMES = [
   { name: '모던 블랙',   main: 0x2e2e32, accent: 0x141416, top: 0x8a6a48, floor: 0x3a3a3e, grain: 0.06 },
   { name: '쇼와 레트로', main: 0xd9ccae, accent: 0x6a2a1e, top: 0xa8683a, floor: 0x5a3820, grain: 0.06 },
 ];
+if (HAKATA) THEMES[0] = { name: '하카타 야타이', main: 0x7a4a2a, accent: 0x6a1a14, top: 0xa8743e, floor: 0x3a2618, grain: 0.18 }; // 붉은 옻칠 테두리
 const themed = []; // 테마 따라 다시 칠할 재질 { m, role, opts?, rx, ry }
 function themeWood(role, rx, ry, opts) { const m = new THREE.MeshStandardMaterial({ roughness: 0.75 }); themed.push({ m, role, opts, rx, ry }); return m; }
 function themeMat(role) { const m = mat(0xffffff); themed.push({ m, role }); return m; }
@@ -1153,8 +1217,8 @@ function norenTex(bg, fg) {
   const c = document.createElement('canvas'); c.width = 512; c.height = 256;
   const g = c.getContext('2d');
   g.fillStyle = bg; g.fillRect(0, 0, 512, 256);
-  g.fillStyle = fg; g.font = 'bold 120px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText('らーめん', 256, 120);
+  g.fillStyle = fg; g.font = `bold ${HAKATA ? 78 : 120}px serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(HAKATA ? '博多らーめん' : 'らーめん', 256, 120);
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -1295,7 +1359,7 @@ function updateSky(mins, rainy) {
   const g = c.getContext('2d');
   g.fillStyle = '#e8dcc2'; g.fillRect(0, 0, 512, 256);
   g.fillStyle = '#2b211b'; g.font = 'bold 64px serif'; g.textAlign = 'center';
-  g.fillText('豚骨らーめん', 256, 100); g.font = 'bold 48px sans-serif'; g.fillText('¥1,000 · 替玉 ¥150', 256, 190);
+  g.fillText(HAKATA ? '博多とんこつ' : '豚骨らーめん', 256, 100); g.font = 'bold 48px sans-serif'; g.fillText('¥1,000 · 替玉 ¥150', 256, 190);
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const p = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.45), new THREE.MeshStandardMaterial({ map: tex }));
   p.position.set(-2.84, 1.9, -1.4); p.rotation.y = Math.PI / 2; scene.add(p);
@@ -1653,6 +1717,19 @@ const minchiMat = smat(0x7a4a2a, { roughness: 0.7 });
 const gyozaMat = { good: smat(0xe8c48a, { roughness: 0.5 }), burnt: smat(0x5a3a22, { roughness: 0.8 }) }; // 노릇한 교자 / 탄 교자
 const rinsedNoodleMat = smat(0xf6e6a8, { roughness: 0.25 }); // 찬물에 헹궈 윤기 나는 면
 const minchiGeo = new THREE.DodecahedronGeometry(0.006, 0);
+// 베니쇼가(붉은 생강 채) · 카라시 타카나(잘게 썬 매운 갓 절임) — 하카타 토핑
+const shogaGeo = new THREE.BoxGeometry(0.014, 0.0016, 0.0016), shogaMats = [smat(0xd8263a, { roughness: 0.35 }), smat(0xe8405a, { roughness: 0.35 })];
+const takanaGeo = new THREE.PlaneGeometry(0.009, 0.006), takanaMats = [smat(0x4a5a1e, { roughness: 0.5, side: THREE.DoubleSide }), smat(0x6a6a22, { roughness: 0.5, side: THREE.DoubleSide })];
+function makeBits(geo, mats, count, rx, rz = rx) {
+  const g = new THREE.Group();
+  for (let i = 0; i < count; i++) {
+    const m = new THREE.Mesh(geo, mats[i % mats.length]);
+    const a = Math.random() * Math.PI * 2, d = Math.sqrt(Math.random());
+    m.position.set(Math.cos(a) * d * rx, Math.random() * 0.007, Math.sin(a) * d * rz); m.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+    g.add(m);
+  }
+  return g;
+}
 function makeMinchi(count, rx, rz = rx) {
   const g = new THREE.Group();
   for (let i = 0; i < count; i++) {
@@ -1736,7 +1813,7 @@ label('그릴 (챠슈)', 0.78, 1.2, -0.9);
 // 토핑 트레이 (스테인리스 밧드 안에 재료가 소복이)
 const trayFood = {}, trays = {};
 
-const TRAY_NAME = { ...TOPPINGS, kikurage: '목이', ajitama: '아지타마', minchi: '고기' }; // 좁은 통 이름표용 짧은 이름
+const TRAY_NAME = { ...TOPPINGS, kikurage: '목이', ajitama: '아지타마', minchi: '고기', shoga: '생강' }; // 좁은 통 이름표용 짧은 이름
 for (const key of Object.keys(TOPPINGS)) {
   const x = 0, z = TOPPING_Z; // 실제 자리는 trayLayout()이 그날 열린 토핑 수에 맞춰 정함
   const g = new THREE.Group(); g.position.set(x, 0.95, z); scene.add(g);
@@ -1756,6 +1833,8 @@ for (const key of Object.keys(TOPPINGS)) {
   } else if (key === 'menma') food = makeMenma(40, 0.11, 0.07);
   else if (key === 'corn') food = makeCorn(260, 0.12, 0.075);
   else if (key === 'minchi') food = makeMinchi(160, 0.12, 0.075);
+  else if (key === 'shoga') food = makeBits(shogaGeo, shogaMats, 220, 0.12, 0.075);
+  else if (key === 'takana') food = makeBits(takanaGeo, takanaMats, 200, 0.12, 0.075);
   else {
     food = new THREE.Group();
     [[-0.09, -0.04], [-0.03, 0.04], [0.03, -0.04], [0.09, 0.04]].forEach(([ex, ez]) => { const e = makeAjitama(0.026); e.position.set(ex, 0.002, ez); e.rotation.y = Math.random() * 3; food.add(e); });
@@ -2199,6 +2278,8 @@ class Bowl {
     p.menma = makeMenma(6, 0.018, 0.012); p.menma.position.set(-0.06, 0.071, 0.0); g.add(p.menma);
     p.corn = makeCorn(30, 0.02); p.corn.position.set(0.02, 0.071, 0.06); g.add(p.corn);
     p.minchi = makeMinchi(24, 0.022); p.minchi.position.set(-0.02, 0.071, -0.02); g.add(p.minchi);
+    p.shoga = makeBits(shogaGeo, shogaMats, 26, 0.016); p.shoga.position.set(0.05, 0.072, -0.005); g.add(p.shoga);
+    p.takana = makeBits(takanaGeo, takanaMats, 22, 0.017); p.takana.position.set(-0.05, 0.072, 0.03); g.add(p.takana);
     // 곁들인 교자 한 접시 (그릇 앞쪽)
     p.gyoza = new THREE.Group(); p.gyoza.position.set(0.0, 0.0, 0.17); g.add(p.gyoza);
     cyl(0.07, 0.06, 0.012, 20, smat(0xf3efe6, { roughness: 0.3 }), 0, 0.006, 0, p.gyoza);
@@ -2585,6 +2666,7 @@ function newGame() {
     event: 'normal', repBonus: 0, criticCame: false, // 오늘의 행사 · 평론가 등으로 오늘 바뀐 평판
     refill: {}, pop: {}, lastAdd: null, // 보충 중인 토핑(남은 초) · 그릇 위 "+파" 표시 · 되돌릴 수 있는 방금 넣은 것
     costIngr: 0, staffT: 2, // 오늘 쓴 재료비 · 보조가 다음에 움직일 때까지
+    stats: { happy: 0, kaedama: 0, firm: {}, ...store.get('ramen-stats', {}) }, comboMax: 0, happyToday: 0, // 이 지역 가게의 누적 기록
     grade: clamp(store.get('ramen-grade', 0), 0, GRADES.length - 1), extraSales: 0, riceSales: 0, // 오늘 재료 등급 · 추가 토핑 · 밥 매출
     xpToday: 0, combo: 0, missionCash: 0, missions: [], // 오늘 얻은 경험치 · 연속 만족 · 미션 보상 · 오늘의 미션
     gyozaPan: { t: null }, gyozaPlates: 0, // 교자 굽는 시간 (null = 비어 있음) · 옆에 빼놓은 접시 수
@@ -2709,11 +2791,13 @@ function makeOrder() {
   const r = Math.random();
   const firm = r < 0.4 ? 'katame' : r < 0.8 ? 'futsu' : 'yawa';
   const chashu = Math.random() < 0.25 ? 2 : 1;
-  if (Math.random() < 0.4) top.add('ajitama');
+  const on = toppingsOn();
+  if (on.includes('ajitama') && Math.random() < 0.4) top.add('ajitama');
   if (Math.random() < 0.25) top.delete('negi');
   if (base.includes('kikurage') && Math.random() < 0.15) top.delete('kikurage');
   if (Math.random() < 0.1) top.delete('nori');
-  const on = toppingsOn();
+  if (on.includes('shoga') && Math.random() < 0.45) top.add('shoga');   // 하카타: 베니쇼가 · 타카나를 즐겨 올림
+  if (on.includes('takana') && Math.random() < 0.3) top.add('takana');
   if (on.includes('menma') && !base.includes('menma') && Math.random() < 0.2) top.add('menma');
   if (on.includes('corn') && !base.includes('corn') && Math.random() < 0.12) top.add('corn');
   if (base.includes('menma') && Math.random() < 0.12) top.delete('menma');
@@ -2791,10 +2875,11 @@ function tickStaff(dt) {
 
 // ---------- 사장 레벨 · 오늘의 미션 · 콤보 (계속 깨고 싶게) ----------
 // 레벨: 손님을 낼 때마다 경험치. 30레벨, 3레벨마다 가게가 유명해지는 칭호 + 레벨업 보너스
-const MAX_LV = 30;
+const MAX_LV = 60;
 const TITLES = [[1, '골목 라멘집 사장'], [4, '동네에서 소문난 집'], [7, '점심마다 줄 서는 집'], [10, '맛집 블로그에 나온 집'],
-  [13, 'TV에 나온 라멘집'], [16, '라멘 가이드 ★'], [19, '라멘 가이드 ★★'], [22, '라멘 가이드 ★★★'], [25, '전국 라멘 명가'], [28, '라멘의 전설']];
-const xpFor = lv => 150 + lv * 80; // lv → lv+1에 필요한 경험치 (Lv.30까지 대략 40~50일)
+  [13, 'TV에 나온 라멘집'], [16, '라멘 가이드 ★'], [19, '라멘 가이드 ★★'], [22, '라멘 가이드 ★★★'], [25, '전국 라멘 명가'], [28, '라멘의 전설'],
+  [31, '전국구 라멘 장인'], [35, '라멘 순례자'], [39, '라멘 연구가'], [43, '라멘 명인'], [47, '라멘 거장'], [51, '라멘의 신화'], [55, '전국 라멘 제패자'], [60, '라멘의 신']];
+const xpFor = lv => 150 + Math.min(lv, 30) * 80; // lv → lv+1에 필요한 경험치 (Lv.30까지 대략 40~50일, 그 뒤로는 일정)
 let xp = store.get('ramen-xp', 0);
 // 예전(더 빨리 오르던) 경험치는 지금 레벨·진행률 그대로 새 기준으로 옮김
 if (store.get('ramen-xp-v', 1) < 2) {
@@ -2895,6 +2980,8 @@ function updateComboChip() {
 function onServed(c, bowl, res) {
   G.xpToday += res === 'happy' ? 20 + Math.min(G.combo, 6) * 2 : res === 'normal' ? 8 : 2;
   comboOnServe(c, res);
+  G.comboMax = Math.max(G.comboMax ?? 0, G.combo);
+  if (res === 'happy') { G.stats.happy++; G.stats.firm[c.order.firm] = (G.stats.firm[c.order.firm] ?? 0) + 1; G.happyToday = (G.happyToday ?? 0) + 1; } // 지역 퀘스트용 누적 기록
   if (res === 'happy') {
     missionStep('happy');
     missionStep('firm', 1, m => m.firm === c.order.firm);
@@ -2910,6 +2997,89 @@ function settleProgress(net) {
   const after = levelInfo().lv;
   let bonus = 0; for (let l = before + 1; l <= after; l++) bonus += levelBonus(l);
   return { before, after, bonus };
+}
+
+// ---------- 전국 라멘 제패: 지역 퀘스트 · 랭킹 · 명성 별 ----------
+// 지역마다 퀘스트 5개를 깨면 마지막 '대결'이 열리고, 대결에 이기면 그 지역 랭킹 1위(제패) → 다음 지역이 열림
+const repFmt = v => '★' + v.toFixed(1);
+const QUESTS = {
+  tokyo: [
+    { id: 't1', text: '😊 만족한 손님 누적 60명', target: 60, val: S => S.happy },
+    { id: 't2', text: '🏮 가게 평판 ★4.0 이상으로 하루 마감', target: 4, val: (S, X) => X.rep, fmt: repFmt },
+    { id: 't3', text: '🔥 하루에 콤보 ×8', target: 8, val: (S, X) => X.comboMax },
+    { id: 't4', text: '🍜 모든 메뉴 개시 (Day 17)', target: 17, val: (S, X) => X.day, fmt: v => `Day ${v}` },
+    { id: 't5', text: '🏗 가게 확장 하나 이상', target: 1, val: (S, X) => X.expand },
+    { id: 't6', final: true, text: '🏆 도쿄 라멘 대회 — 하루에 만족 12명 · 평점 ★4.5 이상', target: 1, val: (S, X) => +(X.happyToday >= 12 && X.avg >= 4.5) },
+  ],
+  fukuoka: [
+    { id: 'f1', text: '😊 만족한 손님 누적 40명', target: 40, val: S => S.happy },
+    { id: 'f2', text: '🍜 하리가네 면으로 만족 누적 20그릇', target: 20, val: S => S.firm.katame ?? 0 },
+    { id: 'f3', text: '🔁 카에다마 누적 25번', target: 25, val: S => S.kaedama },
+    { id: 'f4', text: '🏮 가게 평판 ★4.0 이상으로 하루 마감', target: 4, val: (S, X) => X.rep, fmt: repFmt },
+    { id: 'f5', text: '🔥 하루에 콤보 ×10', target: 10, val: (S, X) => X.comboMax },
+    { id: 'f6', final: true, text: '🏆 하카타 명가 대결 — 하루에 만족 14명 · 평점 ★4.6 이상', target: 1, val: (S, X) => +(X.happyToday >= 14 && X.avg >= 4.6) },
+  ],
+};
+const QUEST_CASH = 3000, FINAL_CASH = 20000, QUEST_FAME = 1, FINAL_FAME = 3, TERRITORY_INCOME = 3000;
+const regionQuests = () => QUESTS[REGION_ID] ?? [];
+const questState = () => store.get('ramen-quests', { done: [] });
+const isConquered = (r = REGION_ID) => conquered().includes(r);
+function regionRank() { // 50위에서 시작해 퀘스트마다 9계단씩, 대결에 이기면 1위
+  if (isConquered()) return 1;
+  return Math.max(2, 50 - questState().done.filter(id => !regionQuests().find(q => q.id === id)?.final).length * 9);
+}
+// 오늘 기록(X)과 누적 기록(S)으로 퀘스트를 확인 → 새로 깬 것 목록과 보상
+function checkQuests(X) {
+  const st = questState(), S = G.stats, fresh = [];
+  const normalLeft = () => regionQuests().filter(q => !q.final && !st.done.includes(q.id)).length;
+  for (const q of regionQuests()) {
+    if (st.done.includes(q.id) || (q.final && normalLeft() > 0)) continue;
+    if (q.val(S, X) >= q.target) { st.done.push(q.id); fresh.push(q); }
+  }
+  let cash = 0, stars = 0;
+  for (const q of fresh) { cash += q.final ? FINAL_CASH : QUEST_CASH; stars += q.final ? FINAL_FAME : QUEST_FAME; }
+  if (fresh.some(q => q.final) && !isConquered()) store.set('ramen-conquered', [...conquered(), REGION_ID]);
+  store.set('ramen-quests', st); store.set('ramen-fame', fame() + stars);
+  return { fresh, cash, stars };
+}
+function questsHtml(X = null, fresh = []) {
+  const st = questState(), S = G?.stats ?? { happy: 0, kaedama: 0, firm: {}, ...store.get('ramen-stats', {}) };
+  const normalLeft = regionQuests().filter(q => !q.final && !st.done.includes(q.id)).length;
+  return '<ul class="quests">' + regionQuests().map(q => {
+    const done = st.done.includes(q.id), locked = q.final && normalLeft > 0, isNew = fresh.includes(q);
+    const cum = q.val.length < 2; // 누적 기록이면 진행 숫자를 보여 줌
+    const v = cum ? q.val(S, X ?? {}) : null;
+    const prog = !done && !locked && cum ? ` <small>${Math.min(v, q.target)}/${q.target}</small>` : '';
+    return `<li class="${done ? 'done' : ''}${locked ? ' locked' : ''}${q.final ? ' final' : ''}${isNew ? ' new' : ''}">${done ? '✅' : locked ? '🔒' : '⬜'} ${q.text}${prog}${isNew ? ' <b>🆕 완료!</b>' : ''}</li>`;
+  }).join('') + '</ul>';
+}
+function regionHeaderHtml() {
+  return `<div class="region-head"><b>${REGION.icon} ${REGION.name}</b> · 간판 라멘 <b>${REGION.ramen}</b>`
+    + `<span class="rank">${isConquered() ? '👑 지역 1위 (제패!)' : `🏅 지역 랭킹 ${regionRank()}위`}</span><span class="fame">⭐ 명성 별 ${fame()}</span></div>`;
+}
+// 시작 화면 '지역' 탭: 이 지역 퀘스트 + 여정 지도(지역 이동)
+function renderRegion() {
+  const el = document.getElementById('regionInfo');
+  const order = Object.keys(REGIONS);
+  const route = order.map(r => {
+    const R = REGIONS[r], here = r === REGION_ID, won = isConquered(r), open = !R.soon && (!R.after || isConquered(R.after));
+    const status = here ? '📍 지금 여기' : won ? '👑 제패' : R.soon ? '🚧 준비 중' : open ? '' : `🔒 ${REGIONS[R.after].name} 제패 필요`;
+    const btn = !here && open ? `<button class="go" data-go="${r}">${won || store.get(`ramen-day@${r}`, 0) || r === 'tokyo' ? '가기' : '진출하기'}</button>` : '';
+    return `<div class="stop${here ? ' here' : ''}${!open && !here ? ' off' : ''}"><div class="pin">${R.icon}</div><b>${R.name}</b><small>${R.ramen}</small><small class="st">${status}</small>${btn}</div>`;
+  }).join('<div class="road"></div>');
+  el.innerHTML = regionHeaderHtml() + '<h4>📍 지역 퀘스트</h4>' + questsHtml()
+    + `<p class="q-reward">퀘스트마다 ⭐+${QUEST_FAME} · ¥${QUEST_CASH.toLocaleString()} / 대결 승리 ⭐+${FINAL_FAME} · ¥${FINAL_CASH.toLocaleString()} · 제패한 지역은 매일 +¥${TERRITORY_INCOME.toLocaleString()}</p>`
+    + '<h4>🗾 전국 라멘 제패 여정</h4><div class="route">' + route + '</div>'
+    + `<p class="q-reward">⭐ 명성 별 하나마다 새 지역 가게의 시작 자금 +¥5,000 · 시작 평판 +0.1</p><div id="travelAsk" hidden></div>`;
+  el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
+    const r = b.dataset.go, ask = document.getElementById('travelAsk');
+    ask.hidden = false;
+    ask.innerHTML = `${REGIONS[r].icon} <b>${josa(REGIONS[r].name, '으로', '로')}</b> 갈까요? 지금 가게(${REGION.name})는 그대로 남아 있고 언제든 돌아올 수 있어요.`
+      + '<div class="row"><button class="btn sub" id="travelNo">취소</button><button class="btn" id="travelYes">이동하기</button></div>';
+    document.getElementById('travelNo').onclick = () => { ask.hidden = true; };
+    document.getElementById('travelYes').onclick = () => { try { localStorage.setItem('ramen-region', JSON.stringify(r)); } catch (e) { /* 저장 불가 */ } location.reload(); };
+    ask.scrollIntoView({ block: 'nearest' });
+  });
 }
 
 // ---------- Day 1 튜토리얼: 첫 손님 한 그릇을 단계별로 따라 하기 ----------
@@ -3152,7 +3322,7 @@ function serve(c, bowl) {
   seat.bowl = bowl;
   bowl.group.position.set(SEAT_X[c.seat], 1.025, -1.62);
   scene.add(bowl.group);
-  if (res !== 'angry' && Math.random() < 0.35) c.kaedamaAt = c.eatT * rand(0.35, 0.6);
+  if (res !== 'angry' && Math.random() < (HAKATA ? (levelCfg().title === '카에다마 축제' ? 0.85 : 0.65) : 0.35)) c.kaedamaAt = c.eatT * rand(0.35, 0.6); // 하카타는 카에다마가 기본
   reactSound(res); Sound.place();
   const msg = issues.length ? issues.slice(0, 2).join('<br>') : pick(['완벽해요! 맛있겠다!', '와, 이거지!', '냄새부터 최고예요!']);
   if (res === 'happy') {
@@ -3171,7 +3341,7 @@ function deliverKaedama(c, t) {
   c.state = 'eating'; c.eatT = rand(7, 10);
   G.money += CFG.kaedamaPrice;
   G.costIngr += KAEDAMA_COST;
-  G.xpToday += 8; missionStep('kaedama');
+  G.xpToday += 8; missionStep('kaedama'); G.stats.kaedama++;
   const b = G.seats[c.seat].bowl; if (b) { b.parts.noodles.visible = true; }
   if (d === 0) {
     if (c.result === 'normal') c.result = 'happy';
@@ -3260,8 +3430,8 @@ function updateCustomers(dt) {
           createTicket(c, true);
           Sound.kaedama();
           const kf = c.kaedama.firm;
-          customerSay(c, `🍜 카에다마! ${FIRM[kf]}${kf === 'futsu' ? '으로' : '로'}요!`, 'kae', 'kaedama_' + kf,
-            'すみません、替え玉' + { katame: 'カタメで！', futsu: 'お願いします！', yawa: 'やわめで！' }[kf]);
+          customerSay(c, `🍜 카에다마! ${josa(FIRM[kf], '으로', '로')}요!`, 'kae', HAKATA ? 'kaedama_futsu' : 'kaedama_' + kf,
+            'すみません、替え玉' + (HAKATA ? 'お願いします！' : { katame: 'カタメで！', futsu: 'お願いします！', yawa: 'やわめで！' }[kf]));
         } else if (c.eatT <= 0) {
           const price = Math.round(RAMEN[c.order.ramen].price * upgValue('recipe') / 10) * 10; // 비법 레시피면 값이 오름
           G.money += price + (c.gotGyoza ? GYOZA_PRICE : 0) + (c.result === 'happy' ? Math.round(tipAmount() * (c.special?.tipMul ?? 1) * (ev().tip ?? 1) * (c.comboMul ?? 1) * grade().tip) : 0);
@@ -3304,7 +3474,7 @@ function updateSeats(dt) {
     if (c.orderT <= 0) {
       c.state = 'waiting'; c.patience = c.maxPatience = custPatience(c);
       createTicket(c); Sound.ding();
-      const what = `${RAMEN[c.order.ramen].name} ${FIRM[c.order.firm]}${c.order.firm === 'futsu' ? '으로' : '로'}`;
+      const what = `${RAMEN[c.order.ramen].name} ${josa(FIRM[c.order.firm], '으로', '로')}`;
       const t = c.special?.type;
       customerSay(c, t === 'regular' ? `⭐ 사장님, 늘 먹던 걸로요! (${what})` : t === 'hurry' ? `⏱ ${what}, 빨리 부탁해요! 시간이 없어서…` :
         t === 'critic' ? `📰 (수첩을 꺼내며) ${what} 주시죠.` : `📝 ${what} 주세요!`, '');
@@ -3952,7 +4122,8 @@ document.getElementById('missionChip').onclick = e => {
   const p = document.getElementById('missionPanel'); p.hidden = !p.hidden;
   clearTimeout(p._t); if (!p.hidden) p._t = setTimeout(() => { p.hidden = true; }, 4000);
 };
-renderShop('start'); renderGrade('startGrade');
+renderShop('start'); renderGrade('startGrade'); renderRegion();
+document.getElementById('regionTag').innerHTML = `📍 ${REGION.icon} ${REGION.name} 가게 · ${isConquered() ? '👑 제패' : `랭킹 ${regionRank()}위`} · ⭐ ${fame()}`;
 document.getElementById('startBtn').textContent = day > 1 ? `Day ${day} 영업 시작` : '영업 시작';
 document.getElementById('startBtn').onclick = () => { goFullscreen(); startDay(); };
 document.getElementById('resetBtn').style.display = day > 1 ? '' : 'none';
@@ -3974,6 +4145,8 @@ const KIT_ICON = (() => {
     corn: draw(g => { for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) circle(g, 15 + c * 11 + (r % 2) * 4, 16 + r * 10, 5, '#f2c230', '#c9951a', 1.5); }),
     chashu: draw(g => { circle(g, 32, 33, 25, '#a8603a'); circle(g, 32, 33, 20, '#f0b896'); g.strokeStyle = '#d98a66'; g.lineWidth = 3; g.beginPath(); for (let a = 0; a < 12; a += 0.2) { const r = 2 + a * 1.4; g.lineTo(32 + Math.cos(a) * r, 33 + Math.sin(a) * r); } g.stroke(); }),
     miso: draw(g => { g.fillStyle = '#e9e2d2'; g.beginPath(); g.roundRect(10, 22, 44, 34, 8); g.fill(); g.fillStyle = '#b07a3a'; g.beginPath(); g.ellipse(32, 24, 22, 7, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = '#c4a27a'; g.save(); g.translate(40, 12); g.rotate(0.5); g.fillRect(0, 0, 5, 22); g.restore(); }),
+    shoga: draw(g => { for (let i = 0; i < 26; i++) { g.save(); g.translate(14 + Math.random() * 36, 16 + Math.random() * 32); g.rotate(Math.random() * 3); g.fillStyle = i % 2 ? '#d8263a' : '#ef4a62'; g.fillRect(-9, -1.5, 18, 3); g.restore(); } }),
+    takana: draw(g => { for (let i = 0; i < 30; i++) { const x = 12 + Math.random() * 40, y = 14 + Math.random() * 36; g.fillStyle = i % 2 ? '#4a5a1e' : '#7a7a2a'; g.beginPath(); g.ellipse(x, y, 5, 3, Math.random() * 3, 0, Math.PI * 2); g.fill(); } }),
     minchi: draw(g => { for (let i = 0; i < 40; i++) { const x = 12 + Math.random() * 40, y = 16 + Math.random() * 34; g.fillStyle = i % 3 ? '#7a4a2a' : '#9a6038'; g.beginPath(); g.arc(x, y, 3 + Math.random() * 3, 0, Math.PI * 2); g.fill(); } }),
     rayu: draw(g => { g.fillStyle = '#d82a1a'; g.beginPath(); g.roundRect(20, 18, 24, 38, 6); g.fill(); g.fillStyle = '#f2e6d0'; g.fillRect(24, 10, 16, 10); g.fillStyle = '#a81a10'; g.fillRect(24, 30, 16, 12); g.fillStyle = '#ffd36a'; g.font = 'bold 12px sans-serif'; g.textAlign = 'center'; g.fillText('辣', 32, 40); }),
     gyoza: draw(g => { for (const [x, y] of [[20, 36], [34, 30], [48, 36]]) { g.fillStyle = '#e8c48a'; g.beginPath(); g.ellipse(x, y, 12, 9, 0, Math.PI, 0); g.closePath(); g.fill(); g.fillStyle = '#b07a3a'; g.fillRect(x - 12, y - 1, 24, 3); g.strokeStyle = '#c99a5a'; g.lineWidth = 1.5; for (let k = -6; k <= 6; k += 4) { g.beginPath(); g.moveTo(x + k, y - 8); g.lineTo(x + k + 2, y - 3); g.stroke(); } } }),
@@ -4391,11 +4564,12 @@ function endDay() {
   document.getElementById('endAngry').textContent = G.results.angry;
   // 순이익 = 매출 − 재료비 − 월세 − 급여 + 2호점 수익 → 금고로 (적자면 금고가 줄어듦)
   const rent = rentToday(), wage = wageToday(), branch = upgValue('branch');
-  const net = G.money - G.costIngr - rent - wage + branch;
+  const territory = conquered().filter(r => r !== REGION_ID).length * TERRITORY_INCOME; // 제패한 다른 지역 가게에서 들어오는 돈
+  const net = G.money - G.costIngr - rent - wage + branch + territory;
   const grow = settleProgress(net); // 마감 미션 확인 · 경험치를 레벨에 반영
   bank += net + G.missionCash + grow.bonus; store.set('ramen-bank', bank);
   const row = (label, v, cls = '') => `<div class="ledger-row ${cls}"><span>${label}</span><b>${v < 0 ? '−' : ''}¥${Math.abs(v).toLocaleString()}</b></div>`;
-  document.getElementById('endMoney').innerHTML = `<div class="ledger">${row('매출', G.money)}${row('재료비', -G.costIngr)}${row('월세', -rent)}${wage ? row('직원 급여', -wage) : ''}${branch ? row('체인점 수익', branch) : ''}`
+  document.getElementById('endMoney').innerHTML = `<div class="ledger">${row('매출', G.money)}${row('재료비', -G.costIngr)}${row('월세', -rent)}${wage ? row('직원 급여', -wage) : ''}${branch ? row('체인점 수익', branch) : ''}${territory ? row('🗾 제패한 지역 수익', territory) : ''}`
     + `${row(net >= 0 ? '순이익' : '적자', net, net >= 0 ? 'net' : 'net loss')}`
     + `${G.missionCash ? row('⭐ 미션 보상', G.missionCash) : ''}${grow.bonus ? row('🎉 레벨업 보너스', grow.bonus) : ''}</div>`
     + `<small>${grade().icon} 재료: ${grade().name}${G.extraSales ? ` · 추가 토핑 ¥${G.extraSales.toLocaleString()}` : ''}${G.riceSales ? ` · 밥 ¥${G.riceSales.toLocaleString()}` : ''}${G.extraSales || G.riceSales ? ' (매출에 포함)' : ''}</small>`;
@@ -4418,6 +4592,17 @@ function endDay() {
   // 가게 평판: 오늘 평점이 40% 반영 + 가게 꾸미기 보너스
   if (G.scores.length) { const before = rep; setRep(rep * 0.6 + avg * 0.4 + upgValue('decor') * 0.05 + upgValue('theme') + G.repBonus); G.repBefore = before; }
   showRep();
+  // 지역 퀘스트 (평판이 반영된 뒤에 확인)
+  store.set('ramen-stats', G.stats);
+  const qx = checkQuests({ rep, avg, day, comboMax: G.comboMax, happyToday: G.happyToday, expand: ['seats', 'staff', 'evening', 'branch'].filter(k => levelOf(k)).length });
+  if (qx.cash) { bank += qx.cash; store.set('ramen-bank', bank); document.querySelector('#endMoney .ledger').insertAdjacentHTML('beforeend', row('📍 지역 퀘스트 보상', qx.cash)); }
+  const won = qx.fresh.some(q => q.final);
+  document.getElementById('endGrowth').insertAdjacentHTML('beforeend', '<h3>📍 지역 퀘스트</h3>' + regionHeaderHtml() + questsHtml(null, qx.fresh)
+    + (qx.stars ? `<p class="new-title">⭐ 명성 별 +${qx.stars}</p>` : '')
+    + (won ? `<p class="new-title">👑 ${REGION.name} 제패! 다음 지역이 열렸어요 — 시작 화면 <b>지역</b> 탭에서 진출하세요</p>` : ''));
+  qx.fresh.forEach(q => toast(q.final ? `👑 ${REGION.name} 제패! 지역 랭킹 1위` : `📍 지역 퀘스트 완료! ${q.text}`, 'good'));
+  if (qx.fresh.length) document.getElementById('endGrowLine').textContent += ` · 📍 퀘스트 ${qx.fresh.length}개 완료`;
+  renderRegion();
   const next = day + 1;
   document.getElementById('endNext').innerHTML = '내일은… ' + dayInfoHtml(next);
   document.getElementById('nextBtn').textContent = `Day ${next} 영업 시작 →`;
