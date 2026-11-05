@@ -127,11 +127,18 @@
   h1.brand small { font-family: "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif; }
   p.ver { margin: -6px 0 10px; }
   .credit summary { cursor: pointer; list-style: none; } /* 음성 출처는 이용 규칙상 남겨 두되 접어 둠 */
-  .flow { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; counter-reset: f; justify-content: center; }
-  .flow li { counter-increment: f; background: #fff3d1; border-radius: 8px; padding: 5px 9px; font-size: 13px; }
-  .flow li::before { content: counter(f) '. '; font-weight: 800; color: var(--red); }
-  #coach { position: fixed; inset: 0; z-index: 40; background: rgba(10, 7, 5, .55); }
-  #coach > .btn { position: absolute; left: calc(16px + env(safe-area-inset-left)); top: 40%; width: auto; padding: 10px 22px; }
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0; margin: 0; list-style: none; counter-reset: f; }
+  .flow li { counter-increment: f; background: #fff3d1; border-radius: 12px; padding: 8px 10px; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; text-align: left; position: relative; }
+  .flow li i { grid-row: span 2; font-style: normal; font-size: 30px; line-height: 1; }
+  .flow li b { font-size: 16px; } .flow li small { font-size: 12.5px; opacity: .8; line-height: 1.3; }
+  .flow li::before { content: counter(f); position: absolute; top: 5px; right: 8px; font-weight: 800; color: var(--red); font-size: 13px; }
+  .coach-open { font-size: 17px; padding: 12px; }
+  #coach { position: fixed; inset: 0; z-index: 40; background: rgba(10, 7, 5, .45); }
+  .coach-bar { position: absolute; top: max(6px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px;
+    background: #fff3d1; border: 2px solid var(--yellow); border-radius: 14px; padding: 5px 6px; box-shadow: 0 4px 12px rgba(0,0,0,.4); white-space: nowrap; }
+  .coach-bar b { font-size: 14px; color: var(--ink); padding: 0 4px; }
+  .coach-bar .btn { width: auto; margin: 0; padding: 7px 14px; font-size: 14px; } .coach-bar .btn:disabled { opacity: .35; }
+  .tip-dot { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #ffd23a; box-shadow: 0 0 0 4px rgba(255,210,58,.35); pointer-events: none; }
   .tip { position: absolute; white-space: nowrap; transform: translate(-50%, -100%); background: #fff3d1; color: var(--ink); border: 2px solid var(--yellow);
     border-radius: 10px; padding: 4px 8px; font-size: 12.5px; font-weight: 700; line-height: 1.35; max-width: 170px; text-align: center; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
   .tip.below { transform: translate(-50%, 0); }
@@ -142,7 +149,8 @@
   .tip::after { content: ''; position: absolute; left: 50%; top: 100%; margin-left: -6px; border: 6px solid transparent; border-top-color: var(--yellow); }
   .tip.below::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--yellow); }
   .tip-ring { position: absolute; border: 3px solid #ffd23a; border-radius: 12px; box-shadow: 0 0 0 3px rgba(255, 210, 58, .3); pointer-events: none; }
-  body.mobile .tip { font-size: 10.5px; padding: 3px 6px; max-width: 130px; }
+  body.mobile .tip { font-size: 12.5px; padding: 4px 8px; max-width: 190px; } /* 휴대폰에서도 잘 읽히게 */
+  body.mobile .coach-bar b { font-size: 13px; } body.mobile .coach-bar .btn { padding: 6px 11px; font-size: 13px; }
   /* 영업 종료: 매출 − 운영비 = 순이익 */
   .end-net { font-size: 15px; margin: 8px 0 2px; color: #2f7a3a; }
   .end-net.loss { color: var(--red); }
@@ -525,7 +533,7 @@
   <div id="barR" class="thumbs"><button id="mServe">🍜 내기</button><button id="mTrash">✋ 손 비우기</button></div>
 </div>
 
-<div id="coach" hidden><div id="coachTips"></div><button class="btn" id="coachClose">알겠어요</button></div>
+<div id="coach" hidden><div id="coachTips"></div><div class="coach-bar"><button class="btn sub" id="coachPrev">◀ 이전</button><b id="coachTitle"></b><button class="btn" id="coachNext">다음 ▶</button></div></div>
 <div id="rotate"><div><span class="ico">📱</span>휴대폰을 <b>가로로</b> 돌려 주세요</div></div>
 
 <div id="title">
@@ -597,11 +605,16 @@
     <section class="view" data-view="guide" hidden>
       <header class="view-head"><button class="back">← 홈</button><h2>📖 조작법</h2></header>
       <div class="scroll">
-        <button class="btn coach-open" id="coachBtn">👀 게임 화면에서 조작 보기</button>
-        <p class="coach-hint">실제 화면 위에 어디를 누르는지 하나씩 짚어 줘요.</p>
         <ol class="flow">
-          <li><b>그릇</b> 놓기</li><li>↻ 뒤돌아 <b>면</b> 삶기</li><li><b>육수</b> 붓기</li><li>면 넣기</li><li>🔥 <b>챠슈</b> · 토핑</li><li>✅ 완성 → 🍜 <b>내기</b></li>
+          <li><i>🥣</i><b>그릇 놓기</b><small>그릇 더미를 탭</small></li>
+          <li><i>♨️</i><b>면 삶기</b><small>↻ 뒤돌아 바구니 탭</small></li>
+          <li><i>🍲</i><b>육수 붓기</b><small>냄비 탭 → 앞으로 돌아 그릇에</small></li>
+          <li><i>🍜</i><b>면 넣기</b><small>주문 굳기가 되면 건져서 그릇에</small></li>
+          <li><i>🔥</i><b>챠슈 · 토핑</b><small>아래 재료 버튼 (챠슈는 꾹)</small></li>
+          <li><i>✅</i><b>완성 → 내기</b><small>초록 고리가 뜨면 🍜 내기</small></li>
         </ol>
+        <button class="btn coach-open" id="coachBtn">👀 게임 화면에서 조작 보기 (① 앞 · ② 뒤)</button>
+        <p class="coach-hint">실제 화면 위에 어디를 누르는지 짚어 줘요.</p>
         <details class="credit"><summary>ⓘ 크레딧</summary>목소리: VOICEVOX:青山龍星 / 玄野武宏 / 剣崎雌雄 / 雀松朱司 / 麒ヶ島宗麟 / 白上虎太郎 / 四国めたん / 九州そら / 冥鳴ひまり / 春日部つむぎ / 波音リツ / No.7 / ちび式じい / もち子さん / 東北イタコ</details>
       </div>
     </section>
@@ -4245,22 +4258,45 @@ const endPage = setupPager(document.querySelector('#end .card'), (i, n) => {
 });
 // ---------- 조작 안내: 시작 화면을 잠깐 내리고 실제 게임 화면의 버튼·물건 위에 말풍선 ----------
 // side: 말풍선이 대상의 어느 쪽에 붙는지 (above · below · left · right)
-const COACH_TIPS = [
-  { world: [-1.0, 1.12, -0.8], text: '그릇 더미<br>탭해서 그릇 놓기', side: 'above' },
-  { world: [0.2, 1.06, BOWL_Z], text: '그릇 자리 — 탭하면 선택<br>(노란 고리)', side: 'above' },
-  { world: [1.1, 1.75, SEAT_Z], text: '손님 — 주문서는<br>왼쪽에 쌓여요', side: 'above' },
-  { el: '#kit', text: '재료 버튼 — 토핑은 탭<br>🔥챠슈는 꾹 눌렀다 초록에서 떼기', side: 'above' },
-  { el: '#mTurn', text: '↻ 뒤돌아서<br>면 삶기 · 육수', side: 'right' },
-  { el: '#mUndo', text: '↶ 방금 넣은 토핑 하나 빼기', side: 'right' },
-  { el: '#mServe', text: '🍜 ✅완성된 그릇 내기', side: 'left' },
-  { el: '#mTrash', text: '✋ 손 비우기 — 들고 있는 것(그릇 포함) 버리기', side: 'left' },
+const COACH_PAGES = [
+  { back: false, title: '① 앞쪽 카운터 — 그릇 · 토핑 · 손님', tips: [
+    { world: [-1.0, 1.12, -0.8], text: '그릇 더미<br>탭해서 그릇 놓기', side: 'above' },
+    { world: [0.2, 1.06, BOWL_Z], text: '그릇 자리 — 탭하면 선택<br>(노란 고리)', side: 'above' },
+    { world: [1.1, 1.75, SEAT_Z], text: '손님 — 주문서는<br>왼쪽에 쌓여요', side: 'above' },
+    { el: '#kit', text: '재료 버튼 — 토핑은 탭<br>🔥챠슈는 꾹 눌렀다 초록에서 떼기', side: 'above' },
+    { el: '#mTurn', text: '↻ 뒤돌아서<br>면 삶기 · 육수 (②쪽)', side: 'right' },
+    { el: '#mUndo', text: '↶ 방금 넣은<br>토핑 하나 빼기', side: 'right' },
+    { el: '#mServe', text: '🍜 ✅완성된<br>그릇 내기', side: 'left' },
+    { el: '#mTrash', text: '✋ 손 비우기<br>(들고 있는 것 버리기)', side: 'left' },
+  ] },
+  { back: true, title: '② 뒤쪽 화구 — 면 삶기 · 육수', tips: [
+    { world: [-0.45, 1.24, 1.2], text: '면 솥 — 바구니 탭: 삶기 시작<br>다시 탭: 건지기 (색이 진할수록 많이 익음)', side: 'above' },
+    { world: [0.47, POT_BASE_Y + 0.6, 1.2], text: '육수 냄비 — 탭해서 국자로 뜨기<br>→ 앞으로 돌아 그릇에 붓기', side: 'above' },
+    { el: '#basketPad', text: '번호 버튼으로도<br>바구니를 누를 수 있어요', side: 'above' },
+    { el: '#mTurn', text: '↻ 앞으로<br>돌아가기', side: 'right' },
+  ] },
 ];
-function showCoach() {
+let coachPage = 0, coachBack = false;
+// 조작 안내: 시작 화면을 잠깐 내리고 실제 게임 화면(①앞 · ②뒤) 위에 말풍선 — 위 막대로 쪽 넘기기
+function showCoach(page = 0) {
+  coachPage = page;
+  const P = COACH_PAGES[page];
   document.getElementById('start').classList.add('hidden');
-  const box = document.getElementById('coachTips'); box.innerHTML = '';
   document.getElementById('coach').hidden = false;
+  document.getElementById('coachTitle').textContent = `${P.title}  (${page + 1}/${COACH_PAGES.length})`;
+  document.getElementById('coachPrev').disabled = page === 0;
+  document.getElementById('coachNext').textContent = page < COACH_PAGES.length - 1 ? '다음 ▶' : '알겠어요 ✓';
+  const box = document.getElementById('coachTips'); box.innerHTML = '';
+  // 그 쪽 시점으로 바로 돌림 (영업 전이라 게임 루프가 시점을 움직이지 않으므로 직접 맞춤)
+  if (P.back !== facingBack) turnAround();
+  const v = facingBack ? VIEW.back : VIEW.front; yaw = v.yaw; pitch = v.pitch; turnTarget = pitchTarget = null;
+  coachBack = P.back; // 뒤에선 재료 버튼 대신 면 바구니 번호판이 보임
+  requestAnimationFrame(() => requestAnimationFrame(() => placeCoachTips(P))); // 시점이 그려진 다음 말풍선 자리 계산
+}
+function placeCoachTips(P) {
+  const box = document.getElementById('coachTips'); box.innerHTML = '';
   const v = new THREE.Vector3();
-  for (const t of COACH_TIPS) {
+  for (const t of P.tips) {
     let r;
     if (t.el) {
       r = document.querySelector(t.el)?.getBoundingClientRect();
@@ -4268,8 +4304,10 @@ function showCoach() {
       box.insertAdjacentHTML('beforeend', `<div class="tip-ring" style="left:${r.left - 4}px;top:${r.top - 4}px;width:${r.width + 8}px;height:${r.height + 8}px"></div>`);
     } else {
       v.set(...t.world).project(camera);
+      if (v.z > 1) continue; // 카메라 뒤쪽이면 건너뜀
       const x = (v.x + 1) / 2 * innerWidth, y = (1 - v.y) / 2 * innerHeight;
       r = { left: x, right: x, top: y, bottom: y, width: 0, height: 0 };
+      box.insertAdjacentHTML('beforeend', `<div class="tip-dot" style="left:${x}px;top:${y}px"></div>`);
     }
     const pos = { above: [r.left + r.width / 2, r.top - 8], below: [r.left + r.width / 2, r.bottom + 8],
       left: [r.left - 10, r.top + r.height / 2], right: [r.right + 10, r.top + r.height / 2] }[t.side];
@@ -4280,11 +4318,16 @@ function showCoach() {
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
   }
 }
-document.getElementById('coachBtn').onclick = showCoach;
-document.getElementById('coachClose').onclick = () => {
+function closeCoach() {
   document.getElementById('coach').hidden = true;
+  coachBack = false;
+  if (facingBack) turnAround();
+  yaw = VIEW.front.yaw; pitch = VIEW.front.pitch; turnTarget = pitchTarget = null;
   document.getElementById('start').classList.remove('hidden');
-};
+}
+document.getElementById('coachBtn').onclick = () => showCoach(0);
+document.getElementById('coachPrev').onclick = () => { Sound.knob(); showCoach(Math.max(0, coachPage - 1)); };
+document.getElementById('coachNext').onclick = () => { Sound.knob(); if (coachPage < COACH_PAGES.length - 1) showCoach(coachPage + 1); else closeCoach(); };
 // ---------- 홈(가게 사무실): 오늘 할 일 + 지도 · 상점 · 조작법 · 설정 화면으로 ----------
 function openView(v) {
   document.querySelectorAll('#start .view').forEach(el => { el.hidden = el.dataset.view !== v; });
@@ -4380,7 +4423,7 @@ function placeBasketPad(pad) {
 }
 function updateBasketPad() {
   const pad = document.getElementById('basketPad'), kit = document.getElementById('kit');
-  const show = G.running && facingBack;
+  const show = (G.running || coachBack) && facingBack; // 조작 안내 ②쪽에서도 보여 줌
   pad.hidden = !show; kit.hidden = show;
   if (!show) return;
   placeBasketPad(pad);
