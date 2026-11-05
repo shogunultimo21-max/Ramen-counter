@@ -690,7 +690,7 @@
 <script type="module">
 import * as THREE from 'three';
 // 게임 버전 — 베타에 올릴 때마다 올림 (시작 화면·일시정지에 표시해서 어느 버전인지 바로 확인)
-const APP_VERSION = 'v1.9', APP_DATE = '11/06';
+const APP_VERSION = 'v1.10', APP_DATE = '11/07';
 document.querySelectorAll('.ver').forEach(el => { el.textContent = `${APP_VERSION} · ${APP_DATE}`; });
 
 // ================= 전국 라멘 제패: 지역 =================
@@ -4443,6 +4443,18 @@ function updateBasketPad() {
     el.className = 'bk-btn' + (f ? ` row firm-${f}` : '');
   });
 }
+// 재료 버튼 줄을 양옆 엄지 버튼(뒤돌기·빼기 / 내기·손 비우기) 사이 가운데에 두고, 넘치면 줄여서 겹치지 않게
+function fitKit() {
+  const kit = document.getElementById('kit');
+  if (kit.hidden || !kit.childElementCount) return;
+  const edges = (sel, side) => [...document.querySelectorAll(sel)].map(b => b.getBoundingClientRect()).filter(r => r.width).map(r => r[side]);
+  const L = Math.max(0, ...edges('#barL button', 'right')), R = Math.min(innerWidth, ...edges('#barR button', 'left'));
+  const room = R - L - 16, s = Math.min(1, room / kit.offsetWidth);
+  kit.style.left = `${(L + R) / 2}px`;
+  kit.style.transformOrigin = 'bottom center';
+  kit.style.transform = `translateX(-50%) scale(${s.toFixed(3)})`;
+}
+addEventListener('resize', () => requestAnimationFrame(fitKit));
 function buildKit() {
   const kit = document.getElementById('kit');
   const items = [
@@ -4800,7 +4812,7 @@ function updateHud() {
   ub.disabled = !last;
   const txt = last ? `↶ ${last.name} 빼기` : '↶ 직전 토핑 빼기'; // 뺄 게 있으면 짧게 (아래 토핑 버튼 줄과 안 겹치게)
   if (ub.textContent !== txt) ub.textContent = txt;
-  updateKit();
+  updateKit(); fitKit();
   const mins = clockMins();
   updateSky(mins, G.event === 'rain');
   const clk = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
