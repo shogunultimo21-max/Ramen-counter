@@ -25,6 +25,12 @@ LINES = {
     'kaedama_katame': {'_': 'すみません、替え玉カタメで！', 'om': '替え玉、かためで頼むよ。', 'of': '替え玉、かためでお願いね。'},
     'kaedama_futsu': {'_': 'すみません、替え玉お願いします！', 'om': '替え玉、ひとつ頼むよ。', 'of': '替え玉、お願いね。'},
     'kaedama_yawa': {'_': 'すみません、替え玉やわめで！', 'om': '替え玉、やわらかめで頼むよ。', 'of': '替え玉、やわらかめでお願いね。'},
+    # 하카타 사투리 (하카타벤) — 후쿠오카 가게에서만 씀
+    'umai_hk': {'m': 'うまか！', 'st': 'バリうまか！', 'f': 'バリおいしか〜！', 'om': 'うまかねぇ。', 'of': 'おいしかねぇ。'},
+    'gochisousama_hk': {'_': 'ごちそうさん、うまかったばい！', 'f': 'ごちそうさま、バリおいしかった〜！', 'om': 'ごちそうさん。よか味やった。', 'of': 'ごちそうさま。おいしかったばい。'},
+    'kaedama_katame_hk': {'_': 'すいません、替え玉ハリガネで！', 'om': '替え玉、ハリガネで頼むばい。', 'of': '替え玉、ハリガネでお願いね。'},
+    'kaedama_futsu_hk': {'_': '替え玉、バリカタで頼むばい！', 'om': '替え玉、バリカタで頼むばい。', 'of': '替え玉、バリカタでお願いしようかね。'},
+    'kaedama_yawa_hk': {'_': '替え玉、カタでよかよ！', 'om': '替え玉、カタでよか。', 'of': '替え玉、カタでよかよ。'},
 }
 
 def post(path, params, body=None):
@@ -45,7 +51,10 @@ def synth(text, sid, speed, pitch, inton, dst):
 
 os.makedirs(OUT, exist_ok=True)
 count = {}
+only = sys.argv[1] if len(sys.argv) > 1 else ''  # 예: python3 tools/make_voices.py _hk  → 이름에 _hk 가 든 대사만 새로 만듦
 for key, texts in LINES.items():
+    if only and only not in key:
+        continue
     for group, voices in CAST.items():
         text = texts.get(group) or (texts.get('_') if group != 'chef' else None)
         if not text:
