@@ -692,7 +692,7 @@
 <script type="module">
 import * as THREE from 'three';
 // 게임 버전 — 베타에 올릴 때마다 올림 (시작 화면·일시정지에 표시해서 어느 버전인지 바로 확인)
-const APP_VERSION = 'v1.13', APP_DATE = '11/21';
+const APP_VERSION = 'v1.14', APP_DATE = '11/22';
 document.querySelectorAll('.ver').forEach(el => { el.textContent = `${APP_VERSION} · ${APP_DATE}`; });
 
 // ================= 전국 라멘 제패: 지역 =================
@@ -1233,7 +1233,8 @@ const SHOP_VOICE = {
 
 // ================= 렌더러 / 씬 =================
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// 휴대폰은 화질 배율을 1.5로: 그래픽 메모리가 모자라면 iOS가 WebGL 화면을 끊어서 검게 변하는 걸 줄임
+renderer.setPixelRatio(Math.min(devicePixelRatio, matchMedia('(pointer: coarse)').matches ? 1.5 : 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -5626,7 +5627,37 @@ function applyLook(dt) {
   });
 }
 
+// ---------- 검은 화면 복구 ----------
+// iOS Safari는 앱 전환·알림·메모리 부족 때 WebGL 화면(그리기 버퍼)을 잃어 검게 될 때가 있음.
+// 가로↔세로를 돌리면 캔버스 크기가 바뀌며 버퍼를 새로 만들어서 다시 보였던 것 → 같은 일을 자동으로 해 줌
+const glCanvas = renderer.domElement;
+let glLost = false, blackChecks = 0, lastKick = 0;
+function kickRenderer() {
+  const now = performance.now(); if (now - lastKick < 500) return; lastKick = now;
+  renderer.setSize(innerWidth - 1, innerHeight); // 크기를 살짝 바꿨다가 되돌리면 버퍼를 새로 만듦
+  renderer.setSize(innerWidth, innerHeight); fitCamera();
+}
+glCanvas.addEventListener('webglcontextlost', e => { e.preventDefault(); glLost = true; }); // 다시 살릴 수 있게
+glCanvas.addEventListener('webglcontextrestored', () => { glLost = false; kickRenderer(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(kickRenderer, 60); });
+addEventListener('pageshow', () => setTimeout(kickRenderer, 60));
+addEventListener('focus', () => setTimeout(kickRenderer, 60));
+// 2초마다 화면 가운데 한 점을 읽어서, 배경색이 있는데도 새까맣게 나오면 버퍼를 다시 만듦
+let blackTimer = 0;
+function checkBlack(dt) {
+  blackTimer += dt; if (blackTimer < 2) return; blackTimer = 0;
+  const gl = renderer.getContext();
+  if (gl.isContextLost()) { glLost = true; return; }
+  const px = new Uint8Array(4);
+  gl.readPixels(gl.drawingBufferWidth >> 1, gl.drawingBufferHeight >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  if (px[0] + px[1] + px[2] === 0) { if (++blackChecks >= 2) { blackChecks = 0; kickRenderer(); } } else blackChecks = 0;
+}
 function frame() {
+  requestAnimationFrame(frame); // 맨 앞에서 예약: 이번 프레임에 오류가 나도 게임 화면이 멈추지 않음
+  if (glLost) return;           // WebGL이 끊긴 동안엔 그리지 않고 복구를 기다림
+  try { drawFrame(); } catch (e) { console.error(e); }
+}
+function drawFrame() {
   const dt = Math.min(0.05, clock.getDelta());
   const t = clock.elapsedTime;
   if (G.running && !G.paused) update(dt);
@@ -5657,7 +5688,7 @@ function frame() {
   renderer.autoClear = false; renderer.clearDepth(); camera.layers.set(HELD_LAYER); renderer.render(scene, camera);
   scene.background = bg;
   camera.layers.set(0);
-  requestAnimationFrame(frame);
+  checkBlack(dt || 1 / 60);
 }
 // 좁은 화면에서도 좌우 조리대가 보이도록 가로 시야각을 기준으로 맞춘다
 // 왼쪽 주문서가 조리대를 가리지 않게, 화면을 주문서 오른쪽 영역에 맞춰 잡고
