@@ -315,7 +315,10 @@
   body.mobile .kit-btn .cnt { font-size: 11px; }
   .bk-btn.rinse { grid-column: 1 / -1; width: auto; background: #cfe8f6; }
   .bk-btn.rinse:disabled { opacity: .45; }
-  .bk-btn.wok { grid-column: 1 / -1; width: auto; background: #ffd8b0; font-weight: 800; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .bk-btn.wok { grid-column: 1 / -1; width: 100%; padding: 0 6px; background: #ffd8b0; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  body.mobile .bk-btn.wok { width: 100%; font-size: 13px; }
+  .bk-btn.wok small { font-size: 10px; font-weight: 700; opacity: .7; }
+  .kit-btn.grill { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
   .bk-btn.wok.held { background: #ff9a4a; color: #fff; }
   .wl.pop { font-size: 14px; font-weight: 800; color: #fff; }
   .wl.pop.in { background: #2f7a3a; }
@@ -692,7 +695,7 @@
 <script type="module">
 import * as THREE from 'three';
 // 게임 버전 — 베타에 올릴 때마다 올림 (시작 화면·일시정지에 표시해서 어느 버전인지 바로 확인)
-const APP_VERSION = 'v1.14', APP_DATE = '11/22';
+const APP_VERSION = 'v1.15', APP_DATE = '11/22';
 document.querySelectorAll('.ver').forEach(el => { el.textContent = `${APP_VERSION} · ${APP_DATE}`; });
 
 // ================= 전국 라멘 제패: 지역 =================
@@ -5059,6 +5062,17 @@ function placeBasketPad(pad) {
   y = clamp(y, margin, innerHeight - h - margin);
   pad.style.left = x + 'px'; pad.style.top = y + 'px';
 }
+function holdButton(el, onStart, onEnd) {
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    if (onStart(e) === false) return;
+    try { el.setPointerCapture(e.pointerId); } catch (err) { /* 무시 */ } // 손가락이 버튼 밖으로 살짝 밀려도 계속 누른 걸로
+    el.classList.add('held');
+  });
+  const up = () => { el.classList.remove('held'); onEnd(); };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+  el.addEventListener('contextmenu', e => e.preventDefault()); // 길게 누르면 뜨는 메뉴 막기
+}
 function updateBasketPad() {
   const pad = document.getElementById('basketPad'), kit = document.getElementById('kit');
   const show = (G.running || coachBack) && facingBack; // 조작 안내 ②쪽에서도 보여 줌
@@ -5070,15 +5084,11 @@ function updateBasketPad() {
     pad.style.gridTemplateColumns = `repeat(${BASKET_GRID[n].cols}, auto)`;
     pad.innerHTML = baskets.slice(0, n).map((b, i) => `<button class="bk-btn" data-i="${i}"><b>${i + 1}</b><span></span></button>`).join('')
       + (rinseOn ? '<button class="bk-btn rinse" id="rinseBtn">💧 찬물 헹구기 (츠케멘)</button>' : '')
-      + (wokOn ? '<button class="bk-btn wok" id="wokBtn">🥘 웍 볶음 — 꾹 누르고 초록에서 떼기</button>' : '');
+      + (wokOn ? '<button class="bk-btn wok" id="wokBtn">🥘 웍 볶음<small>꾹 → 초록에서 떼기</small></button>' : '');
     pad.querySelectorAll('.bk-btn[data-i]').forEach(el => el.addEventListener('click', e => { e.currentTarget.blur(); if (G.running && !G.paused) act({ kind: 'basket', i: +el.dataset.i }); }));
     pad.querySelector('#rinseBtn')?.addEventListener('click', e => { e.currentTarget.blur(); if (G.running && !G.paused) act({ kind: 'rinse' }); });
     const wb = pad.querySelector('#wokBtn');
-    if (wb) {
-      wb.addEventListener('pointerdown', e => { e.preventDefault(); if (!G.running || G.paused) return; wb.classList.add('held'); wokStart(); });
-      const up = () => { wb.classList.remove('held'); wokEnd(); };
-      wb.addEventListener('pointerup', up); wb.addEventListener('pointerleave', up); wb.addEventListener('pointercancel', up);
-    }
+    if (wb) holdButton(wb, () => { if (!G.running || G.paused) return false; wokStart(); }, wokEnd);
   }
   const rb = pad.querySelector('#rinseBtn'); if (rb) rb.disabled = G.hand?.type !== 'noodles' || !!G.hand.rinsed;
   pad.querySelectorAll('.bk-btn[data-i]').forEach((el, i) => {
@@ -5118,14 +5128,12 @@ function buildKit() {
     const k = b.dataset.k;
     if (k === 'wok') b.addEventListener('click', e => { e.currentTarget.blur(); if (G.running && !G.paused) wokServe(); });
     else if (k === 'chashu') { // 누르고 있는 동안 굽고, 떼면 선택한 그릇에 올라감
-      b.addEventListener('pointerdown', e => {
-        e.preventDefault(); if (!G.running || G.paused) return;
-        if (G.hand) return toast('손을 먼저 비우세요 (✋ 손 비우기)', 'warn');
-        if (!G.bowls.some(readyForToppings)) return toast('챠슈는 육수와 면을 넣은 그릇에 올려요', 'warn');
-        b.classList.add('held'); grillStart();
-      });
-      const up = () => { b.classList.remove('held'); grillEnd(); };
-      b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+      holdButton(b, () => {
+        if (!G.running || G.paused) return false;
+        if (G.hand) { toast('손을 먼저 비우세요 (✋ 손 비우기)', 'warn'); return false; }
+        if (!G.bowls.some(readyForToppings)) { toast('챠슈는 육수와 면을 넣은 그릇에 올려요', 'warn'); return false; }
+        grillStart();
+      }, grillEnd);
     } else b.addEventListener('click', e => {
       e.currentTarget.blur(); if (!G.running || G.paused) return;
       act(TOPPINGS[k] ? { kind: 'topping', key: k } : { kind: k }); // 미소 · 라유 · 교자는 그대로 kind
