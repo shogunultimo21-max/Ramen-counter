@@ -173,7 +173,7 @@
   .card.hub .view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
   .card.hub .view[hidden] { display: none; }
   .hub-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .hub-name { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0; }
+  .hub-name { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
   .hub-name h1 { margin: 0; font-size: 26px; }
   .shop-title { font-size: 14px; color: var(--ink); } .shop-title b { color: var(--red); }
   .hub-right { display: flex; align-items: center; gap: 8px; flex: none; }
@@ -195,6 +195,123 @@
   .card.hub .pages .pg { flex: 1; min-height: 0; overflow-y: auto; }
   .card.hub .scroll { flex: 1; min-height: 0; overflow-y: auto; }
   .settings { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+  .set-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
+  .set-row b { min-width: 110px; } .set-row .btn { width: auto; margin: 0; padding: 6px 14px; }
+  .set-row input[type=range] { flex: 1; min-width: 120px; accent-color: var(--red); }
+  .seg { display: inline-flex; border: 2px solid #e3d7c0; border-radius: 10px; overflow: hidden; }
+  .seg button { border: 0; background: #fffaf0; padding: 6px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+  .seg button.on { background: var(--red); color: #fff; font-weight: 800; }
+  .set-note { margin: -6px 0 0; font-size: 12px; opacity: .7; }
+  .keys-help { font-size: 12.5px; opacity: .85; }
+  body.mobile .pc-only { display: none; }
+  /* PC: 버튼에 단축키 표시 */
+  .kh { position: absolute; left: 3px; top: 2px; font-style: normal; font-size: 10px; font-weight: 800; background: rgba(43,33,27,.78); color: #fff; border-radius: 4px; padding: 0 4px; line-height: 15px; pointer-events: none; }
+  .thumbs button, .bk-btn { position: relative; }
+  body.mobile .kh { display: none; }
+  /* ===== PC 화면 구성 (휴대폰은 그대로) ===== */
+  .today-title { display: none; }
+  body:not(.mobile):not(.playing) #hud { display: none; }
+  #potPanel, #keyHints { display: none; }
+  body:not(.mobile) #start.home-mode { justify-content: flex-start; align-items: stretch; padding: 0;
+    background: linear-gradient(90deg, rgba(18,11,7,.94) 0%, rgba(18,11,7,.8) 30%, rgba(18,11,7,.18) 56%, rgba(18,11,7,0) 72%); }
+  body:not(.mobile) .card.hub.at-home { width: 460px; max-width: 460px; height: 100%; max-height: none; border-radius: 0; background: none; box-shadow: none;
+    padding: 44px 0 36px max(56px, env(safe-area-inset-left)); color: #f6ecd8; overflow: visible; }
+  body:not(.mobile) .at-home .view[data-view="home"] { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+  body:not(.mobile) .at-home .hub-head { order: 1; display: block; }
+  body:not(.mobile) .at-home .hub-name { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; align-items: center; }
+  body:not(.mobile) .at-home .hub-name h1.brand { grid-column: 1 / -1; order: -1; font-size: 64px; line-height: 1; color: #f6ecd8; }
+  body:not(.mobile) .at-home .home-avatar { width: 64px; height: 75px; }
+  body:not(.mobile) .at-home .shop-title { color: #e8dcc4; font-size: 15px; }
+  body:not(.mobile) .at-home .hub-right { position: fixed; right: max(40px, env(safe-area-inset-right)); top: 32px; display: flex; gap: 10px; align-items: center; }
+  body:not(.mobile) .at-home .region-tag { background: rgba(18,11,7,.75); color: #f6ecd8; border-radius: 999px; padding: 8px 16px; font-size: 14px; }
+  body:not(.mobile) .at-home .icon-btn { background: rgba(18,11,7,.75); color: #f6ecd8; }
+  body:not(.mobile) .at-home #ownerInfo { order: 2; background: rgba(255,247,232,.08); border: 1px solid rgba(246,236,216,.18); border-radius: 14px; padding: 10px 14px; color: #f6ecd8; }
+  body:not(.mobile) .at-home .foot { order: 3; margin: 6px 0 0; }
+  body:not(.mobile) .at-home #startBtn { font-size: 22px; padding: 16px 20px; border-radius: 12px; box-shadow: 0 6px 0 #7a1e18; text-align: left; }
+  body:not(.mobile) .at-home .hub-grid { order: 4; display: block; flex: none; }
+  body:not(.mobile) .at-home .hub-tiles { display: flex; flex-direction: column; gap: 2px; }
+  body:not(.mobile) .at-home .tile { background: none; box-shadow: none; color: #f6ecd8; border-radius: 10px; padding: 10px 8px; text-align: left; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex: none; }
+  body:not(.mobile) .at-home .tile:hover, body:not(.mobile) .at-home .tile:focus-visible { background: rgba(255,247,232,.1); }
+  body:not(.mobile) .at-home .tile b { font-size: 18px; } body:not(.mobile) .at-home .tile small { color: #c8b89e; font-size: 13px; margin: 0; }
+  body:not(.mobile) .at-home .hub-today { position: fixed; right: max(40px, env(safe-area-inset-right)); bottom: 40px; width: 380px; max-height: calc(100vh - 140px); overflow-y: auto;
+    background: #fff7e8; color: var(--ink); border-radius: 16px; padding: 16px 18px; box-shadow: 0 12px 32px rgba(0,0,0,.45); display: flex; flex-direction: column; gap: 10px; }
+  body:not(.mobile) .at-home .today-title { display: block; margin: 0; font-family: "Song Myung", serif; font-weight: 400; font-size: 24px; }
+  /* 영업 화면 */
+  body:not(.mobile) #topbar { top: 12px; gap: 0; background: rgba(18,11,7,.8); border-radius: 12px; padding: 4px; }
+  body:not(.mobile) #topbar .chip { background: none; border-radius: 8px; padding: 5px 14px; font-size: 15px; }
+  body:not(.mobile) #topbar .chip + .chip { border-left: 1px solid rgba(246,236,216,.2); border-radius: 0; }
+  body:not(.mobile) #money { color: #f2c86a; }
+  body:not(.mobile) #tickets { top: 66px; left: max(20px, env(safe-area-inset-left)); width: min(620px, 50vw); flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 14px 12px;
+    padding: 14px 12px 0; background: linear-gradient(#8a5a34, #5a3820) top / 100% 10px no-repeat; border-radius: 5px; max-height: 62vh; }
+  body:not(.mobile) .ticket .line { overflow-wrap: anywhere; white-space: normal; }
+  body:not(.mobile) .ticket { width: 172px; box-sizing: border-box; border-top: 0; border-radius: 0 0 6px 6px; padding: 14px 10px 8px; position: relative; background: #fffdf6; box-shadow: 0 6px 12px rgba(0,0,0,.35); font-size: 13px; }
+  body:not(.mobile) .ticket::before { content: ''; position: absolute; top: -8px; left: 50%; margin-left: -15px; width: 30px; height: 14px; background: #c8c8cc; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+  body:not(.mobile) .ticket:nth-child(3n+1) { transform: rotate(-1.4deg); } body:not(.mobile) .ticket:nth-child(3n+2) { transform: rotate(1deg); } body:not(.mobile) .ticket:nth-child(3n) { transform: rotate(-.4deg); }
+  body:not(.mobile) .ticket.kae { background: #fff0c8; outline: 2px solid #e0b030; }
+  body:not(.mobile) #kit { background: rgba(18,11,7,.72); padding: 8px; border-radius: 16px; bottom: 18px; }
+  body:not(.mobile) #hint { background: rgba(18,11,7,.82); color: #f6ecd8; border-radius: 8px; padding: 6px 12px; font-size: 15px; top: calc(50% + 22px); }
+  body:not(.mobile) #hint kbd { background: #f6ecd8; color: #2b211b; border-radius: 4px; padding: 0 7px; font: 800 13px system-ui; margin-right: 8px; }
+  body:not(.mobile):not(.drag) .thumbs { display: none; }
+  body:not(.mobile):not(.drag) #keyHints { display: flex; position: absolute; right: max(20px, env(safe-area-inset-right)); bottom: 24px; flex-direction: column; gap: 6px; align-items: flex-end; font-size: 13px; }
+  #keyHints span { background: rgba(18,11,7,.72); color: #f6ecd8; border-radius: 8px; padding: 4px 10px; }
+  #keyHints kbd { background: #f6ecd8; color: #2b211b; border-radius: 4px; padding: 0 6px; margin-right: 6px; font: 800 12px system-ui; }
+  body:not(.mobile) #potPanel { display: block; position: absolute; right: max(20px, env(safe-area-inset-right)); top: 66px; width: 210px; background: rgba(255,247,232,.94); color: var(--ink);
+    border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.6; box-shadow: 0 6px 16px rgba(0,0,0,.35); }
+  #potPanel b { font-size: 14px; } #potPanel .ready { color: #2f7a3a; font-weight: 800; } #potPanel .bad { color: #b8322a; font-weight: 800; } #potPanel .off { color: #7a6a5c; }
+  body:not(.mobile) #helperCard { top: auto; bottom: 120px; }
+  #story { position: fixed; inset: 0; z-index: 60; background: linear-gradient(transparent 35%, rgba(12,8,5,.78)); cursor: pointer; }
+  #story.hidden { display: none; }
+  .st-portrait { position: absolute; left: max(4%, env(safe-area-inset-left)); bottom: calc(150px + env(safe-area-inset-bottom)); width: 190px; height: 222px; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.5); transition: opacity .2s; }
+  .st-portrait svg { width: 100%; height: 100%; display: block; }
+  .st-portrait.empty { opacity: 0; }
+  .st-box { position: absolute; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(920px, calc(100% - 32px)); min-height: 120px; box-sizing: border-box;
+    background: #fff7e8; color: var(--ink); border: 3px solid #3a2a20; border-radius: 16px; padding: 14px 20px 26px; box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+  .st-name { display: inline-block; margin-top: -30px; margin-bottom: 6px; background: var(--red); color: #fff; font-weight: 800; font-size: 15px; padding: 3px 12px; border-radius: 8px; }
+  .st-name:empty { display: none; }
+  .st-text { font-size: 18px; line-height: 1.6; white-space: pre-wrap; }
+  .st-text.narr { font-style: italic; opacity: .85; }
+  .st-next { position: absolute; right: 16px; bottom: 6px; font-size: 12px; opacity: .55; animation: stBlink 1.2s infinite; }
+  @keyframes stBlink { 50% { opacity: .15; } }
+  .st-skip { position: absolute; right: max(14px, env(safe-area-inset-right)); top: max(12px, env(safe-area-inset-top)); border: 0; background: rgba(20,12,8,.7); color: #fff; font: 700 13px system-ui; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+  body.mobile .st-portrait { width: 120px; height: 140px; bottom: calc(118px + env(safe-area-inset-bottom)); } body.mobile .st-text { font-size: 15px; } body.mobile .st-box { min-height: 96px; padding: 10px 14px 22px; }
+  /* 만화 컷 */
+  #story { background: rgba(12,8,5,.82); }
+  .st-page { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -52%); width: min(1180px, calc(100vw - 48px)); height: min(640px, calc(100vh - 90px));
+    background: #f4efe4; padding: 16px; box-sizing: border-box; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.6); }
+  .st-panel { position: relative; border: 5px solid #141210; background: #fffdf6; overflow: hidden; animation: stPop .28s cubic-bezier(.2,1.4,.4,1); }
+  .st-panel.wide { grid-column: 1 / -1; }
+  @keyframes stPop { from { transform: scale(.86) rotate(-1deg); opacity: 0; } }
+  .st-panel .lines { position: absolute; inset: 0; background: repeating-conic-gradient(from 0deg at var(--fx, 30%) 60%, rgba(20,18,16,.07) 0 2deg, transparent 2deg 9deg); }
+  .st-panel .tone { position: absolute; inset: 0; background-image: radial-gradient(rgba(20,18,16,.16) 1.2px, transparent 1.4px); background-size: 9px 9px; }
+  .st-panel .face { position: absolute; bottom: 0; width: 42%; max-width: 230px; aspect-ratio: 120 / 140; }
+  .st-panel .face svg { width: 100%; height: 100%; display: block; }
+  .st-panel.left .face { left: 4%; } .st-panel.right .face { right: 4%; }
+  .st-panel .who { position: absolute; top: 10px; background: #141210; color: #fffdf6; font: 800 13px system-ui; padding: 3px 10px; border-radius: 4px; }
+  .st-panel.left .who { left: 10px; } .st-panel.right .who { right: 10px; }
+  .st-panel .balloon { position: absolute; top: 50%; transform: translateY(-55%); width: 50%; background: #fff; border: 3px solid #141210; border-radius: 46% / 40%;
+    padding: 20px 24px; font: 700 clamp(14px, 1.55vw, 19px)/1.5 "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif; color: #141210; text-align: center; box-sizing: border-box; white-space: pre-wrap; }
+  .st-panel.left .balloon { right: 4%; } .st-panel.right .balloon { left: 4%; }
+  .st-panel .caption { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 78%; background: #fffdf6; border: 3px solid #141210; padding: 16px 20px;
+    font: 700 clamp(15px, 1.6vw, 20px)/1.6 "Song Myung", serif; color: #141210; white-space: pre-wrap; box-shadow: 5px 5px 0 #141210; }
+  .st-panel.letter { background: #e8d6b0; } .st-panel.letter .balloon { border-radius: 4px; background: #f6ecd2; font-family: "Song Myung", serif; font-weight: 400; transform: translateY(-55%) rotate(-2deg); }
+  .st-foot { position: absolute; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(1180px, calc(100vw - 48px)); display: flex; justify-content: space-between; color: #d9c9ac; font-size: 13px; }
+  body.mobile .st-page { padding: 8px; gap: 8px; width: calc(100vw - 24px); height: calc(100vh - 54px); }
+  body.mobile .st-panel { border-width: 3px; } body.mobile .st-panel .balloon { padding: 8px 10px; font-size: 12.5px; } body.mobile .st-panel .caption { font-size: 13px; padding: 8px 10px; }
+  .note-page { background: #f6ecd2; border: 1px solid #d9c49a; border-radius: 6px; padding: 12px 16px; box-shadow: 2px 3px 0 #d9c49a; font-family: "Song Myung", serif; }
+  .note-page h3 { margin: 0 0 6px; font-size: 18px; } .note-page p { margin: 0; line-height: 1.7; }
+  .note-page.locked { opacity: .5; font-family: inherit; }
+  .notes-list { display: grid; gap: 10px; }
+  #pause .card { max-height: calc(100vh - 32px); overflow-y: auto; }
+  .pause-tabs { display: flex; gap: 8px; margin-top: 10px; } .pause-tabs .btn { flex: 1; margin: 0; }
+  #pauseSettings { margin-top: 12px; text-align: left; }
+  #pauseSettings #renameBtn, #pauseSettings .danger { display: none; } /* 영업 중엔 이름 바꾸기·처음부터는 숨김 */
+  .keylist { margin-top: 12px; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; text-align: left; font-size: 14px; }
+  .keylist kbd, .keybind kbd { font: 800 12px system-ui !important; background: #3a2a20 !important; color: #fff !important; opacity: 1 !important; border-radius: 5px; padding: 2px 7px; white-space: nowrap; box-shadow: 0 2px 0 #1a120c; }
+  .keybind { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; font-size: 13.5px; }
+  .keybind button { border: 2px solid #e3d7c0; background: #fffaf0; border-radius: 8px; padding: 3px 10px; font: 800 12.5px system-ui; cursor: pointer; min-width: 74px; }
+  .keybind button.wait { border-color: var(--red); color: var(--red); }
+  .kit-btn.sel { outline: 3px solid #ffd23a; outline-offset: 2px; }
+  body.tickets-big #tickets { transform: scale(1.4); transform-origin: top left; z-index: 6; }
   .settings .danger { background: #f8e6df; border-radius: 12px; padding: 10px 12px; font-size: 13px; }
   .settings .danger p { margin: 0 0 8px; } #resetAsk { margin-top: 8px; } #resetAsk .row { display: flex; gap: 8px; margin-top: 6px; } #resetAsk .btn { flex: 1; }
   body.mobile .card.hub { padding: 9px 12px 8px; } body.mobile .hub-name h1 { font-size: 22px; } body.mobile .hub-grid { grid-template-columns: 1fr 170px; gap: 9px; }
@@ -224,7 +341,22 @@
   .rg-head b { font-size: 16px; } .rg-head small { font-size: 12px; opacity: .8; } .rg-head .st { font-size: 12.5px; font-weight: 800; color: var(--red); }
   .rg-desc { font-size: 13px; margin: 8px 0; } #travelGo { width: 100%; margin-top: 6px; }
   /* 가게 차리기 */
-  .name-card { width: min(440px, 100%); display: flex; flex-direction: column; gap: 9px; text-align: left; }
+  .name-card { width: min(760px, 100%); max-height: calc(100vh - 24px); overflow-y: auto; display: flex; flex-direction: column; gap: 9px; text-align: left; }
+  .story-line { margin: -4px 0 2px; text-align: center; font-size: 13.5px; line-height: 1.55; opacity: .85; }
+  .char-make { display: grid; grid-template-columns: 170px 1fr; gap: 16px; align-items: start; }
+  .char-left { display: flex; flex-direction: column; gap: 8px; align-items: center; position: sticky; top: 0; }
+  .char-left .btn { width: auto; margin: 0; padding: 6px 14px; font-size: 13px; }
+  .char-portrait { width: 160px; height: 186px; }
+  .char-portrait svg, .home-avatar svg { width: 100%; height: 100%; display: block; }
+  .char-right { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .char-opts { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; font-size: 13px; font-weight: 800; }
+  .char-opts .sw { display: flex; gap: 5px; flex-wrap: wrap; }
+  .char-opts button { border: 2px solid #e3d7c0; background: #fffaf0; border-radius: 8px; padding: 3px 9px; font: 700 12.5px inherit; cursor: pointer; color: var(--ink); }
+  .char-opts button.dot { width: 26px; height: 26px; padding: 0; border-radius: 50%; }
+  .char-opts button.on { border-color: var(--red); box-shadow: 0 0 0 2px rgba(184,50,42,.25); }
+  .home-avatar { width: 46px; height: 54px; flex: none; align-self: center; border-radius: 10px; overflow: hidden; background: #f2e3c4; }
+  body.mobile .char-make { grid-template-columns: 120px 1fr; gap: 10px; } body.mobile .char-portrait { width: 116px; height: 135px; }
+  body.mobile .story-line { font-size: 12px; } body.mobile .name-card h1 { font-size: 18px; }
   .name-card h1 { font-size: 21px; margin: 0 0 4px; text-align: center; }
   .name-card label { display: flex; flex-direction: column; gap: 4px; font-weight: 800; font-size: 14px; }
   .name-card input { font: inherit; font-size: 17px; padding: 9px 12px; border-radius: 10px; border: 2px solid #d9c7a4; background: #fffaf0; color: var(--ink); }
@@ -521,6 +653,8 @@
     <button class="chip" id="mPause" title="일시정지">⏸</button>
   </div>
   <div id="tickets"></div>
+  <div id="potPanel"></div>
+  <div id="keyHints"></div>
   <div id="labels"></div>
   <div id="crosshair"></div>
   <div id="hint"></div>
@@ -558,9 +692,16 @@
 <!-- 처음 한 번: 가게 차리기 (사장님 이름 · 가게 이름) -->
 <div id="nameSetup" class="overlay hidden">
   <div class="card name-card">
-    <h1>🏮 오늘, 나의 라멘집을 엽니다</h1>
-    <label>사장님 이름<input id="ownerName" maxlength="8" placeholder="예: 준" autocomplete="off"></label>
-    <label>가게 이름<input id="shopName" maxlength="12" placeholder="예: 준이네 라멘" autocomplete="off"></label>
+    <h1>🏮 할아버지의 라멘집을 물려받던 날</h1>
+    <p class="story-line">골목 끝 낡은 라멘집. 할아버지가 남긴 건 가게 열쇠와 마지막 장이 비어 있는 비법 노트 한 권.<br>「너만의 <b>인생 라멘</b>을 찾아라.」</p>
+    <div class="char-make">
+      <div class="char-left"><div id="charPreview" class="char-portrait"></div><button class="btn sub" id="charRandom" type="button">🎲 무작위</button></div>
+      <div class="char-right">
+        <label>사장님 이름<input id="ownerName" maxlength="8" placeholder="예: 준" autocomplete="off"></label>
+        <label>가게 이름<input id="shopName" maxlength="12" placeholder="예: 준이네 라멘" autocomplete="off"></label>
+        <div id="charOpts" class="char-opts"></div>
+      </div>
+    </div>
     <p class="name-preview" id="namePreview"></p>
     <button class="btn" id="nameOk">가게 열기</button>
   </div>
@@ -571,12 +712,13 @@
     <!-- 홈: 가게 사무실 -->
     <section class="view" data-view="home">
       <header class="hub-head">
-        <div class="hub-name"><h1 class="brand">인생<span>라멘</span></h1><div id="shopTitle" class="shop-title"></div></div>
+        <div class="hub-name"><div id="homeAvatar" class="home-avatar" title="내 캐릭터 (설정에서 바꾸기)"></div><h1 class="brand">인생<span>라멘</span></h1><div id="shopTitle" class="shop-title"></div></div>
         <div class="hub-right"><span id="regionTag" class="region-tag"></span><button class="icon-btn" data-open="settings" title="설정">⚙</button></div>
       </header>
       <div id="ownerInfo"></div>
       <div class="hub-grid">
         <div class="hub-today">
+          <h3 class="today-title">오늘의 장사</h3>
           <div class="day-box" id="dayInfo"></div>
           <div id="todayMissions"></div>
           <div class="grade-pick" id="startGrade"></div>
@@ -587,6 +729,7 @@
           <button class="tile" data-open="map"><b>🗾 전국 지도</b><small id="tileMap"></small></button>
           <button class="tile" data-open="shop"><b>🏪 상점</b><small id="tileShop"></small></button>
           <button class="tile" data-open="guide"><b>📖 조작법</b><small>화면에서 하나씩 짚어 줘요</small></button>
+          <button class="tile" data-open="notes"><b>📓 할아버지 노트</b><small id="tileNotes"></small></button>
         </div>
       </div>
       <div class="foot"><button class="btn" id="startBtn">영업 시작</button></div>
@@ -619,16 +762,29 @@
           <li><i>🔥</i><b>챠슈 · 토핑</b><small>아래 재료 버튼 (챠슈는 꾹)</small></li>
           <li><i>✅</i><b>완성 → 내기</b><small>초록 고리가 뜨면 🍜 내기</small></li>
         </ol>
+        <div class="pc-only"><h3 style="margin:10px 0 4px">⌨ PC 조작</h3><div class="keylist"></div></div>
         <button class="btn coach-open" id="coachBtn">👀 게임 화면에서 조작 보기 (① 앞 · ② 뒤)</button>
         <p class="coach-hint">실제 화면 위에 어디를 누르는지 짚어 줘요.</p>
         <details class="credit"><summary>ⓘ 크레딧</summary>목소리: VOICEVOX:青山龍星 / 玄野武宏 / 剣崎雌雄 / 雀松朱司 / 麒ヶ島宗麟 / 白上虎太郎 / 四国めたん / 九州そら / 冥鳴ひまり / 春日部つむぎ / 波音リツ / No.7 / ちび式じい / もち子さん / 東北イタコ</details>
       </div>
     </section>
+    <!-- 할아버지 비법 노트 -->
+    <section class="view" data-view="notes" hidden>
+      <header class="view-head"><button class="back">← 홈</button><h2>📓 할아버지의 비법 노트</h2></header>
+      <div class="scroll"><div class="notes-list" id="notesList"></div></div>
+    </section>
     <!-- 설정 -->
     <section class="view" data-view="settings" hidden>
       <header class="view-head"><button class="back">← 홈</button><h2>⚙ 설정</h2><small class="ver"></small></header>
       <div class="scroll settings">
-        <button class="btn sub" id="renameBtn">✏️ 사장님·가게 이름 바꾸기</button>
+        <button class="btn sub" id="renameBtn">✏️ 내 캐릭터 · 가게 이름 바꾸기</button>
+        <div class="set-row"><b>🖥 화면</b><button class="btn sub" id="fsBtn">전체 화면</button></div>
+        <div class="set-row"><b>✨ 그래픽 품질</b><div class="seg" id="gfxSeg"><button data-q="low">낮음</button><button data-q="mid">보통</button><button data-q="high">높음</button></div></div>
+        <p class="set-note">게임이 버벅이거나 기기가 뜨거우면 「낮음」으로 바꿔 보세요.</p>
+        <div class="set-row"><b>🔊 소리 크기</b><input type="range" id="volRange" min="0" max="100" step="5" aria-label="소리 크기"><span id="volVal"></span></div>
+        <div class="set-row pc-only"><b>🖱 조작 방식</b><div class="seg" id="aimSeg"><button data-a="look">마우스로 시점 (추천)</button><button data-a="cursor">커서로 클릭</button></div></div>
+        <div class="set-row pc-only"><b>🎯 마우스 감도</b><input type="range" id="sensRange" min="30" max="250" step="10" aria-label="마우스 감도"><span id="sensVal"></span></div>
+        <div class="pc-only"><b>⌨ 키 바꾸기</b> <small style="opacity:.7">버튼을 누른 뒤 원하는 키를 누르세요</small><div class="keybind" id="keyBind"></div></div>
         <div class="danger">
           <p>이 지역 가게를 Day 1부터 다시 시작해요 (금고·업그레이드도 처음으로). 사장 레벨·명성 별은 그대로예요.</p>
           <button class="btn sub" id="resetBtn">처음부터 다시</button>
@@ -639,12 +795,21 @@
   </div>
 </div>
 
+<div id="story" class="hidden">
+  <div class="st-page" id="stPage"></div>
+  <div class="st-foot"><span id="stPageNo"></span><span>▶ 클릭 · Space 다음 컷</span></div>
+  <button class="st-skip" id="stSkip">건너뛰기 ⏭</button>
+</div>
+
 <div id="pause" class="overlay hidden">
   <div class="card" style="max-width:380px;text-align:center">
     <h1>일시정지</h1>
     <p class="ver"></p>
     <p>주방은 잠시 멈춰 있어요.</p>
     <button class="btn" id="resumeBtn">계속하기</button>
+    <div class="pause-tabs"><button class="btn sub" id="pauseSetBtn">⚙ 설정</button><button class="btn sub pc-only" id="pauseKeyBtn">⌨ 조작법</button></div>
+    <div id="pauseSettings" hidden></div>
+    <div id="pauseKeys" class="keylist" hidden></div>
   </div>
 </div>
 
@@ -696,7 +861,7 @@
 <script type="module">
 import * as THREE from 'three';
 // 게임 버전 — 베타에 올릴 때마다 올림 (시작 화면·일시정지에 표시해서 어느 버전인지 바로 확인)
-const APP_VERSION = 'v1.16', APP_DATE = '11/22';
+const APP_VERSION = 'v1.17', APP_DATE = '11/23';
 document.querySelectorAll('.ver').forEach(el => { el.textContent = `${APP_VERSION} · ${APP_DATE}`; });
 
 // ================= 전국 라멘 제패: 지역 =================
@@ -719,6 +884,67 @@ const rkey = k => (REGION_ID !== 'tokyo' && REGION_KEYS.has(k) ? `${k}@${REGION_
 const BRANCH = { tokyo: '', fukuoka: '하카타점', sapporo: '삿포로점', yokohama: '요코하마점', osaka: '오사카점' };
 const ownerInfo = () => { try { return JSON.parse(localStorage.getItem('ramen-owner')); } catch (e) { return null; } };
 const ownerName = () => ownerInfo()?.name || '사장';
+// ---------- 내 캐릭터 (외모) ----------
+const LOOK_OPTS = {
+  skin: { name: '피부', dot: true, list: [['#f6d9c0', '밝음'], ['#e9bd98', '보통'], ['#d39a6e', '구릿빛'], ['#9a6440', '짙음']] },
+  hair: { name: '머리', list: [['short', '짧은 머리'], ['sport', '스포츠'], ['bob', '단발'], ['tie', '묶은 머리'], ['long', '긴 머리'], ['bald', '삭발']] },
+  hairColor: { name: '머리색', dot: true, list: [['#1c1612', '검정'], ['#4a2e1c', '갈색'], ['#8a5a2a', '밝은 갈색'], ['#c8a060', '금발'], ['#a8302a', '빨강'], ['#9a9a9a', '회색']] },
+  eyes: { name: '눈', list: [['round', '동그란 눈'], ['smile', '웃는 눈'], ['sharp', '날카로운 눈']] },
+  band: { name: '머리띠', list: [['white', '흰 머리띠'], ['red', '빨간 머리띠'], ['towel', '남색 두건'], ['none', '없음']] },
+  jacket: { name: '조리복', dot: true, list: [['#f6f2ea', '흰색'], ['#2a3550', '남색'], ['#26262a', '검정'], ['#8a2a22', '팥색']] },
+  apron: { name: '앞치마', dot: true, list: [['#3a2a20', '짙은 갈색'], ['#1f2b4a', '남색'], ['#b8322a', '빨강'], ['#e9e2d2', '생성']] },
+};
+const DEFAULT_LOOK = { skin: '#e9bd98', hair: 'short', hairColor: '#1c1612', eyes: 'round', band: 'white', jacket: '#f6f2ea', apron: '#3a2a20' };
+const lookNow = () => ({ ...DEFAULT_LOOK, ...(ownerInfo()?.look || {}) });
+// 초상 (임시 그림 — 나중에 힉스필드 그림으로 바꿀 자리). mood: happy | normal
+function charSVG(L, mood = 'happy') {
+  const shade = (hex, k) => { const c = new THREE.Color(hex); c.offsetHSL(0, 0, k); return '#' + c.getHexString(); };
+  const skinD = shade(L.skin, -0.08), hairD = shade(L.hairColor, -0.06), jacketD = shade(L.jacket, -0.1);
+  const back = { bob: `<path d="M30 54 Q29 22 60 21 Q91 22 90 54 L91 82 Q86 88 79 82 L41 82 Q34 88 29 82Z" fill="${L.hairColor}"/>`,
+    long: `<path d="M29 52 Q28 20 60 20 Q92 20 91 52 L95 118 Q84 124 76 112 L44 112 Q36 124 25 118Z" fill="${L.hairColor}"/>`,
+    tie: `<path d="M78 34 Q100 40 96 70 Q92 58 82 50Z" fill="${hairD}"/>` }[L.hair] ?? '';
+  const front = { short: `<path d="M33 56 Q30 24 60 23 Q90 24 87 56 Q84 40 72 37 Q62 44 48 37 Q36 42 33 56Z" fill="${L.hairColor}"/>`,
+    sport: `<path d="M35 50 Q34 28 60 27 Q86 28 85 50 Q78 38 60 37 Q42 38 35 50Z" fill="${L.hairColor}" opacity=".92"/>`,
+    bob: `<path d="M32 58 Q30 24 60 23 Q90 24 88 58 Q86 44 76 40 Q66 46 52 40 Q40 42 32 58Z" fill="${L.hairColor}"/>`,
+    tie: `<path d="M33 54 Q31 24 60 23 Q89 24 87 54 Q82 38 60 36 Q40 38 33 54Z" fill="${L.hairColor}"/><circle cx="84" cy="36" r="6" fill="${hairD}"/>`,
+    long: `<path d="M32 58 Q30 23 60 22 Q90 23 88 58 Q84 40 70 38 Q58 46 46 39 Q37 44 32 58Z" fill="${L.hairColor}"/>`,
+    bald: '' }[L.hair];
+  const band = { white: ['#f6f2ea', '#d8d2c6'], red: ['#c8302a', '#8a1a14'], towel: ['#2a3a6a', '#1a2448'], none: null }[L.band];
+  const bandSvg = !band ? '' : L.band === 'towel'
+    ? `<path d="M31 50 Q30 20 60 19 Q90 20 89 50 Q78 40 60 39 Q42 40 31 50Z" fill="${band[0]}"/><path d="M86 44 l10 6 l-4 8 l-8 -6z" fill="${band[1]}"/><path d="M40 30 h40" stroke="rgba(255,255,255,.25)" stroke-width="2"/>`
+    : `<path d="M32 44 Q60 36 88 44 L88 51 Q60 43 32 51Z" fill="${band[0]}" stroke="${band[1]}" stroke-width="1"/><path d="M87 46 l11 -6 l-2 9 z M87 48 l10 8 l-9 1 z" fill="${band[0]}" stroke="${band[1]}" stroke-width="1"/>`;
+  const eyes = { round: `<ellipse cx="49" cy="61" rx="3.4" ry="4.2" fill="#1c1410"/><ellipse cx="71" cy="61" rx="3.4" ry="4.2" fill="#1c1410"/><circle cx="50.2" cy="59.6" r="1.2" fill="#fff"/><circle cx="72.2" cy="59.6" r="1.2" fill="#fff"/>`,
+    smile: `<path d="M44 62 q5 -6 10 0 M66 62 q5 -6 10 0" stroke="#1c1410" stroke-width="2.6" fill="none" stroke-linecap="round"/>`,
+    sharp: `<path d="M44 61 l10 -2 l-1 4 z M76 61 l-10 -2 l1 4 z" fill="#1c1410"/>` }[L.eyes];
+  const brows = L.eyes === 'sharp' ? `<path d="M43 53 l11 3 M77 53 l-11 3" stroke="${hairD}" stroke-width="2.6" stroke-linecap="round"/>`
+    : `<path d="M44 54 q5 -3 10 0 M66 54 q5 -3 10 0" stroke="${hairD}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+  const mouth = mood === 'happy' ? `<path d="M52 73 q8 8 16 0 z" fill="#8a3a2a"/><path d="M54 74 q6 4 12 0" fill="#e88a7a"/>` : `<path d="M53 75 h14" stroke="#7a3a2a" stroke-width="2.4" stroke-linecap="round"/>`;
+  return `<svg viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="120" height="140" fill="#f2e3c4"/><circle cx="60" cy="64" r="52" fill="#ead2a6"/>
+    ${back}
+    <path d="M14 140 Q16 104 44 96 L60 106 L76 96 Q104 104 106 140Z" fill="${L.jacket}"/>
+    <path d="M44 96 L60 120 L76 96" fill="none" stroke="${jacketD}" stroke-width="2"/>
+    ${L.suit ? `<path d="M48 97 L60 118 L72 97Z" fill="#f4f2ee"/><path d="M57 102 L63 102 L64 124 L60 130 L56 124Z" fill="${L.suit}"/>` : ''}
+    ${L.apron && L.apron !== 'none' ? `<path d="M38 116 L82 116 L86 140 L34 140Z" fill="${L.apron}"/><path d="M42 116 L36 100 M78 116 L84 100" stroke="${L.apron}" stroke-width="4"/>` : ''}
+    <rect x="52" y="82" width="16" height="16" rx="3" fill="${skinD}"/>
+    <ellipse cx="33" cy="63" rx="5" ry="7" fill="${skinD}"/><ellipse cx="87" cy="63" rx="5" ry="7" fill="${skinD}"/>
+    <ellipse cx="60" cy="60" rx="27" ry="30" fill="${L.skin}"/>
+    ${front}${bandSvg}${brows}${eyes}
+    <ellipse cx="44" cy="70" rx="5" ry="3" fill="rgba(230,110,100,.28)"/><ellipse cx="76" cy="70" rx="5" ry="3" fill="rgba(230,110,100,.28)"/>
+    ${mouth}
+    ${L.beard ? `<path d="M40 70 Q42 92 60 94 Q78 92 80 70 Q74 80 66 80 Q60 76 54 80 Q46 80 40 70Z" fill="${L.beard}"/><path d="M50 73 Q60 68 70 73 Q64 76 60 75 Q56 76 50 73Z" fill="${L.beard}"/>` : ''}
+    ${L.glasses ? `<g fill="none" stroke="#2a2420" stroke-width="2"><circle cx="49" cy="61" r="7.5"/><circle cx="71" cy="61" r="7.5"/><path d="M56.5 61 h7 M41.5 59 l-8 -2 M78.5 59 l8 -2"/></g>` : ''}
+    ${L.sepia ? '<rect width="120" height="140" fill="#a07840" opacity=".22"/>' : ''}</svg>`;
+}
+// 등장인물 (임시 초상 — 나중에 힉스필드 그림으로)
+const CAST = {
+  grandpa: { name: '할아버지', look: { skin: '#e2b48e', hair: 'bald', hairColor: '#d8d4cc', eyes: 'smile', band: 'white', jacket: '#f6f2ea', apron: '#3a2a20', beard: '#ece8e0', sepia: true } },
+  kuroda: { name: '구로다 (멘오 지점장)', look: { skin: '#f0d0b0', hair: 'short', hairColor: '#141210', eyes: 'sharp', band: 'none', jacket: '#26262e', apron: 'none', suit: '#a8242a', glasses: true } },
+  sato: { name: '사토 할아버지 (단골)', look: { skin: '#e9bd98', hair: 'sport', hairColor: '#b8b8b8', eyes: 'smile', band: 'none', jacket: '#6a7a52', apron: 'none', glasses: true } },
+  yoshie: { name: '요시에 할머니 (하카타)', look: { skin: '#e6b892', hair: 'tie', hairColor: '#c8c4bc', eyes: 'smile', band: 'red', jacket: '#f6f2ea', apron: '#b8241c' } },
+  takeshi: { name: '다케시 (요코하마 장인)', look: { skin: '#d8a47e', hair: 'sport', hairColor: '#1c1612', eyes: 'sharp', band: 'towel', jacket: '#26262a', apron: '#d8a81c', beard: '#2a2420' } },
+  haruo: { name: '하루오 할아버지 (삿포로)', look: { skin: '#eac4a4', hair: 'short', hairColor: '#d0ccc4', eyes: 'round', band: 'none', jacket: '#2a3550', apron: '#5a3a24', beard: '#e4e0d8' } },
+};
 // 지역 말투: 하카타에선 손님이 하카타벤(사투리)을 씀 — 한글 발음 + (뜻)
 const HK = (tokyo, hakata, yoko, sappo) => (HAKATA ? hakata : YOKO && yoko !== undefined ? yoko : SAPPO && sappo !== undefined ? sappo : tokyo); // 요코하마는 하마 말투(~쟝)
 const shopName = () => (ownerInfo()?.shop || '인생라멘') + (BRANCH[REGION_ID] ? ' ' + BRANCH[REGION_ID] : '');
@@ -1004,6 +1230,8 @@ const TOPPING_Z = -1.12;
 const params = new URLSearchParams(location.search);
 
 // ================= 사운드 (브라우저에서 직접 합성) =================
+// 전체 소리 크기 (설정 화면, 0~1) — 지역과 상관없이 하나
+const volumeNow = () => { try { const v = parseFloat(localStorage.getItem('ramen-volume')); return isNaN(v) ? 1 : v; } catch (e) { return 1; } };
 const Sound = (() => {
   let ctx, master, noiseBuf, boilGain, sizzleGain;
   let boilTarget = 0, sizzleOn = false;
@@ -1094,7 +1322,7 @@ const Sound = (() => {
       unlockMobileAudio();
       if (ctx) { if (ctx.state !== 'running') ctx.resume(); return; }
       ctx = new (window.AudioContext || window.webkitAudioContext)();
-      master = ctx.createGain(); master.gain.value = 0.7; master.connect(ctx.destination);
+      master = ctx.createGain(); master.gain.value = 0.7 * volumeNow(); master.connect(ctx.destination);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
       const d = noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -1161,6 +1389,7 @@ const Sound = (() => {
     },
     decode: ab => ctx.decodeAudioData(ab),
     get ready() { return !!ctx; },
+    setVolume(v) { if (master) master.gain.value = 0.7 * v; },
   };
 })();
 
@@ -1238,9 +1467,13 @@ const SHOP_VOICE = {
 // ================= 렌더러 / 씬 =================
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 // 휴대폰은 화질 배율을 1.5로: 그래픽 메모리가 모자라면 iOS가 WebGL 화면을 끊어서 검게 변하는 걸 줄임
-renderer.setPixelRatio(Math.min(devicePixelRatio, matchMedia('(pointer: coarse)').matches ? 1.5 : 2));
+// 그래픽 품질 (설정 화면): low 1배 · 그림자 없음 / mid 1.5배 / high 최대 2배. 휴대폰 기본은 mid
+const GFX_KEY = 'ramen-gfx';
+const gfxNow = () => { try { return localStorage.getItem(GFX_KEY) || (matchMedia('(pointer: coarse)').matches ? 'mid' : 'high'); } catch (e) { return 'mid'; } };
+const gfxRatio = q => Math.min(devicePixelRatio, q === 'low' ? 1 : q === 'mid' ? 1.5 : 2);
+renderer.setPixelRatio(gfxRatio(gfxNow()));
 renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
+renderer.shadowMap.enabled = gfxNow() !== 'low';
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -3128,6 +3361,13 @@ function makeHand() {
   };
 }
 const camHand = makeHand();
+// 내 캐릭터 외모를 1인칭 손(피부)·소매(조리복 색)에 입힘
+function applyCharLook() {
+  const L = lookNow();
+  skinMat.color.set(L.skin); nailMat.color.set(L.skin).offsetHSL(0, -0.1, 0.08);
+  jacketMat.color.set(L.jacket);
+}
+applyCharLook();
 camHand.group.position.set(0.0, -0.04, 0.06); camHand.group.rotation.set(0.35, 0.3, 0.15);
 camHand.setCurl(0.35); holdGroup.add(camHand.group);
 // 토치를 쥘 때: 오른손을 토치 캔 오른쪽에 붙여 악수하듯 감싸 쥐고(엄지 위, 손바닥이 캔 쪽), 토치와 함께 그릴을 향해 돌아감
@@ -4271,10 +4511,16 @@ function updateSeats(dt) {
 // ================= 상호작용 =================
 const raycaster = new THREE.Raycaster(); raycaster.far = 4.2;
 const aimNDC = new THREE.Vector2(0, 0);
-let dragMode = !params.has('lock'); // 기본: 마우스 커서로 바로 클릭 (?lock 이면 1인칭 마우스 고정)
+let dragMode = true; // 아래에서 기기·설정을 보고 정함 (PC 기본: 마우스 시점 + 조준점)
+let kitSel = 0; // PC: 마우스 휠로 고른 재료 버튼 번호
 // 모바일(터치 화면)이면 터치용 화면 배치 · 버튼 (?mobile 로 PC에서도 확인 가능)
 const MOBILE = params.has('mobile') || matchMedia('(pointer: coarse)').matches;
 if (MOBILE) document.body.classList.add('mobile');
+// PC 기본은 스팀 게임처럼 「마우스로 시점 + 가운데 조준점」. 설정에서 「커서로 클릭」을 고르거나 ?drag 로 예전 방식
+const aimPref = () => { try { return localStorage.getItem('ramen-aim') || 'look'; } catch (e) { return 'look'; } };
+dragMode = MOBILE || params.has('drag') || aimPref() === 'cursor';
+let mouseSens = (() => { try { return parseFloat(localStorage.getItem('ramen-sens')) || 1; } catch (e) { return 1; } })();
+if (!MOBILE) { const tap = document.querySelector('.t-tap'); if (tap) tap.textContent = '🖱 클릭해서 시작'; } // PC는 터치 대신 클릭
 function isShown(o) { while (o) { if (!o.visible) return false; o = o.parent; } return true; }
 const AIM_ASSIST_PX = MOBILE ? 120 : 90; // 손가락은 커서보다 덜 정확하니 더 넓게
 // 토핑 통·그릴·미소 항아리·냉장고는 아래 버튼으로만 (화면에서 잘못 눌리지 않게)
@@ -4635,7 +4881,7 @@ addEventListener('pointermove', e => {
 });
 function look(dx, dy) {
   if (turnTarget != null) return;
-  yaw -= dx * 0.0024; pitch -= dy * 0.0024;
+  yaw -= dx * 0.0024 * mouseSens; pitch -= dy * 0.0024 * mouseSens;
   pitch = Math.max(-1.25, Math.min(0.7, pitch));
 }
 // 키보드는 PC에서 방향키로 둘러보기만 (단축키 없음 — 터치·클릭으로 조작)
@@ -4681,6 +4927,7 @@ function startDay() {
   G.missions = makeMissions(day); updateMissionChip(); updateComboChip();
   { const [g0, g1] = grillWindow(); document.querySelector('#grillGauge .track').style.background = `linear-gradient(90deg, #e6a7a0 0 ${g0 * 100}%, #4caf50 ${g0 * 100}% ${g1 * 100}%, #3b2418 ${g1 * 100}% 100%)`; } // 그릴 장비에 맞춘 초록 구간
   if (day === 1 && !tutDone()) startTutorial();
+  else setTimeout(maybeDayStory, 600);
   Sound.music(musicOn); Sound.setRain(G.event === 'rain');
   const e = ev();
   toast(`📅 <b>Day ${day} — ${lv.title}</b><br><small>${lv.note}</small>` + (G.event !== 'normal' ? `<br><b>${e.icon} 오늘은 ${e.name}!</b> <small>${e.note}</small>` : ''), 'warn');
@@ -4964,12 +5211,18 @@ document.getElementById('coachNext').onclick = () => { Sound.knob(); if (coachPa
 // ---------- 홈(가게 사무실): 오늘 할 일 + 지도 · 상점 · 조작법 · 설정 화면으로 ----------
 function openView(v) {
   document.querySelectorAll('#start .view').forEach(el => { el.hidden = el.dataset.view !== v; });
+  document.getElementById('start').classList.toggle('home-mode', v === 'home'); // PC: 홈은 왼쪽 메뉴 + 가게 배경
+  document.querySelector('#start .card.hub').classList.toggle('at-home', v === 'home');
   if (v === 'map') renderRegion();
 }
 document.querySelectorAll('#start [data-open]').forEach(b => b.addEventListener('click', () => { Sound.init(); Sound.knob(); openView(b.dataset.open); }));
 document.querySelectorAll('#start .back').forEach(b => b.addEventListener('click', () => { Sound.knob(); refreshHome(); openView('home'); }));
 function refreshHome() {
   document.getElementById('shopTitle').innerHTML = `🏮 <b>${shopName()}</b> · ${ownerName()} 사장님`;
+  document.getElementById('homeAvatar').innerHTML = charSVG(lookNow());
+  setTimeout(refreshNotes, 0); setTimeout(maybeHomeStory, 350);
+  { const homeOn = !document.querySelector('#start .view[data-view="home"]').hidden; // PC 홈 배치는 홈 화면이 보일 때만
+    document.getElementById('start').classList.toggle('home-mode', homeOn); document.querySelector('#start .card.hub').classList.toggle('at-home', homeOn); } // 스토리 데이터는 파일 뒤쪽에 있어서 다 읽힌 뒤에 실행
   document.getElementById('regionTag').innerHTML = `${REGION.icon} ${REGION.name} · ${isConquered() ? '👑 제패' : `랭킹 ${regionRank()}위`}`;
   document.getElementById('ownerInfo').innerHTML = levelBarHtml();
   document.getElementById('dayInfo').innerHTML = startInfoHtml();
@@ -4994,6 +5247,169 @@ document.getElementById('resetNo').onclick = () => { document.getElementById('re
 document.getElementById('resetYes').onclick = () => { // 이 지역 가게를 금고·업그레이드까지 처음부터
   day = 1; saveDay(); bank = 0; for (const k in upgLv) delete upgLv[k]; store.set('ramen-bank', 0); store.set('ramen-upg', []); store.set('ramen-upg2', {}); store.set('ramen-seen', 1); store.set('ramen-tut-done', false); setRep(3); startDay();
 };
+// ================= 스토리: 할아버지의 비법 노트 =================
+// 대사는 [누가, 말] — me = 내 캐릭터, narr = 해설, 나머지는 CAST. {name} {shop} 은 내 이름·가게 이름으로 바뀜
+const STORY = {
+  prologue: [
+    ['narr', '할아버지가 돌아가시고 한 달.\n오랫동안 닫혀 있던 골목 끝 라멘집의 셔터를 올렸다.'],
+    ['me', '…먼지투성이네. 할아버지, 정말 이 가게를 저한테 맡기신 거예요?'],
+    ['narr', '카운터 위에 낡은 노트 한 권과 편지 한 장이 놓여 있었다.'],
+    ['grandpa', '{name}에게.\n이 노트엔 내가 평생 전국을 돌며 배운 라멘이 적혀 있다.'],
+    ['grandpa', '그런데 마지막 장은 비워 두었다. 그건 네가 채울 차례다.\n너만의 「인생 라멘」을 찾아라.'],
+    ['narr', '그때, 가게 문이 드르륵 열렸다.'],
+    ['kuroda', '여기가 그 영감님 가게로군요. 라멘 체인 「멘오(麺王)」의 구로다입니다.'],
+    ['kuroda', '이 골목 가게들은 곧 전부 멘오 지점이 될 겁니다. 오래 버티진 못하실 테니, 팔 생각이 생기면 연락 주시죠.'],
+    ['me', '…이 가게는 안 팔아요. 할아버지 라멘, 제가 지킬 거예요.'],
+    ['narr', '「{shop}」, 오늘부터 영업 시작!'],
+  ],
+  tokyo_d3: [
+    ['narr', '점심 장사 전. 골목 입구에 「멘오」 깃발이 펄럭인다.'],
+    ['kuroda', '손님이 좀 드나 보군요. 하지만 우리 멘오는 하루 500그릇을 팝니다.'],
+    ['me', '그릇 수가 중요한가요? 한 그릇이라도 제대로 내는 게 중요하죠.'],
+    ['kuroda', '후훗. 그 말이 언제까지 가는지 보죠.'],
+  ],
+  tokyo_d6: [
+    ['sato', '자네가 그 집 손주구먼. 내가 이 가게 단골만 40년이야.'],
+    ['sato', '자네 할아버지는 말이야, 손님 얼굴만 봐도 면을 얼마나 삶을지 알았지.'],
+    ['me', '얼굴만 보고요?'],
+    ['sato', '배고픈 얼굴, 지친 얼굴, 기분 좋은 얼굴…\n한 그릇에 그 사람 하루를 담는 거라고 하더군.'],
+    ['me', '(노트 첫 장에도 비슷한 말이 있었는데…)'],
+  ],
+  tokyo_duel: [
+    ['kuroda', '골목 손님들이 전부 그쪽으로 간다는 소문이 돌더군요.'],
+    ['kuroda', '좋습니다. 「도쿄 명가 대결」. 하루 동안 누가 손님을 더 만족시키는지 겨뤄 보죠.'],
+    ['me', '좋아요. 할아버지 가게 이름을 걸고요.'],
+  ],
+  tokyo_win: [
+    ['kuroda', '…말도 안 돼. 이런 작은 가게에 졌다고?'],
+    ['kuroda', '하지만 이걸로 끝이 아닙니다. 멘오는 전국에 있으니까요. 하카타에서 보죠.'],
+    ['narr', '그날 밤, 노트 첫 장의 글씨가 유난히 또렷하게 보였다.'],
+    ['grandpa', '「기본」 — 좋은 육수, 정직한 면, 그리고 손님의 얼굴.\n다음 장은 하카타의 요시에 할머니에게 배웠다.'],
+    ['narr', '📓 할아버지 노트 1장을 얻었다!\n다음 목적지: 후쿠오카 하카타'],
+  ],
+  fukuoka_arrive: [
+    ['narr', '하카타, 나카스 강변. 밤이 되면 포장마차 불빛이 강물에 번진다.'],
+    ['yoshie', '아이고, 니가 그 영감 손주가? 얼굴이 쏙 빼닮았네~'],
+    ['yoshie', '하카타 면은 가늘어서 몇 초가 승부라. 손님 오래 세워 두면 다 가 뿐다 아이가.'],
+    ['me', '빨리… 그래도 정성은 들여야죠?'],
+    ['yoshie', '빠른 게 곧 정성이다. 니 할배도 처음엔 면을 다 불려 묵었데이. 하하! 해 봐라.'],
+  ],
+  fukuoka_duel: [
+    ['kuroda', '또 뵙네요. 멘오 하카타점은 회전율로 승부합니다. 손님을 얼마나 빨리 만족시키는지 보죠.'],
+    ['yoshie', '쫄지 마래이. 하리가네 3초, 니 손은 이미 알고 있다.'],
+  ],
+  fukuoka_win: [
+    ['kuroda', '크윽… 속도까지 따라잡다니.'],
+    ['yoshie', '잘했다! 니 할배보다 손이 빠르네. 이거 가져가라.'],
+    ['grandpa', '「속도」 — 면은 기다려 주지 않는다. 빠름은 정성의 다른 이름이다.\n다음 장은 요코하마의 다케시에게서.'],
+    ['narr', '📓 할아버지 노트 2장을 얻었다!\n다음 목적지: 요코하마'],
+  ],
+  yokohama_arrive: [
+    ['narr', '요코하마 항구. 노란 간판의 이에케 가게들이 줄지어 있다.'],
+    ['takeshi', '…영감 손주냐. 이에케는 손님이 정한다. 굳기, 진하기, 기름.'],
+    ['me', '손님마다 전부 다르게요?'],
+    ['takeshi', '그게 이에케다. 손님 말을 흘려듣는 놈은 이 거리에서 못 버틴다.'],
+  ],
+  yokohama_duel: [
+    ['kuroda', '멘오 요코하마점은 맛을 하나로 통일했습니다. 그게 효율이죠.'],
+    ['takeshi', '…저놈한테 보여 줘라. 「카타메·코이메·오오메」가 뭔지.'],
+  ],
+  yokohama_win: [
+    ['kuroda', '손님 하나하나에 맞춘다니… 비효율적인데 왜 이기는 거지?'],
+    ['takeshi', '…괜찮은 손이다. 영감이 남긴 거 받아 가라.'],
+    ['grandpa', '「손님의 취향」 — 라멘은 내가 아니라 손님이 완성한다.\n다음 장은 삿포로의 하루오 영감에게서.'],
+    ['narr', '📓 할아버지 노트 3장을 얻었다!\n다음 목적지: 삿포로'],
+  ],
+  sapporo_arrive: [
+    ['narr', '삿포로. 눈이 소복이 쌓인 거리에 미소 냄새가 퍼진다.'],
+    ['haruo', '어서 와, 춥지? 삿포로 미소는 웍에서 시작해.'],
+    ['haruo', '센 불이 무섭다고 불을 줄이면, 맛도 같이 줄어들지.'],
+    ['me', '불을… 겁내지 말 것.'],
+  ],
+  sapporo_duel: [
+    ['kuroda', '여기까지 따라오셨군요. 멘오 삿포로점의 웍은 기계가 볶습니다.'],
+    ['haruo', '기계는 불을 몰라. 네 손은 안다.'],
+  ],
+  sapporo_win: [
+    ['kuroda', '…본사에 보고해야겠군요. 오사카에서 기다리겠습니다. 사장님이 직접 나오실 겁니다.'],
+    ['haruo', '좋은 불이었어. 네 할아버지도 웃고 있을 거야.'],
+    ['grandpa', '「불」 — 센 불 앞에서 물러서지 마라. 웍은 마음을 볶는 것이다.\n남은 건 오사카, 그리고 마지막 장.'],
+    ['narr', '📓 할아버지 노트 4장을 얻었다!\n마지막 무대: 오사카 (준비 중)'],
+  ],
+};
+// 노트 장: 지역을 제패하면 열림
+const NOTE_PAGES = [
+  ['tokyo', '1장 · 도쿄', '「기본」', '좋은 육수, 정직한 면, 그리고 손님의 얼굴.\n한 그릇에 그 사람의 하루를 담아라.'],
+  ['fukuoka', '2장 · 하카타', '「속도」', '면은 기다려 주지 않는다.\n빠름은 정성의 다른 이름이다. — 요시에 할머니에게 배움'],
+  ['yokohama', '3장 · 요코하마', '「손님의 취향」', '라멘은 내가 아니라 손님이 완성한다.\n굳기, 진하기, 기름. 귀를 기울여라. — 다케시에게 배움'],
+  ['sapporo', '4장 · 삿포로', '「불」', '센 불 앞에서 물러서지 마라.\n웍은 마음을 볶는 것이다. — 하루오 영감에게 배움'],
+  ['osaka', '5장 · 오사카', '「???」', '(아직 가 보지 못했다)'],
+  ['last', '마지막 장', '「인생 라멘」', '(비어 있다… 네가 채울 차례다)'],
+];
+const storySeen = () => { try { return JSON.parse(localStorage.getItem('ramen-story') || '[]'); } catch (e) { return []; } };
+const markSeen = id => { try { localStorage.setItem('ramen-story', JSON.stringify([...new Set([...storySeen(), id])])); } catch (e) { /* 저장 불가 */ } };
+let storyOn = false;
+function playStory(id, done) {
+  const lines = STORY[id];
+  if (!lines || storySeen().includes(id) || storyOn) { done?.(); return false; }
+  storyOn = true; markSeen(id);
+  const el = document.getElementById('story'), page = document.getElementById('stPage'), pno = document.getElementById('stPageNo');
+  const wasPaused = G?.paused; if (G?.running) G.paused = true;
+  if (document.pointerLockElement) document.exitPointerLock();
+  const fill = t => t.replaceAll('{name}', ownerName()).replaceAll('{shop}', shopName());
+  // 컷 나누기: 해설은 가로로 넓은 컷(2칸), 대사는 1칸. 한 쪽 = 4칸
+  const pages = []; let cur = [], cells = 0;
+  for (const ln of lines) { const w = ln[0] === 'narr' ? 2 : 1; if (cells + w > 4) { pages.push(cur); cur = []; cells = 0; } cur.push(ln); cells += w; }
+  if (cur.length) pages.push(cur);
+  let pi = 0, li = -1;
+  const panelHtml = ([who, line], k) => {
+    const text = fill(line).replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+    if (who === 'narr') return `<div class="st-panel wide"><div class="tone"></div><div class="caption">${text}</div></div>`;
+    const L = who === 'me' ? lookNow() : CAST[who]?.look, side = k % 2 ? 'right' : 'left';
+    const name = who === 'me' ? `${ownerName()} 사장님` : CAST[who]?.name ?? '';
+    return `<div class="st-panel ${side} ${who === 'grandpa' ? 'letter' : ''}" style="--fx:${side === 'left' ? 25 : 75}%"><div class="lines"></div><div class="face">${L ? charSVG(L, 'happy') : ''}</div><span class="who">${name}</span><div class="balloon">${text}</div></div>`;
+  };
+  const next = () => {
+    li++;
+    if (li >= pages[pi].length) { pi++; li = 0; page.innerHTML = ''; if (pi >= pages.length) return finish(); }
+    page.insertAdjacentHTML('beforeend', panelHtml(pages[pi][li], page.children.length));
+    pno.textContent = `${pi + 1} / ${pages.length}쪽`;
+    Sound.init(); Sound.pick?.();
+  };
+  const onKey = e => { if (['Space', 'Enter', 'KeyE', 'NumpadEnter'].includes(e.code)) { e.preventDefault(); e.stopPropagation(); next(); } else if (e.code === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(); } };
+  function finish() {
+    el.classList.add('hidden'); el.onclick = null; removeEventListener('keydown', onKey, true); page.innerHTML = '';
+    storyOn = false;
+    if (G?.running) { G.paused = !!wasPaused; if (!G.paused) lockPointer(); }
+    refreshNotes(); done?.();
+  }
+  el.onclick = e => { if (e.target.id === 'stSkip') return; next(); };
+  document.getElementById('stSkip').onclick = e => { e.stopPropagation(); finish(); };
+  addEventListener('keydown', onKey, true);
+  page.innerHTML = ''; el.classList.remove('hidden'); next();
+  return true;
+}
+// 언제 어떤 장면이 나오는지
+function maybeHomeStory() {
+  if (storyOn || !ownerInfo() || document.getElementById('start').classList.contains('hidden')) return;
+  const R = REGION_ID, qs = regionQuests(), st = questState?.() ?? {};
+  const again = () => setTimeout(maybeHomeStory, 300); // 장면이 끝나면 다음 볼 장면이 있는지 이어서 확인
+  if (!storySeen().includes('prologue')) return playStory('prologue', again);
+  if (R !== 'tokyo' && STORY[`${R}_arrive`] && playStory(`${R}_arrive`, again)) return;
+  if (isConquered()) { if (STORY[`${R}_win`]) playStory(`${R}_win`); return; }
+  const others = qs.filter(q => !q.final);
+  if (others.length && others.every(q => st.done?.includes?.(q.id))) playStory(`${R}_duel`);
+}
+function maybeDayStory() { if (REGION_ID === 'tokyo') playStory(`tokyo_d${day}`); }
+function refreshNotes() {
+  const won = conquered();
+  const el = document.getElementById('notesList'); if (!el) return;
+  el.innerHTML = NOTE_PAGES.map(([r, ch, title, body]) => {
+    const open = won.includes(r);
+    return `<div class="note-page ${open ? '' : 'locked'}"><h3>${ch} ${open ? title : '🔒'}</h3><p>${open ? body.replaceAll('\n', '<br>') : r === 'last' ? '마지막 장은 비어 있다.' : '이 지역을 제패하면 열려요.'}</p></div>`;
+  }).join('');
+  const t = document.getElementById('tileNotes'); if (t) t.textContent = `${NOTE_PAGES.filter(([r]) => won.includes(r)).length} / 4장`;
+}
 // 가게 차리기: 사장님 이름 → 가게 이름을 '○○네 라멘'으로 추천 (직접 바꾸면 그대로)
 {
   const nameIn = document.getElementById('ownerName'), shopIn = document.getElementById('shopName'), prev = document.getElementById('namePreview');
@@ -5004,15 +5420,27 @@ document.getElementById('resetYes').onclick = () => { // 이 지역 가게를 �
   };
   nameIn.addEventListener('input', update);
   shopIn.addEventListener('input', () => { shopTouched = true; update(); }); // 한 번이라도 직접 고치면 추천으로 다시 채우지 않음 (다 지울 수 있게)
+  // 외모 고르기
+  let look = { ...lookNow() };
+  const optsEl = document.getElementById('charOpts'), prevEl = document.getElementById('charPreview');
+  const drawLook = () => {
+    prevEl.innerHTML = charSVG(look);
+    optsEl.innerHTML = Object.entries(LOOK_OPTS).map(([k, o]) => `<span>${o.name}</span><div class="sw">${o.list.map(([v, n]) =>
+      `<button type="button" data-k="${k}" data-v="${v}" title="${n}" class="${o.dot ? 'dot' : ''} ${look[k] === v ? 'on' : ''}" ${o.dot ? `style="background:${v}"` : ''}>${o.dot ? '' : n}</button>`).join('')}</div>`).join('');
+    optsEl.querySelectorAll('button').forEach(b => b.onclick = () => { look[b.dataset.k] = b.dataset.v; drawLook(); Sound.init(); Sound.place?.(); });
+  };
+  document.getElementById('charRandom').onclick = () => { for (const [k, o] of Object.entries(LOOK_OPTS)) look[k] = pick(o.list)[0]; drawLook(); };
   window.openNameSetup = () => {
     const o = ownerInfo(); nameIn.value = o?.name ?? ''; shopIn.value = o?.shop ?? ''; shopTouched = !!o?.shop; update();
+    look = { ...lookNow() }; drawLook();
     shopIn.placeholder = '비워 두면 「○○네 라멘」';
     document.getElementById('start').classList.add('hidden'); document.getElementById('nameSetup').classList.remove('hidden');
   };
   document.getElementById('nameOk').onclick = () => {
     const name = nameIn.value.trim();
     if (!name) { nameIn.focus(); prev.textContent = '사장님 이름을 적어 주세요'; return; }
-    try { localStorage.setItem('ramen-owner', JSON.stringify({ name, shop: shopIn.value.trim() || `${josa(name, '이네', '네')} 라멘` })); } catch (e) { /* 저장 불가 */ }
+    try { localStorage.setItem('ramen-owner', JSON.stringify({ name, shop: shopIn.value.trim() || `${josa(name, '이네', '네')} 라멘`, look })); } catch (e) { /* 저장 불가 */ }
+    applyCharLook();
     nameIn.blur(); shopIn.blur(); Sound.init(); Sound.happy();
     document.getElementById('nameSetup').classList.add('hidden'); document.getElementById('start').classList.remove('hidden');
     updateSign(); refreshHome(); openView('home');
@@ -5020,6 +5448,142 @@ document.getElementById('resetYes').onclick = () => { // 이 지역 가게를 �
   document.getElementById('renameBtn').onclick = () => openNameSetup();
 }
 document.getElementById('resumeBtn').onclick = () => { pause(false); lockPointer(); };
+// ---------- 설정: 전체 화면 · 그래픽 품질 · 소리 크기 ----------
+{
+  const fsBtn = document.getElementById('fsBtn');
+  const fsText = () => { fsBtn.textContent = document.fullscreenElement ? '창 모드로' : '전체 화면'; };
+  fsBtn.onclick = () => { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch (e) { /* 지원 안 함 */ } };
+  document.addEventListener('fullscreenchange', fsText); fsText();
+  const seg = document.getElementById('gfxSeg');
+  const showGfx = () => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.q === gfxNow()));
+  seg.querySelectorAll('button').forEach(b => b.onclick = () => {
+    try { localStorage.setItem(GFX_KEY, b.dataset.q); } catch (e) { /* 저장 불가 */ }
+    renderer.setPixelRatio(gfxRatio(b.dataset.q)); renderer.setSize(innerWidth, innerHeight);
+    const sh = b.dataset.q !== 'low';
+    if (renderer.shadowMap.enabled !== sh) { renderer.shadowMap.enabled = sh; scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.needsUpdate = true; }); }); }
+    showGfx();
+  });
+  showGfx();
+  const vol = document.getElementById('volRange'), volVal = document.getElementById('volVal');
+  vol.value = Math.round(volumeNow() * 100); volVal.textContent = vol.value + '%';
+  vol.oninput = () => { const v = vol.value / 100; volVal.textContent = vol.value + '%'; try { localStorage.setItem('ramen-volume', String(v)); } catch (e) { /* 저장 불가 */ } Sound.setVolume(v); };
+}
+// ---------- PC 조작 (스팀 표준) ----------
+// 마우스로 시점 · 왼쪽 클릭/E 집기·놓기 · 휠 재료 고르기 · 오른쪽 클릭 고른 재료 올리기 · Tab(누르고 있기) 주문서 크게 · Esc 메뉴
+// 키는 설정에서 바꿀 수 있음 (숫자 1~9는 고정: 앞 = 재료 버튼, 뒤 = 면 바구니)
+const KEY_ACTIONS = [
+  ['use', '집기 · 놓기 (조준점)', 'KeyE'], ['turn', '뒤돌기 / 앞 보기', 'Space'], ['bowl', '그릇 놓기', 'KeyB'], ['serve', '내기', 'Enter'],
+  ['trash', '손 비우기', 'KeyQ'], ['undo', '직전 토핑 빼기', 'KeyZ'], ['wok', '웍 볶음 (꾹, 삿포로)', 'KeyW'], ['orders', '주문서 크게 (꾹)', 'Tab'],
+];
+const KB = (() => { const d = Object.fromEntries(KEY_ACTIONS.map(([k, , c]) => [k, c])); try { return { ...d, ...JSON.parse(localStorage.getItem('ramen-keys') || '{}') }; } catch (e) { return d; } })();
+const keyLabel = c => ({ Space: 'Space', Enter: 'Enter', Tab: 'Tab', Escape: 'Esc', Backspace: '⌫', ShiftLeft: 'Shift', ShiftRight: 'Shift', ControlLeft: 'Ctrl', AltLeft: 'Alt', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' }[c]
+  ?? c.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Num '));
+const actionOf = code => Object.keys(KB).find(k => KB[k] === code);
+const heldKeys = new Map(); // 키 → 누르고 있는 버튼 (챠슈·웍)
+function keyButton(code) {
+  const m = /^(?:Digit|Numpad)([1-9])$/.exec(code);
+  if (m) {
+    const i = +m[1] - 1;
+    return facingBack ? document.querySelectorAll('#basketPad .bk-btn[data-i]')[i] : document.querySelectorAll('#kit .kit-btn')[i];
+  }
+  if (code === KB.wok) return document.getElementById('wokBtn');
+  return null;
+}
+const isHoldBtn = b => (b.classList.contains('grill') && b.dataset.k === 'chashu') || b.id === 'wokBtn';
+function pressButton(b, down) { // 키·오른쪽 클릭으로 화면 버튼 누르기 (꾹 누르는 버튼은 뗄 때 끝)
+  if (!b) return;
+  if (isHoldBtn(b)) b.dispatchEvent(new PointerEvent(down ? 'pointerdown' : 'pointerup', { bubbles: true }));
+  else if (down) b.click();
+}
+let keyWait = null; // 키 바꾸기: 다음에 누르는 키를 받을 행동
+addEventListener('keydown', e => {
+  if (keyWait) { e.preventDefault(); e.stopPropagation(); if (e.code !== 'Escape') { for (const k in KB) if (KB[k] === e.code) KB[k] = null; KB[keyWait] = e.code; saveKeys(); } keyWait = null; renderKeyBind(); return; }
+  if (MOBILE || e.repeat || e.target.closest?.('input, textarea')) return;
+  const a2 = actionOf(e.code);
+  if (a2 === 'orders') { e.preventDefault(); document.body.classList.add('tickets-big'); return; }
+  if (!G.running || G.paused) return;
+  if (a2 && a2 !== 'wok') {
+    e.preventDefault();
+    if (a2 === 'use') { if (press()) heldKeys.set(e.code, 'use'); return; }
+    ({ turn: turnAround, trash: discard, undo: undoBowl, serve: autoServe, bowl: () => act({ kind: 'bowlStack' }) })[a2]?.();
+    return;
+  }
+  const b = keyButton(e.code); if (!b) return;
+  e.preventDefault(); pressButton(b, true); if (isHoldBtn(b)) heldKeys.set(e.code, b);
+}, true);
+addEventListener('keyup', e => {
+  if (actionOf(e.code) === 'orders') document.body.classList.remove('tickets-big');
+  const b = heldKeys.get(e.code); if (!b) return;
+  heldKeys.delete(e.code);
+  if (b === 'use') grillEnd(); else pressButton(b, false);
+});
+// 마우스 휠: 아래 재료 버튼 중 하나 고르기 → 오른쪽 클릭으로 올리기 (챠슈는 오른쪽 버튼을 누르고 있기)
+function markKitSel() { if (MOBILE) return; document.querySelectorAll('#kit .kit-btn').forEach((b, i) => b.classList.toggle('sel', i === kitSel)); }
+addEventListener('wheel', e => {
+  if (MOBILE || !G.running || G.paused || facingBack || e.target.closest?.('.overlay, .scroll')) return;
+  const n = document.querySelectorAll('#kit .kit-btn').length; if (!n) return;
+  kitSel = (kitSel + (e.deltaY > 0 ? 1 : -1) + n) % n; markKitSel();
+}, { passive: true });
+let rightHeld = null;
+canvas.addEventListener('pointerdown', e => {
+  if (e.button !== 2 || MOBILE || !G.running || G.paused) return;
+  const b = facingBack ? document.getElementById('wokBtn') : document.querySelectorAll('#kit .kit-btn')[kitSel];
+  if (!b) return; pressButton(b, true); if (isHoldBtn(b)) rightHeld = b;
+});
+addEventListener('pointerup', e => { if (e.button === 2 && rightHeld) { pressButton(rightHeld, false); rightHeld = null; } });
+// 키 바꾸기 화면 · 조작법 목록
+function saveKeys() { try { localStorage.setItem('ramen-keys', JSON.stringify(KB)); } catch (e) { /* 저장 불가 */ } updateKeyBadges(); }
+function renderKeyBind() {
+  const el = document.getElementById('keyBind'); if (!el) return;
+  el.innerHTML = KEY_ACTIONS.map(([k, name]) => `<span>${name}</span><button data-k="${k}" class="${keyWait === k ? 'wait' : ''}">${keyWait === k ? '키를 누르세요…' : KB[k] ? keyLabel(KB[k]) : '없음'}</button>`).join('')
+    + '<span style="opacity:.7">기본값으로</span><button data-reset="1">되돌리기</button>';
+  el.querySelectorAll('button[data-k]').forEach(b => b.onclick = () => { keyWait = b.dataset.k; renderKeyBind(); });
+  el.querySelector('[data-reset]').onclick = () => { KEY_ACTIONS.forEach(([k, , c]) => { KB[k] = c; }); saveKeys(); renderKeyBind(); };
+  renderKeyList();
+}
+function keyListHtml() {
+  const k = c => `<kbd>${KB[c] ? keyLabel(KB[c]) : '–'}</kbd>`;
+  return [
+    [dragMode ? '<kbd>마우스</kbd>' : '<kbd>드래그</kbd>', '둘러보기'], ['<kbd>왼쪽 클릭</kbd> ' + k('use'), '조준한 것 집기 · 놓기 · 누르기'],
+    [k('turn'), '뒤돌기 / 앞 보기'], [k('bowl'), '그릇 놓기'], ['<kbd>1~9</kbd>', '앞: 재료 버튼 · 뒤: 면 바구니'],
+    ['<kbd>휠</kbd> <kbd>오른쪽 클릭</kbd>', '재료 고르기 → 올리기 (챠슈는 꾹)'], [k('serve'), '내기'], [k('trash'), '손 비우기'], [k('undo'), '직전 토핑 빼기'],
+    [k('wok'), '웍 볶음 (삿포로, 꾹)'], [k('orders'), '주문서 크게 보기 (꾹)'], ['<kbd>Esc</kbd>', '메뉴 · 일시정지'],
+  ].map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('');
+}
+function renderKeyList() { document.querySelectorAll('.keylist').forEach(el => { el.innerHTML = keyListHtml(); }); }
+function updateKeyBadges() {
+  if (MOBILE) return;
+  [['mTurn', 'turn'], ['mUndo', 'undo'], ['mServe', 'serve'], ['mTrash', 'trash']].forEach(([id, a]) => {
+    const btn = document.getElementById(id); if (!btn) return;
+    btn.querySelector('.kh')?.remove(); if (KB[a]) btn.insertAdjacentHTML('afterbegin', `<i class="kh">${keyLabel(KB[a])}</i>`);
+  });
+}
+renderKeyBind();
+// 버튼 위 단축키 표시 (PC만)
+updateKeyBadges();
+// 설정: 조작 방식 · 마우스 감도
+{
+  const seg = document.getElementById('aimSeg');
+  const show = () => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.a === (dragMode ? 'cursor' : 'look')));
+  seg.querySelectorAll('button').forEach(b => b.onclick = () => {
+    try { localStorage.setItem('ramen-aim', b.dataset.a); } catch (e) { /* 저장 불가 */ }
+    dragMode = b.dataset.a === 'cursor'; document.body.classList.toggle('drag', dragMode);
+    if (dragMode && document.pointerLockElement) document.exitPointerLock();
+    show(); renderKeyList();
+  });
+  show();
+  const sr = document.getElementById('sensRange'), sv = document.getElementById('sensVal');
+  sr.value = Math.round(mouseSens * 100); sv.textContent = mouseSens.toFixed(1) + '×';
+  sr.oninput = () => { mouseSens = sr.value / 100; sv.textContent = mouseSens.toFixed(1) + '×'; try { localStorage.setItem('ramen-sens', String(mouseSens)); } catch (e) { /* 저장 불가 */ } };
+}
+// Esc 메뉴: 일시정지 창 안에서 설정 · 조작법 (설정 칸은 홈 화면 것을 잠시 옮겨 와서 씀)
+{
+  const setBox = document.querySelector('.scroll.settings'), home = setBox.parentNode, ps = document.getElementById('pauseSettings'), pk = document.getElementById('pauseKeys');
+  document.getElementById('pauseSetBtn').onclick = () => { const open = ps.hidden; ps.hidden = !open; pk.hidden = true; if (open) ps.appendChild(setBox); };
+  document.getElementById('pauseKeyBtn').onclick = () => { pk.hidden = !pk.hidden; ps.hidden = true; renderKeyList(); };
+  const back = () => { if (setBox.parentNode !== home) home.appendChild(setBox); ps.hidden = pk.hidden = true; };
+  new MutationObserver(() => { if (document.getElementById('pause').classList.contains('hidden')) back(); }).observe(document.getElementById('pause'), { attributes: true, attributeFilter: ['class'] });
+}
 // ---------- 아래 재료 버튼 줄: 토핑 · 챠슈(누르고 있기) · 미소 ----------
 // 버튼 그림은 캔버스로 직접 그림 (한눈에 알아보게 단순하고 크게)
 const KIT_ICON = (() => {
@@ -5085,7 +5649,7 @@ function updateBasketPad() {
     pad.style.gridTemplateColumns = `repeat(${BASKET_GRID[n].cols}, auto)`;
     pad.innerHTML = baskets.slice(0, n).map((b, i) => `<button class="bk-btn" data-i="${i}"><b>${i + 1}</b><span></span></button>`).join('')
       + (rinseOn ? '<button class="bk-btn rinse" id="rinseBtn">💧 찬물 헹구기 (츠케멘)</button>' : '')
-      + (wokOn ? '<button class="bk-btn wok" id="wokBtn">🥘 웍 볶음<small>꾹 → 초록에서 떼기</small></button>' : '');
+      + (wokOn ? `<button class="bk-btn wok" id="wokBtn">${MOBILE ? '' : '<i class="kh">W</i>'}🥘 웍 볶음<small>꾹 → 초록에서 떼기</small></button>` : '');
     pad.querySelectorAll('.bk-btn[data-i]').forEach(el => el.addEventListener('click', e => { e.currentTarget.blur(); if (G.running && !G.paused) act({ kind: 'basket', i: +el.dataset.i }); }));
     pad.querySelector('#rinseBtn')?.addEventListener('click', e => { e.currentTarget.blur(); if (G.running && !G.paused) act({ kind: 'rinse' }); });
     const wb = pad.querySelector('#wokBtn');
@@ -5124,7 +5688,8 @@ function buildKit() {
     { k: 'chashu', name: '챠슈', cls: 'grill' }, // 오른쪽 끝 (오른손 엄지 가까이)
   ];
   kit.classList.toggle('many', items.length > 9);
-  kit.innerHTML = items.map(it => `<button class="kit-btn ${it.cls ?? ''}" data-k="${it.k}"><img src="${KIT_ICON[it.k]}" alt=""><span>${it.name}</span><i class="cnt" hidden></i></button>`).join('');
+  kitSel = Math.min(kitSel, items.length - 1); setTimeout(markKitSel, 0);
+  kit.innerHTML = items.map((it, i) => `<button class="kit-btn ${it.cls ?? ''}" data-k="${it.k}">${i < 9 ? `<i class="kh">${i + 1}</i>` : ''}<img src="${KIT_ICON[it.k]}" alt=""><span>${it.name}</span><i class="cnt" hidden></i></button>`).join('');
   kit.querySelectorAll('.kit-btn').forEach(b => {
     const k = b.dataset.k;
     if (k === 'wok') b.addEventListener('click', e => { e.currentTarget.blur(); if (G.running && !G.paused) wokServe(); });
@@ -5502,9 +6067,21 @@ function nextStep() {
   }
   return turn('front', '그릇을 클릭해서 들고 → 손님 클릭');
 }
+let keyHintsHtml = '';
 function updateHud() {
+  document.body.classList.toggle('playing', !!G.running); // PC: 메뉴 화면에선 영업 화면 표시(HUD)를 숨김
+  if (!MOBILE) { // PC: 면 솥 상태 · 핵심 키 안내
+    const n = upgValue('noodle').b;
+    document.getElementById('potPanel').innerHTML = '<b>♨️ 면 솥</b><br>' + baskets.slice(0, n).map((b, i) => {
+      if (!b.cooking) return `<span class="off">${i + 1} 비었음</span>`;
+      const f = firmOf(b.t);
+      return `<span class="${f === 'raw' ? 'off' : f === 'nobi' ? 'bad' : 'ready'}">${i + 1} ${FIRM_ALL[f]}${f === 'raw' ? '' : f === 'nobi' ? ' · 버리기' : ' · 건질 수 있음'}</span>`;
+    }).join('<br>');
+    const kh = [['turn', '뒤돌기'], ['serve', '내기'], ['trash', '손 비우기'], ['orders', '주문서 크게']].filter(([a]) => KB[a]).map(([a, t]) => `<span><kbd>${keyLabel(KB[a])}</kbd>${t}</span>`).join('');
+    if (kh !== keyHintsHtml) { keyHintsHtml = kh; document.getElementById('keyHints').innerHTML = kh; }
+  }
   const step = G.running && !G.paused && !G.tut ? nextStep() : '';
-  document.getElementById('guide').textContent = step ? '👉 ' + step.replace(/Space로 /g, '↻ ').replace(/클릭/g, '탭').replace(/ \(U\)| U로/g, ' ↶로').replace('그릇을 탭해서 들고 → 손님 탭', '🍜 내기 버튼 누르기') : '';
+  document.getElementById('guide').textContent = step ? '👉 ' + (!MOBILE ? step.replace(/Space로 /g, `${keyLabel(KB.turn)}로 `) : step.replace(/Space로 /g, '↻ ').replace(/클릭/g, '탭').replace(/ \(U\)| U로/g, ' ↶로').replace('그릇을 탭해서 들고 → 손님 탭', '🍜 내기 버튼 누르기')) : '';
   // 빼기 버튼: 방금 넣은 것을 뺄 수 있을 때만 켜짐
   const ub = document.getElementById('mUndo'), last = G.running && !G.paused && lastUndoable();
   ub.disabled = !last;
@@ -5685,7 +6262,7 @@ function drawFrame() {
   const hintEl = document.getElementById('hint');
   const hint = hintFor(d);
   hintEl.style.display = hint && !MOBILE ? 'block' : 'none'; // 터치엔 마우스를 올려 두는 일이 없으니 숨김
-  if (hint) hintEl.textContent = hint;
+  if (hint) { const t = !dragMode ? `<kbd>${keyLabel(KB.use)}</kbd>${hint.replace(/^클릭:\s*/, '')}` : hint; if (hintEl._t !== t) { hintEl.innerHTML = t; hintEl._t = t; } }
   if (dragMode && hint) { hintEl.style.left = ((aimNDC.x + 1) / 2 * innerWidth) + 'px'; hintEl.style.top = ((1 - aimNDC.y) / 2 * innerHeight + 22) + 'px'; }
   else { hintEl.style.left = ''; hintEl.style.top = ''; }
   updateLabels();
@@ -5724,7 +6301,7 @@ frame();
 
 // 테스트용 핸들
 window.__game = { setHand: h => setHand(h), sky: (m, r) => updateSky(m, r),
-  get G() { return G; }, Sound, VoiceFiles, act, aimed, press, grillStart, grillEnd, serve, spawnCustomer, baskets, endDay,
+  get G() { return G; }, Sound, VoiceFiles, charSVG, DEFAULT_LOOK, act, aimed, press, grillStart, grillEnd, serve, spawnCustomer, baskets, endDay,
   view(y, p) { yaw = y; pitch = p; },
   step(sec) { for (let t = 0; t < sec; t += 0.05) { update(0.05); visuals(0.05, t); } updateHud(); },
 };

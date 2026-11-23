@@ -1,0 +1,24 @@
+{
+  "name": "insaeng-ramen",
+  "productName": "인생라멘",
+  "version": "0.1.0",
+  "description": "인생라멘 — 1인칭 라멘 가게 게임 (PC판)",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "build-app": "node build.mjs",
+    "start": "node build.mjs && electron .",
+    "pack:mac": "./pack-mac.sh",
+    "pack:win": "node build.mjs && electron-packager . InsaengRamen --platform=win32 --arch=x64 --out=dist --overwrite --ignore=^/dist --ignore=^/fonts-src"
+  },
+  "devDependencies": {
+    "@electron/packager": "^18.4.4",
+    "electron": "^33.4.11"
+  },
+  "dependencies": {
+    "three": "^0.160.0"
+  },
+  "allowScripts": {
+    "electron@33.4.11": true
+  }
+}
