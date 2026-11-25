@@ -51,6 +51,11 @@
   .wl.firm-yawa, .row.firm-yawa { background: #d68f2a; color: #2b211b; }
   .wl.firm-nobi, .row.firm-nobi { background: #b8322a; color: #fff; }
   .wl.firm-secs, .row.firm-secs { background: #fffaf0; color: #2b211b; } /* 타이머 없을 때: 초만 (색으로 익힘을 알려 주지 않음) */
+  .fbar { display: inline-block; position: relative; width: 64px; height: 7px; border-radius: 4px; margin-left: 6px; vertical-align: middle; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+  .fbar i { position: absolute; top: -3px; width: 3px; height: 13px; margin-left: -1px; background: #141210; border-radius: 2px; box-shadow: 0 0 0 1px #fff; }
+  body.mobile .fbar { width: 44px; }
+  .bk-btn .fbar-wrap { display: block; line-height: 0; } .bk-btn .fbar { width: 46px; margin: 3px 0 0; } .bk-btn { white-space: nowrap; }
+  .owner-tag { font-size: .85em; opacity: .75; margin-left: 4px; }
   #potPanel .firm-guide { display: block; margin-top: 4px; font-size: 11px; opacity: .7; line-height: 1.35; }
   .wl[class*="firm-"] { font-size: 14px; font-weight: 800; }
   #guide { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: #ffd23a; color: #2b211b;
@@ -282,6 +287,11 @@
   #talk.hidden { display: none; }
   .tk-face { width: 130px; height: 152px; flex: none; border-radius: 14px; overflow: hidden; border: 3px solid #141210; box-shadow: 0 6px 18px rgba(0,0,0,.5); }
   .tk-face svg { width: 100%; height: 100%; display: block; }
+  .tk-face img, .st-panel .face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 8%; display: block; user-select: none; }
+  .tk-face { background: #fbf5e8; }
+  .tk-face img { transform: scale(1.45); transform-origin: 50% 10%; } /* 대화 상자에선 얼굴 위주로 크게 */
+  .st-panel .face img { mix-blend-mode: multiply; -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); } /* 양옆 가장자리를 흐리게 */ /* 그림의 크림색 바탕이 컷 종이와 섞이게 */
+  .face-img.sepia { filter: sepia(.45) saturate(.85); } /* 할아버지는 회상 — 바랜 사진 느낌 */
   .tk-box { position: relative; width: min(820px, 100%); min-height: 112px; box-sizing: border-box; background: #fffdf6; color: #141210; border: 3px solid #141210; border-radius: 18px; padding: 22px 22px 26px; box-shadow: 5px 5px 0 #141210; }
   .tk-name { position: absolute; top: -16px; left: 18px; background: #b8322a; color: #fff; font: 800 14px system-ui; padding: 3px 12px; border-radius: 6px; }
   .tk-text { font: 700 clamp(15px, 1.6vw, 20px)/1.55 "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif; white-space: pre-wrap; }
@@ -714,7 +724,7 @@
       <div class="char-left"><div id="charPreview" class="char-portrait"></div><button class="btn sub" id="charRandom" type="button">🎲 무작위</button></div>
       <div class="char-right">
         <label>사장님 이름<input id="ownerName" maxlength="8" placeholder="예: 준" autocomplete="off"></label>
-        <label>가게 이름<input id="shopName" maxlength="12" placeholder="예: 준이네 라멘" autocomplete="off"></label>
+        <label hidden>가게 이름<input id="shopName" maxlength="12" placeholder="예: 준이네 라멘" autocomplete="off"></label>
         <div id="charOpts" class="char-opts"></div>
       </div>
     </div>
@@ -781,7 +791,7 @@
         <div class="pc-only"><h3 style="margin:10px 0 4px">⌨ PC 조작</h3><div class="keylist"></div></div>
         <button class="btn coach-open" id="coachBtn">👀 게임 화면에서 조작 보기 (① 앞 · ② 뒤)</button>
         <p class="coach-hint">실제 화면 위에 어디를 누르는지 짚어 줘요.</p>
-        <details class="credit"><summary>ⓘ 크레딧</summary>목소리: VOICEVOX:青山龍星 / 玄野武宏 / 剣崎雌雄 / 雀松朱司 / 麒ヶ島宗麟 / 白上虎太郎 / 四国めたん / 九州そら / 冥鳴ひまり / 春日部つむぎ / 波音リツ / No.7 / ちび式じい / もち子さん / 東北イタコ</details>
+        <details class="credit"><summary>ⓘ 크레딧</summary>목소리: VOICEVOX:青山龍星 / 玄野武宏 / 剣崎雌雄 / 雀松朱司 / 麒ヶ島宗麟 / 白上虎太郎 / 四国めたん / 九州そら / 冥鳴ひまり / 春日部つむぎ / 波音リツ / No.7 / ちび式じい / もち子さん / 東北イタコ<br>3D 손님 모델: Meshy (CC BY 4.0) · 동작: Mixamo · 질감·조명: Poly Haven (CC0)</details>
       </div>
     </section>
     <!-- 할아버지 비법 노트 -->
@@ -881,7 +891,7 @@
 <script type="module">
 import * as THREE from 'three';
 // 게임 버전 — 베타에 올릴 때마다 올림 (시작 화면·일시정지에 표시해서 어느 버전인지 바로 확인)
-const APP_VERSION = 'v1.18', APP_DATE = '11/23';
+const APP_VERSION = 'v1.19', APP_DATE = '11/25';
 document.querySelectorAll('.ver').forEach(el => { el.textContent = `${APP_VERSION} · ${APP_DATE}`; });
 
 // ================= 전국 라멘 제패: 지역 =================
@@ -967,7 +977,10 @@ const CAST = {
 };
 // 지역 말투: 하카타에선 손님이 하카타벤(사투리)을 씀 — 한글 발음 + (뜻)
 const HK = (tokyo, hakata, yoko, sappo) => (HAKATA ? hakata : YOKO && yoko !== undefined ? yoko : SAPPO && sappo !== undefined ? sappo : tokyo); // 요코하마는 하마 말투(~쟝)
-const shopName = () => (ownerInfo()?.shop || '인생라멘') + (BRANCH[REGION_ID] ? ' ' + BRANCH[REGION_ID] : '');
+// 가게 이름은 할아버지 때 그대로 「인생라멘」 (간판은 일본어 「人生らーめん」) — 플레이어는 사장 이름만 정함
+const shopName = () => '인생라멘' + (BRANCH[REGION_ID] ? ' ' + BRANCH[REGION_ID] : '');
+const JP_BRANCH = { fukuoka: '博多店', sapporo: '札幌店', yokohama: '横浜店', osaka: '大阪店' };
+const signName = () => '人生らーめん' + (JP_BRANCH[REGION_ID] ? ' ' + JP_BRANCH[REGION_ID] : '');
 
 // ================= 설정 =================
 const CFG = {
@@ -1117,7 +1130,7 @@ const UPGRADES = {
   slot4:   { group: 'kitchen', name: '그릇 자리', icon: '🍜', values: [3, 4], prices: [6000],
     names: ['3자리', '4자리'], desc: v => `그릇을 ${v}개까지 놓을 수 있어요` },
   noodle:  { group: 'kitchen', name: '면 타이머', icon: '⏱', values: [{ b: 4, t: 0 }, { b: 4, t: 1 }], prices: [4000],
-    names: ['타이머 없음', '면 타이머'], desc: v => (v.t ? '바구니 위에 「카타메·보통…」 익힘이 보이고, 구간마다 띵!' : '삶은 시간(초)과 면 색깔만 보여요 — 익힘은 직접 판단') },
+    names: ['타이머 없음', '면 타이머'], desc: v => (v.t ? '바구니 위에 「카타메·보통…」 이름이 뜨고, 구간마다 띵! 소리로 알려 줘요 (안 봐도 됨)' : '익힘 막대와 면 색깔로 직접 봐야 해요 — 소리 알림 없음') },
   rail:    { group: 'kitchen', name: '토핑 레일', icon: '🥡', values: [{ n: 6, r: 2 }, { n: 8, r: 2 }, { n: 10, r: 1 }, { n: 14, r: 1 }, { n: 18, r: 0.3 }], prices: [2500, 6000, 12000, 18000],
     names: ['기본 통', '큰 통', '큰 통 + 큰 냉장고', '대형 통 + 큰 냉장고', '특대 통 + 업소용 냉장고'], desc: v => `통 하나에 ${v.n}그릇 · 채우기 ${v.r}초` },
   grill2:  { group: 'kitchen', name: '챠슈 그릴', icon: '🔥', values: [22, 32, 42], prices: [5000, 12000],
@@ -1242,6 +1255,13 @@ const FIRM_ALL = { raw: '덜 익음', ...FIRM, nobi: '불어 버림' };
 const hasTimer = () => !!upgValue('noodle').t || !!G?.tut;
 const firmTxt = t => (hasTimer() || firmOf(t) === 'nobi' ? FIRM_ALL[firmOf(t)] : `${Math.floor(t)}초`);
 const firmCls = t => (hasTimer() || firmOf(t) === 'nobi' ? firmOf(t) : 'secs');
+// 타이머 없을 때: 익힘 막대 (덜 익음 → 카타메 → 보통 → 야와 → 불음 색 구간 위로 바늘이 움직임) — 이름은 안 알려 주지만 눈으로 판단 가능
+let firmGrad = null;
+function firmBar(t) {
+  const N = CFG.noodle, max = N.yawa[1] * 1.12, pc = x => (x / max * 100).toFixed(1) + '%';
+  firmGrad ??= `linear-gradient(90deg, #8a8478 0 ${pc(N.katame[0])}, #f5dc7a ${pc(N.katame[0])} ${pc(N.katame[1])}, #e9b544 ${pc(N.futsu[0])} ${pc(N.futsu[1])}, #d68f2a ${pc(N.yawa[0])} ${pc(N.yawa[1])}, #b8322a ${pc(N.yawa[1])})`;
+  return `<span class="fbar" style="background:${firmGrad}"><i style="left:${Math.min(100, Math.round(t / max * 100))}%"></i></span>`;
+}
 const FIRM_COLOR = { raw: 0xece6d0, katame: 0xf5dc7a, futsu: 0xe9b544, yawa: 0xd68f2a, nobi: 0x9a6a3a };
 const FIRM_IDX = { raw: -1, katame: 0, futsu: 1, yawa: 2, nobi: 3 };
 const TOPPINGS = { negi: '파', kikurage: '목이버섯', nori: '김', ajitama: '아지타마고', menma: '멘마', corn: '콘', minchi: '다진고기', shoga: '베니쇼가', takana: '타카나', mentaiko: '멘타이코', hourenso: '시금치', uzura: '우즈라', negi2: '파 듬뿍', butter: '버터' };
@@ -1681,6 +1701,7 @@ function tileTexture(base) {
   return tex;
 }
 const themed = []; // 테마 따라 다시 칠할 재질 { m, role, opts?, rx, ry }
+const tokyoDefaultOnly = []; // 도쿄 기본 인테리어일 때만 보이는 것 (회벽·메뉴판·종이 초롱) — 다른 테마·지역에선 숨김
 function themeWood(role, rx, ry, opts) { const m = new THREE.MeshStandardMaterial({ roughness: 0.75 }); themed.push({ m, role, opts, rx, ry }); return m; }
 function themeMat(role) { const m = mat(0xffffff); themed.push({ m, role }); return m; }
 let themeNow = Math.min(store.get('ramen-theme', 0), levelOf('theme'));
@@ -1693,6 +1714,8 @@ function applyTheme(i) {
     else t.m.color.setHex(T[t.role]);
     t.m.needsUpdate = true;
   }
+  const plain = i === 0 && !HAKATA && !YOKO && !SAPPO;
+  for (const o of tokyoDefaultOnly) o.visible = plain;
 }
 
 // ---------- 방 ----------
@@ -1712,6 +1735,15 @@ box(0.1, 2.8, 7, wallWood(), 2.9, 1.4, -1);     // 오른쪽 벽
 for (const x of [-2.84, 2.84]) {                // 벽 아래 진한 나무 판 + 몰딩
   box(0.03, 0.9, 7, themeWood('accent', 6, 1, { planks: 14, vertical: true }), x, 0.45, -1);
   box(0.05, 0.05, 7, woodDark, x, 0.92, -1);
+}
+// 도쿄 기본 가게: 허리까지 나무, 위는 크림색 회벽 + 나무 기둥 (콘셉트 그림처럼 밝고 아늑하게)
+{
+  const plaster = new THREE.MeshStandardMaterial({ map: (() => { const t = plasterTexture(0xe9dcbd); t.repeat.set(3, 1.2); return t; })(), roughness: 0.95, color: 0xd6cab2 }); // 조명이 세서 살짝 어둡게
+  for (const x of [-2.82, 2.82]) {
+    const w = box(0.02, 1.62, 6.9, plaster, x, 1.78, -1.05); tokyoDefaultOnly.push(w);
+    for (const z of [-3.5, -2.5, -1.5, -0.5, 0.5, 1.5]) tokyoDefaultOnly.push(box(0.05, 1.7, 0.09, woodDark, x * 0.995, 1.8, z)); // 기둥
+    tokyoDefaultOnly.push(box(0.06, 0.08, 6.9, woodDark, x * 0.995, 2.6, -1.05));                                                // 위 보
+  }
 }
 
 // ---------- 가게 앞벽: 창문 + 입구 ----------
@@ -1771,6 +1803,43 @@ const norenPanels = [];
   }
   cyl(0.012, 0.012, DOOR_X1 - DOOR_X0 + 0.1, 6, woodDark, (DOOR_X0 + DOOR_X1) / 2, DOOR_H, FRONT_Z + 0.2).rotation.z = Math.PI / 2;
 }
+// 도쿄 기본 가게 꾸밈: 오른쪽 벽 나무 메뉴판 줄 · 왼쪽 벽 「ラーメン」 큰 종이 · 흰 종이 초롱
+{
+  const MENU = [['ラーメン', '九〇〇'], ['味玉ラーメン', '一〇〇〇'], ['チャーシュー麺', '一二〇〇'], ['醤油ラーメン', '九〇〇'], ['塩ラーメン', '九五〇'], ['味噌ラーメン', '一一〇〇'],
+    ['つけ麺', '一〇〇〇'], ['替玉', '一五〇'], ['ネギ増し', '一〇〇'], ['餃子', '四〇〇'], ['ライス', '一五〇'], ['生ビール', '五〇〇']];
+  const tagTex = ([name, price]) => canvasTex(128, g => { // 세로 나무 메뉴 패
+    g.fillStyle = '#d9b98a'; g.fillRect(0, 0, 128, 128); g.fillStyle = 'rgba(120,80,40,.2)'; for (let k = 0; k < 7; k++) g.fillRect(k * 19 + 4, 0, 2, 128);
+    g.fillStyle = '#1a120c'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const ch = [...name], fs = Math.min(15, 92 / ch.length);
+    g.save(); g.scale(0.55, 1); g.font = `${fs * 1.7}px "Yuji Syuku", "Hiragino Mincho ProN", serif`; ch.forEach((c, k) => g.fillText(c, 64 / 0.55, 10 + fs / 2 + k * fs)); g.restore();
+    g.fillStyle = '#9a2a1c'; g.font = `9px "Hiragino Mincho ProN", serif`; g.save(); g.scale(0.55, 1); [...price].forEach((c, k) => g.fillText(c, 64 / 0.55, 100 + k * 7 - (price.length - 1) * 3.5)); g.restore();
+  });
+  MENU.forEach((m, i) => {
+    const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.42), new THREE.MeshStandardMaterial({ map: tagTex(m), roughness: 0.85 }));
+    tag.position.set(2.8, i < 6 ? 2.25 : 1.75, -3.25 + (i % 6) * 0.17); tag.rotation.y = -Math.PI / 2; scene.add(tag); tokyoDefaultOnly.push(tag);
+  });
+  const poster = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.95), new THREE.MeshStandardMaterial({ roughness: 0.9, map: canvasTex(256, g => { // 「ラーメン」 붓글씨 종이
+    g.fillStyle = '#f6efe0'; g.fillRect(0, 0, 256, 256); g.fillStyle = '#1a120c'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.save(); g.scale(0.53, 1); g.font = `56px "Yuji Syuku", "Hiragino Mincho ProN", serif`; [...'ラーメン'].forEach((c, k) => g.fillText(c, 128 / 0.53, 40 + k * 58)); g.restore();
+    g.fillStyle = '#b8241c'; g.fillRect(200, 214, 26, 26);
+  }) }));
+  { // 앞벽도 허리 위는 회벽 (창문·입구 구멍은 남김)
+    const pm = new THREE.MeshStandardMaterial({ map: (() => { const t = plasterTexture(0xe9dcbd); t.repeat.set(2, 1); return t; })(), roughness: 0.95, color: 0xd6cab2 });
+    const z = FRONT_Z + 0.056;
+    for (const [x0, x1, y0, y1] of [[-2.85, -1.93, 0.95, 2.66], [0.73, 1.71, 0.95, 2.66], [-1.93, 0.73, 2.21, 2.66], [1.71, 2.79, 2.11, 2.66]])
+      tokyoDefaultOnly.push(box(x1 - x0, y1 - y0, 0.01, pm, (x0 + x1) / 2, (y0 + y1) / 2, z));
+  }
+  poster.position.set(-2.8, 1.85, -2.45); poster.rotation.y = Math.PI / 2; scene.add(poster); tokyoDefaultOnly.push(poster);
+  for (const [x, z] of [[-1.7, -3.1], [1.3, -3.1]]) { // 흰 종이 초롱 (은은하게 빛남)
+    const lan = new THREE.Group(); lan.position.set(x, 2.25, z); scene.add(lan); tokyoDefaultOnly.push(lan);
+    const pts = []; for (let k = 0; k <= 10; k++) { const a = k / 10; pts.push(new THREE.Vector2(0.13 + Math.sin(a * Math.PI) * 0.04, -0.2 + a * 0.4)); }
+    lan.add(new THREE.Mesh(new THREE.LatheGeometry(pts, 20), new THREE.MeshStandardMaterial({ color: 0xfff4dc, emissive: 0xffd89a, emissiveIntensity: 0.9, roughness: 0.9, side: THREE.DoubleSide })));
+    for (const y of [-0.21, 0.21]) { const r = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.03, 16), mat(0x2a1a10)); r.position.y = y; lan.add(r); }
+    const pl = new THREE.PointLight(0xffd9a0, 0.9, 2.2, 1.6); lan.add(pl);
+  }
+  document.fonts?.load('40px "Yuji Syuku"', 'ラーメン味玉醤油塩味噌つけ麺替玉ネギ増し餃子ライス生ビールチャーシュー').catch(() => {});
+  for (const o of tokyoDefaultOnly) o.visible = themeNow === 0 && !HAKATA && !YOKO && !SAPPO; // 테마를 먼저 입힌 뒤에 만들어져서 한 번 더
+}
 // 창문 위 나무 간판 (2단계~), 창문 양옆 등불 (3단계~), 간판에 불 (4단계)
 const signBoard = new THREE.Group(); scene.add(signBoard);
 // 가게 간판: 내가 정한 가게 이름이 걸림
@@ -1781,14 +1850,15 @@ function signTexture(text) {
   for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(60,30,10,${0.15 + Math.random() * 0.2})`; g.beginPath(); g.moveTo(0, Math.random() * 200); g.lineTo(1024, Math.random() * 200); g.stroke(); }
   if (HAKATA || YOKO) { g.strokeStyle = '#b8241c'; g.lineWidth = 14; g.strokeRect(7, 7, 1010, 186); }
   g.fillStyle = HAKATA ? '#f2cf7a' : YOKO ? '#1a1410' : '#f6e3b8'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  let size = 120; do { g.font = `bold ${size}px "Song Myung", "AppleMyungjo", serif`; size -= 6; } while (g.measureText(text).width > 940 && size > 40);
+  let size = 120; do { g.font = `${size}px "Yuji Syuku", "Hiragino Mincho ProN", "Song Myung", serif`; size -= 6; } while (g.measureText(text).width > 940 && size > 40);
   g.fillText(text, 512, 104);
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
-const signMat = (() => { const tex = signTexture(shopName()); return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, emissive: 0xffc070, emissiveMap: tex, emissiveIntensity: 0 }); })();
-function updateSign() { const old = signMat.map; signMat.map = signMat.emissiveMap = signTexture(shopName()); signMat.needsUpdate = true; old?.dispose(); }
+const signMat = (() => { const tex = signTexture(signName()); return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, emissive: 0xffc070, emissiveMap: tex, emissiveIntensity: 0 }); })();
+function updateSign() { const old = signMat.map; signMat.map = signMat.emissiveMap = signTexture(signName()); signMat.needsUpdate = true; old?.dispose(); }
 document.fonts?.ready.then(updateSign); // 붓글씨 글꼴을 받은 뒤 다시 그림
+document.fonts?.load('40px "Yuji Syuku"', '人生らーめん 博多店札幌店横浜店大阪店').then(updateSign).catch(() => {}); // 간판 글자 모양을 미리 받음 (글꼴을 글자별로 나눠 받기 때문)
 {
   const board = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.43), signMat); board.position.set(-0.6, 2.47, FRONT_Z + 0.07); signBoard.add(board);
   box(2.3, 0.04, 0.06, woodDark, -0.6, 2.7, FRONT_Z + 0.08, signBoard); box(2.3, 0.04, 0.06, woodDark, -0.6, 2.24, FRONT_Z + 0.08, signBoard);
@@ -3364,6 +3434,53 @@ function makePerson(look) {
   g.userData = { torso, head, mouth, sticks };
   return g;
 }
+// ================= 3D 손님 (Meshy로 만들고 Mixamo로 뼈·동작을 넣은 모델) =================
+// 고화질에서만 불러옴. 다 불러오기 전이나 다른 손님은 위의 블록 사람(makePerson) 그대로
+const CHAR_KINDS = ['salaryman', 'man', 'woman', 'student', 'grandpa', 'grandma']; // 3D 모델이 있는 손님 종류 (나머지는 블록 사람)
+// 같은 모델에 옷 색만 다른 질감(img/chars/<이름>.jpg) — 손님마다 이 중 하나를 무작위로 입힘
+const CHAR_SKINS = { salaryman: ['salaryman'], man: ['man'], woman: ['woman'], student: ['student'], grandpa: ['grandpa'], grandma: ['grandma'] };
+const CHAR3D = {};
+const CHAR_S = 0.0085, SIT_Y = 0.35; // 모델(cm, 키 1.9m) → 게임 키 약 1.6m · 앉으면 높은 의자(0.75m)에 맞춰 올림
+const SEATED = new Set(['ordering', 'waiting', 'eating', 'kaedama']);
+function use3D(L, special) { return !!CHAR3D[L.kind] && !special; }
+function makePerson3D(L) {
+  const g = new THREE.Group(), C = CHAR3D[L.kind];
+  const body = C.clone(C.scene); body.scale.setScalar(CHAR_S * (L.scale ?? 1)); g.add(body);
+  const skin = pick(C.mats);
+  body.traverse(o => { if (o.isSkinnedMesh) { o.material = skin; o.castShadow = true; o.frustumCulled = false; o.raycast = () => {}; } }); // 클릭 판정은 아래 상자로 (7만 면을 매번 검사하지 않게)
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.6, 0.5), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 0.8; g.add(hit);
+  const mixer = new THREE.AnimationMixer(body), acts = {};
+  for (const c of C.clips) acts[c.name] = mixer.clipAction(c);
+  // 기존 손님 코드와 같은 이름표: head.rotation.x(끄덕임) 값을 실제 뼈에 더해 줌
+  const head = new THREE.Object3D(), torso = new THREE.Object3D(), mouth = new THREE.Object3D(); g.add(head, torso, mouth);
+  const sticks = new THREE.Group(); sticks.visible = false; g.add(sticks);
+  for (const dz of [-0.008, 0.008]) { const st = cyl(0.0035, 0.0025, 0.22, 5, mat(0xd8b27a, { flatShading: false }), -0.103, 0.037, dz, sticks); st.rotation.z = 1.22; }
+  cyl(0.013, 0.011, 0.09, 6, mat(0xf2d27a, { flatShading: false }), 0, -0.035, 0, sticks);
+  g.userData = { torso, head, mouth, sticks, is3D: true, body, mixer, acts, cur: null,
+    bones: { head: body.getObjectByName('mixamorigHead'), spine: body.getObjectByName('mixamorigSpine1') } };
+  play3D(g, 'idle', 0);
+  return g;
+}
+function play3D(m, name, fade = 0.35) {
+  const u = m.userData; if (u.cur === name) return;
+  const a = u.acts[name]; a.reset().play();
+  if (u.cur) u.acts[u.cur].crossFadeTo(a, fade, false); else a.time = Math.random() * a.getClip().duration; // 처음엔 동작 시작점을 사람마다 다르게
+  u.cur = name;
+}
+function updatePeople3D(dt) {
+  for (const c of G.customers) {
+    const m = c.mesh, u = m.userData;
+    if (!u.is3D || !m.visible) continue;
+    const s = c.state, seated = SEATED.has(s);
+    const clip = s === 'walking' || s === 'leaving' ? 'walk' : seated ? (s === 'waiting' && c.patience < c.maxPatience * 0.35 ? 'impatient' : 'sit') : 'idle';
+    play3D(m, clip);
+    m.position.y = 0; // 블록 손님의 통통 튀는 걸음 대신 진짜 걷기 동작
+    u.body.position.y = THREE.MathUtils.damp(u.body.position.y, seated ? SIT_Y : 0, 10, dt);
+    u.mixer.update(dt * (clip === 'walk' ? 1.4 : 1)); // 걷는 속도(1.5m/s)에 발걸음을 맞춤
+    const nod = u.head.rotation.x; // 먹기(후루룩) · 자판기 볼 때 고개 숙이기
+    if (nod && u.bones.head) { u.bones.head.rotation.x += nod * 0.9; if (u.bones.spine) u.bones.spine.rotation.x += nod * 0.5; }
+  }
+}
 
 // ================= 들고 있는 물건 (바디캠 시점의 손) =================
 const holdGroup = new THREE.Group(); holdGroup.position.set(0.24, -0.26, -0.55); holdGroup.scale.setScalar(0.8); camera.add(holdGroup);
@@ -4240,7 +4357,7 @@ function spawnCustomer(forced = null, group = null) { // forced: { order, specia
   else if (special?.look) look = { ...randomLook(), hoodie: false, cap: false, bag: false, earrings: false, glasses: null, beard: null, suit: false, tie: null, cardigan: false, skirt: false, ...special.look };
   else if (special?.type === 'critic') look = { ...randomLook(), kind: 'salaryman', female: false, skirt: false, suit: true, tie: 0x2a2a2a, top: 0x1a1a1a, hairStyle: 'neat', glasses: 0x1a1a1a, bag: true, cap: false };
   else look = randomLook();
-  const mesh = makePerson(look);
+  const mesh = use3D(look, special) ? makePerson3D(look) : makePerson(look);
   mesh.position.copy(OUTSIDE); scene.add(mesh);
   const c = { id: G.nextId++, mesh, state: 'queue', seat: -1, path: [], order: order ?? makeOrder(), patience: 0, maxPatience: 0, special,
     queueT: 0, result: null, eatT: 0, look, voice: customerVoice(look), kaedamaAt: -1, kaedama: null, bubble: '', ticket: null, bob: Math.random() * 10, group };
@@ -4509,7 +4626,7 @@ function updateCustomers(dt) {
           const rice = upgValue('rice'); // 공기밥 · 챠슈동
           if (rice && Math.random() < rice.pct) { G.money += rice.p; G.costIngr += rice.c; G.riceSales = (G.riceSales ?? 0) + rice.p; }
           G.seats[c.seat].bowl?.empty();
-          if (c.result === 'happy') customerSay(c, Math.random() < 0.3 ? HK(`😋 ${ownerName()} 사장님, 최고예요!`, `😋 ${ownerName()} 사장님, 바리 요카! (최고!)`, `😋 ${ownerName()} 사장님, 사이코-쟝! (최고잖아!)`, `😋 ${ownerName()} 사장님, 나마라 사이코-! (엄청 최고!)`) : HK('😋 잘 먹었습니다!', '😋 우마캇타~ 고치소-상! (잘 먹었어!)', '😋 우마캇타쟝, 고치소-사마! (맛있었어!)', '😋 나마라 우마캇타! 시탓케네~ (맛있었어, 그럼 또!)'), 'happy', 'gochisousama', HK('ごちそうさまでした！', 'ごちそうさん、うまかったばい！', 'ごちそうさま、うまかったじゃん！', 'ごちそうさま、なまらうまかったわ！'));
+          if (c.result === 'happy') customerSay(c, Math.random() < 0.3 ? HK(`😋 사장님, 최고예요!`, `😋 사장님, 바리 요카! (최고!)`, `😋 사장님, 사이코-쟝! (최고잖아!)`, `😋 사장님, 나마라 사이코-! (엄청 최고!)`) : HK('😋 잘 먹었습니다!', '😋 우마캇타~ 고치소-상! (잘 먹었어!)', '😋 우마캇타쟝, 고치소-사마! (맛있었어!)', '😋 나마라 우마캇타! 시탓케네~ (맛있었어, 그럼 또!)'), 'happy', 'gochisousama', HK('ごちそうさまでした！', 'ごちそうさん、うまかったばい！', 'ごちそうさま、うまかったじゃん！', 'ごちそうさま、なまらうまかったわ！'));
           else customerSay(c, c.result === 'normal' ? HK('🙂 잘 먹었어요', '🙂 고치소-상 (잘 먹었어)', '🙂 고치소-사마 (잘 먹었어요)', '🙂 고치소-사마, 시탓케 (잘 먹었어, 그럼)') : '😠 …', c.result);
           Sound.line('arigatou', 'ありがとうございましたー！', SHOP_VOICE);
           customerLeaves(c);
@@ -4551,16 +4668,16 @@ function updateSeats(dt) {
       if (t === 'story') customerSay(c, c.special.test ? `🎌 시험이다. ${what}${konomi} — 보여 줘 봐라.` : `📝 ${what}${konomi}로 부탁하네.`, '');
       else if (SAPPO) {
         if (o.wok && o.top.has('butter') && o.top.has('corn') && !t) customerSay(c, `🧈 미소 버터콘 쵸-다이! 나마라 스키난다~ (엄청 좋아해!) · ${what}`, '', 'misobutter', '味噌バターコーン、ちょうだい！');
-        else customerSay(c, t === 'regular' ? `⭐ ${ownerName()} 사장님, 이츠모노 타노무베사! (늘 먹던 걸로! ${what})` : t === 'hurry' ? `⏱ ${what}, 하야쿠 시테케레! (빨리 해 줘!)` :
+        else customerSay(c, t === 'regular' ? `⭐ 사장님, 이츠모노 타노무베사! (늘 먹던 걸로! ${what})` : t === 'hurry' ? `⏱ ${what}, 하야쿠 시테케레! (빨리 해 줘!)` :
           t === 'critic' ? `📰 (수첩을 꺼내며) ${what} 주시죠.` : `📝 ${what} 쵸-다이! (주세요!)`, '');
       } else if (YOKO) {
         if (kkoOrder) customerSay(c, '💪 카타메·코이메·오오메데! (단단·진하게·기름 많이!)', '', 'kko', 'カタメ、コイメ、オオメで！');
-        else customerSay(c, t === 'regular' ? `⭐ ${ownerName()} 사장님, 이츠모노데 이이쟝! (늘 먹던 걸로! ${what}${konomi})` : t === 'hurry' ? `⏱ ${what}${konomi}, 이소이데룬쟝! (급하단 말이야!)` :
+        else customerSay(c, t === 'regular' ? `⭐ 사장님, 이츠모노데 이이쟝! (늘 먹던 걸로! ${what}${konomi})` : t === 'hurry' ? `⏱ ${what}${konomi}, 이소이데룬쟝! (급하단 말이야!)` :
           t === 'critic' ? `📰 (수첩을 꺼내며) ${what}${konomi} 주시죠.` : `📝 ${what}${konomi} 쵸-다이! (주세요!)`, '');
       } else customerSay(c, HAKATA
-        ? (t === 'regular' ? `⭐ ${ownerName()} 사장님, 이츠모노 타노무바이! (늘 먹던 걸로! ${what})` : t === 'hurry' ? `⏱ ${what}, 하요 시테! 지칸 나카켄… (빨리! 시간 없어서…)` :
+        ? (t === 'regular' ? `⭐ 사장님, 이츠모노 타노무바이! (늘 먹던 걸로! ${what})` : t === 'hurry' ? `⏱ ${what}, 하요 시테! 지칸 나카켄… (빨리! 시간 없어서…)` :
           t === 'critic' ? `📰 (수첩을 꺼내며) ${what} 주시죠.` : `📝 ${what} 쵸-다이! (주세요!)`)
-        : (t === 'regular' ? `⭐ ${ownerName()} 사장님, 늘 먹던 걸로요! (${what})` : t === 'hurry' ? `⏱ ${what}, 빨리 부탁해요! 시간이 없어서…` :
+        : (t === 'regular' ? `⭐ 사장님, 늘 먹던 걸로요! (${what})` : t === 'hurry' ? `⏱ ${what}, 빨리 부탁해요! 시간이 없어서…` :
           t === 'critic' ? `📰 (수첩을 꺼내며) ${what} 주시죠.` : `📝 ${what} 주세요!`), '');
     }
   }
@@ -5292,7 +5409,7 @@ function openView(v) {
 document.querySelectorAll('#start [data-open]').forEach(b => b.addEventListener('click', () => { Sound.init(); Sound.knob(); openView(b.dataset.open); }));
 document.querySelectorAll('#start .back').forEach(b => b.addEventListener('click', () => { Sound.knob(); refreshHome(); openView('home'); }));
 function refreshHome() {
-  document.getElementById('shopTitle').innerHTML = `🏮 <b>${shopName()}</b> · ${ownerName()} 사장님`;
+  document.getElementById('shopTitle').innerHTML = `🏮 <b>${shopName()}</b> <span class="owner-tag">주인 · ${ownerName()}</span>`;
   document.getElementById('homeAvatar').innerHTML = charSVG(lookNow());
   setTimeout(refreshNotes, 0); setTimeout(maybeHomeStory, 350);
   { const homeOn = !document.querySelector('#start .view[data-view="home"]').hidden; // PC 홈 배치는 홈 화면이 보일 때만
@@ -5411,6 +5528,27 @@ const STORY = {
     ['narr', '📓 할아버지 노트 4장을 얻었다!\n마지막 무대: 오사카 (준비 중)'],
   ],
 };
+// 등장인물 얼굴 그림 (힉스필드로 그린 것, img/faces/인물_표정.jpg) — 없으면 코드로 그린 얼굴
+const FACE_IMG = { grandpa: ['normal', 'happy'], kuroda: ['normal', 'happy', 'angry'], sato: ['normal', 'happy'], yoshie: ['normal', 'happy', 'angry'], takeshi: ['normal', 'happy', 'angry'], haruo: ['normal', 'happy', 'angry'] };
+function faceHTML(who, L, mood = 'normal') {
+  if (who === 'me') return ''; // 주인공(나)은 1인칭 — 얼굴 그림 없이 이름만
+  const m = FACE_IMG[who];
+  if (m) return `<img class="face-img${who === 'grandpa' ? ' sepia' : ''}" src="img/faces/${who}_${m.includes(mood) ? mood : 'normal'}.jpg" alt="" draggable="false">`;
+  return L ? charSVG(L, mood === 'happy' ? 'happy' : 'normal') : '';
+}
+// 대사에 맞는 표정 고르기 (장면 이름 + 말투로 짐작)
+function moodOf(who, line, scene = '') {
+  if (/_test_ok$/.test(scene)) return 'happy';
+  if (/_test_ng$/.test(scene)) return 'angry';
+  if (who === 'kuroda') {
+    if (/_win$/.test(scene) || /크윽|말도 안|졌다고|왜 이기/.test(line)) return 'angry';
+    return /후훗|500|전부|효율|기계|오래 버티|또 뵙/.test(line) ? 'happy' : 'normal';
+  }
+  if (/크윽|말도 안|멀었다|뭐라고|울상|겁났|흘려듣|못 버틴|다시 들어/.test(line)) return 'angry';
+  if (/하하|허허|잘했|좋다|딱이다|웃고|빼닮|괜찮은 손|좋은 불|어서 와|쫄지|기다리겠|인정/.test(line)) return 'happy';
+  return 'normal';
+}
+setTimeout(() => { for (const [w, ms] of Object.entries(FACE_IMG)) for (const m of ms) new Image().src = `img/faces/${w}_${m}.jpg`; }, 4000); // 미리 받아 두기 (대화 때 늦게 뜨지 않게)
 // 가게 안 방문: 등장인물이 손님처럼 들어와 앉아서 이야기하고, 명인은 「시험 주문」을 냄
 STORY.fukuoka_test_ok = [['yoshie', '…3초. 딱이다! 니 손 아직 안 죽었네.'], ['yoshie', '좋다, 하카타 라멘은 니한테 맡겨도 되겠다. 멘오 그 놈들한테 보여 줘라!']];
 STORY.fukuoka_test_ng = [['yoshie', '아이고, 아직 멀었다. 면이 울고 있다 아이가.'], ['yoshie', '내일 또 오꾸마. 그때까지 손 좀 풀어 놔라.']];
@@ -5478,8 +5616,8 @@ function playTalk(id, c, done, { mark = true } = {}) {
     i++; if (i >= lines.length) return finish();
     const [who, line, focus] = lines[i], L = who === 'me' ? lookNow() : CAST[who]?.look;
     if (focus) { const p = focus.isVector3 ? focus : new THREE.Box3().setFromObject(focus).getCenter(new THREE.Vector3()); aim(p, 1.2); } // 이 줄에서 비출 물건
-    face.hidden = !L; if (L) face.innerHTML = charSVG(L, 'happy');
-    nm.textContent = who === 'me' ? `${ownerName()} 사장님` : who === 'narr' ? '' : CAST[who]?.name ?? ''; nm.hidden = !nm.textContent;
+    face.hidden = !L || who === 'me'; if (!face.hidden) face.innerHTML = faceHTML(who, L, moodOf(who, line, Array.isArray(id) ? '' : id));
+    nm.textContent = who === 'me' ? ownerName() : who === 'narr' ? '' : CAST[who]?.name ?? ''; nm.hidden = !nm.textContent;
     tx.textContent = fill(line); tx.classList.toggle('narr', who === 'narr');
     if (c && who !== 'me' && who !== 'narr') c.bob += 0.4; // 말하는 손님이 살짝 움직임
     Sound.init(); Sound.pick?.();
@@ -5553,8 +5691,8 @@ function playStory(id, done) {
     const text = fill(line).replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
     if (who === 'narr') return `<div class="st-panel wide"><div class="tone"></div><div class="caption">${text}</div></div>`;
     const L = who === 'me' ? lookNow() : CAST[who]?.look, side = k % 2 ? 'right' : 'left';
-    const name = who === 'me' ? `${ownerName()} 사장님` : CAST[who]?.name ?? '';
-    return `<div class="st-panel ${side} ${who === 'grandpa' ? 'letter' : ''}" style="--fx:${side === 'left' ? 25 : 75}%"><div class="lines"></div><div class="face">${L ? charSVG(L, 'happy') : ''}</div><span class="who">${name}</span><div class="balloon">${text}</div></div>`;
+    const name = who === 'me' ? ownerName() : CAST[who]?.name ?? '';
+    return `<div class="st-panel ${side} ${who === 'grandpa' ? 'letter' : ''}" style="--fx:${side === 'left' ? 25 : 75}%"><div class="lines"></div><div class="face">${faceHTML(who, L, moodOf(who, line, id))}</div><span class="who">${name}</span><div class="balloon">${text}</div></div>`;
   };
   const next = () => {
     li++;
@@ -5599,8 +5737,7 @@ function refreshNotes() {
   const nameIn = document.getElementById('ownerName'), shopIn = document.getElementById('shopName'), prev = document.getElementById('namePreview');
   let shopTouched = false;
   const update = () => {
-    if (!shopTouched) shopIn.value = nameIn.value.trim() ? `${josa(nameIn.value.trim(), '이네', '네')} 라멘` : ''; // 준 → 준이네, 민호 → 민호네
-    prev.textContent = nameIn.value.trim() ? `🏮「${shopIn.value.trim() || '인생라멘'}」 개업! — ${nameIn.value.trim()} 사장님` : '이름을 적으면 가게 간판에 걸려요';
+    prev.textContent = nameIn.value.trim() ? `🏮 할아버지의 「人生らーめん」, 다시 문을 엽니다 — 주인 ${nameIn.value.trim()}` : '할아버지 가게를 이어받을 사장님 이름을 적어 주세요';
   };
   nameIn.addEventListener('input', update);
   shopIn.addEventListener('input', () => { shopTouched = true; update(); }); // 한 번이라도 직접 고치면 추천으로 다시 채우지 않음 (다 지울 수 있게)
@@ -5623,7 +5760,7 @@ function refreshNotes() {
   document.getElementById('nameOk').onclick = () => {
     const name = nameIn.value.trim();
     if (!name) { nameIn.focus(); prev.textContent = '사장님 이름을 적어 주세요'; return; }
-    try { localStorage.setItem('ramen-owner', JSON.stringify({ name, shop: shopIn.value.trim() || `${josa(name, '이네', '네')} 라멘`, look })); } catch (e) { /* 저장 불가 */ }
+    try { localStorage.setItem('ramen-owner', JSON.stringify({ name, look })); } catch (e) { /* 저장 불가 */ }
     applyCharLook();
     nameIn.blur(); shopIn.blur(); Sound.init(); Sound.happy();
     document.getElementById('nameSetup').classList.add('hidden'); document.getElementById('start').classList.remove('hidden');
@@ -5642,7 +5779,7 @@ document.getElementById('resumeBtn').onclick = () => { pause(false); lockPointer
   const showGfx = () => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.q === gfxNow()));
   seg.querySelectorAll('button').forEach(b => b.onclick = () => {
     try { localStorage.setItem(GFX_KEY, b.dataset.q); } catch (e) { /* 저장 불가 */ }
-    renderer.setPixelRatio(gfxRatio(b.dataset.q)); renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(gfxRatio(b.dataset.q)); renderer.setSize(innerWidth, innerHeight); composer?.setPixelRatio(renderer.getPixelRatio()); composer?.setSize(innerWidth, innerHeight);
     const sh = b.dataset.q !== 'low';
     if (renderer.shadowMap.enabled !== sh) { renderer.shadowMap.enabled = sh; scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.needsUpdate = true; }); }); }
     showGfx();
@@ -5844,6 +5981,8 @@ function updateBasketPad() {
     const b = baskets[i];
     const txt = b.cooking ? firmTxt(b.t) : '비었음';
     const span = el.querySelector('span'); if (span.textContent !== txt) span.textContent = txt;
+    let bar = el.querySelector('.fbar-wrap'); if (!bar) { bar = document.createElement('span'); bar.className = 'fbar-wrap'; el.appendChild(bar); }
+    const bh = b.cooking && !hasTimer() ? firmBar(b.t) : ''; if (bar._h !== bh) { bar.innerHTML = bh; bar._h = bh; }
     el.className = 'bk-btn' + (b.cooking ? ` row firm-${firmCls(b.t)}` : '');
   });
 }
@@ -5975,7 +6114,7 @@ function updateLabels() {
     const f = firmOf(b.t);
     b.noodles.material.color.setHex(FIRM_COLOR[f]);
     b.group.getWorldPosition(wp); wp.y += 0.1; // 바구니 바로 위 (모두 같은 높이)
-    worldLabel('basket' + i, wp, `<b>${BASKET_LETTERS[i]}</b> ${firmTxt(b.t)}`, `wl firm-${firmCls(b.t)}`);
+    worldLabel('basket' + i, wp, `<b>${BASKET_LETTERS[i]}</b> ${firmTxt(b.t)}${hasTimer() ? '' : firmBar(b.t)}`, `wl firm-${firmCls(b.t)}`);
   });
   updateBasketPad();
   // 토핑 통 이름·남은 양은 아래 재료 버튼 줄(#kit)에 보임
@@ -6093,6 +6232,7 @@ function update(dt) {
     if (G.wok.t > 1.15) wokEnd();
   }
   updateCustomers(dt);
+  updatePeople3D(dt);
   updateSeats(dt);
   // 사운드
   const cooking = baskets.filter(b => b.cooking).length;
@@ -6263,7 +6403,7 @@ function updateHud() {
     document.getElementById('potPanel').innerHTML = '<b>♨️ 면 솥</b><br>' + baskets.slice(0, n).map((b, i) => {
       if (!b.cooking) return `<span class="off">${i + 1} 비었음</span>`;
       const f = firmOf(b.t);
-      if (!hasTimer() && f !== 'nobi') return `<span>${i + 1} ⏱ ${Math.floor(b.t)}초</span>`; // 타이머 없으면 초만
+      if (!hasTimer() && f !== 'nobi') return `<span>${i + 1} ⏱ ${Math.floor(b.t)}초 ${firmBar(b.t)}</span>`; // 타이머 없으면 초 + 익힘 막대
       return `<span class="${f === 'raw' ? 'off' : f === 'nobi' ? 'bad' : 'ready'}">${i + 1} ${FIRM_ALL[f]}${f === 'raw' ? '' : f === 'nobi' ? ' · 버리기' : ' · 건질 수 있음'}</span>`;
     }).join('<br>') + (hasTimer() ? '' : `<small class="firm-guide">${Object.entries(CFG.noodle).filter(([k]) => FIRM[k]).map(([k, [a, b]]) => `${FIRM[k]} ${a}–${b}초`).join(' · ')}</small>`);
     const kh = [['turn', '뒤돌기'], ['serve', '내기'], ['trash', '손 비우기'], ['orders', '주문서 크게']].filter(([a]) => KB[a]).map(([a, t]) => `<span><kbd>${keyLabel(KB[a])}</kbd>${t}</span>`).join('');
@@ -6339,7 +6479,7 @@ function endDay() {
   document.getElementById('endGrowth').insertAdjacentHTML('beforeend', '<h3>📍 지역 퀘스트</h3>' + regionHeaderHtml() + questsHtml(null, qx.fresh)
     + (qx.stars ? `<p class="new-title">⭐ 명성 별 +${qx.stars}</p>` : '')
     + (won ? `<p class="new-title">👑 ${REGION.name} 제패! 다음 지역이 열렸어요 — 시작 화면 <b>지역</b> 탭에서 진출하세요</p>` : ''));
-  qx.fresh.forEach(q => toast(q.final ? `👑 ${ownerName()} 사장님, ${REGION.name} 제패! 지역 랭킹 1위` : `📍 지역 퀘스트 완료! ${q.text}`, 'good'));
+  qx.fresh.forEach(q => toast(q.final ? `👑 ${REGION.name} 제패! 지역 랭킹 1위` : `📍 지역 퀘스트 완료! ${q.text}`, 'good'));
   if (qx.fresh.length) document.getElementById('endGrowLine').textContent += ` · 📍 퀘스트 ${qx.fresh.length}개 완료`;
   renderRegion();
   document.querySelector('#end h1').textContent = `${shopName()} · Day ${day} 영업 종료`;
@@ -6375,7 +6515,7 @@ if (LOOK) {
     matDone.add(m);
     m.flatShading = false; // 각진 면 → 매끈하게
     const steel = m.metalness > 0.4 || (!m.map && Math.abs(m.color.r - m.color.b) < 0.04 && m.color.r > 0.45 && m.color.r < 0.85);
-    if (steel && !m.transparent) { m.metalness = Math.max(m.metalness, 0.75); m.roughness = 0.32; m.roughnessMap = brushed; m.bumpMap = brushed; m.bumpScale = 0.4; }
+    if (steel && !m.transparent) { m.metalness = Math.max(m.metalness, 0.75); m.roughness = HQ ? 0.55 : 0.32; /* 고화질에선 빛 번짐이 있어 덜 반짝이게 */ m.roughnessMap = brushed; m.bumpMap = brushed; m.bumpScale = 0.4; }
     m.color.getHSL(hsl);
     // 나무색이고 커다란 물건만 (사람 머리카락·피부는 작아서 빠짐)
     if (!steel && !m.map && !m.transparent && hsl.h > 0.04 && hsl.h < 0.12 && hsl.s > 0.25 && hsl.l > 0.15 && hsl.l < 0.6 && o.geometry) {
@@ -6391,6 +6531,65 @@ if (LOOK) {
   v.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at 55% 45%, transparent 50%, rgba(40,18,6,.55) 100%)';
   document.body.appendChild(v);
   renderer.domElement.style.filter = 'saturate(1.12) contrast(1.06) sepia(.08)';
+}
+// ---------- 고화질: 진짜 나무·타일 표면(결의 울퉁불퉁함·광택 차이) + 카페 사진 조명 반사 + 등불 빛 번짐 ----------
+// 색은 테마 색을 그대로 쓰고 표면 느낌만 더함 → 상점에서 산 인테리어 테마도 그대로 동작. 그래픽 '낮음'·휴대폰은 끔 (?hq=0 으로도 끔)
+const HQ = !!LOOK && gfxNow() !== 'low' && !MOBILE && new URLSearchParams(location.search).get('hq') !== '0';
+let composer = null;
+// 3D 손님 모델 불러오기 (?char3d=0 이면 끔)
+if (HQ && new URLSearchParams(location.search).get('char3d') !== '0') (async () => {
+  try {
+    const [{ GLTFLoader }, SkeletonUtils] = await Promise.all([import('three/addons/loaders/GLTFLoader.js'), import('three/addons/utils/SkeletonUtils.js')]);
+    for (const kind of CHAR_KINDS) { // 손님 종류별 모델 (img/chars/<종류>.glb + .jpg)
+      const mats = (CHAR_SKINS[kind] ?? [kind]).map(name => {
+        const tex = new THREE.TextureLoader().load(`img/chars/${name}.jpg`); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+        return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.75 });
+      });
+      new GLTFLoader().load(`img/chars/${kind}.glb`, g => {
+        CHAR3D[kind] = { scene: g.scene, clips: g.animations, clone: SkeletonUtils.clone, mats };
+      }, undefined, e => console.error(e));
+    }
+  } catch (e) { console.error(e); }
+})();
+if (HQ) {
+  try {
+    const tl = new THREE.TextureLoader(), cache = {};
+    const base = (name, m) => cache[name + m] ??= (() => { const t = tl.load(`img/tex/${name}_${m}.jpg`); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; if (m === 'diff') t.colorSpace = THREE.SRGBColorSpace; return t; })();
+    const rep2 = (t, rx, ry) => { const c = t.clone(); c.repeat.set(rx, ry); return c; }; // 같은 그림을 물건 크기에 맞게 반복
+    const surf = (m, name, rx, ry, { rough = 0.85, normal = 0.9, diff = false } = {}) => {
+      m.normalMap = rep2(base(name, 'nor_gl'), rx, ry); m.normalScale.set(normal, normal);
+      m.roughnessMap = rep2(base(name, 'rough'), rx, ry); m.roughness = rough;
+      if (diff) m.map = rep2(base(name, 'diff'), rx, ry);
+      m.bumpMap = null; m.needsUpdate = true;
+    };
+    const SET = { main: 'japanese_cedar_planks', floor: 'dark_wooden_planks', top: 'kitchen_wood', accent: 'dark_wood' };
+    for (const t of themed) surf(t.m, SET[t.role] ?? 'dark_wood', (t.rx || 2) * 0.6, (t.ry || 1) * 0.6, { rough: t.role === 'top' ? 0.7 : 0.9 });
+    scene.traverse(o => { // 주방 뒷벽: 흰 타일 (하카타는 어두운 타일 — 원래 색을 곱함)
+      if (o.isMesh && o.geometry?.parameters?.width === 6 && o.geometry.parameters.height === 2.8 && o.position.z > 1.5) surf(o.material, 'long_white_tiles', 4, 2, { rough: 0.5, normal: 0.6, diff: true });
+    });
+    const [{ EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }, { RGBELoader }] = await Promise.all([
+      import('three/addons/postprocessing/EffectComposer.js'), import('three/addons/postprocessing/RenderPass.js'),
+      import('three/addons/postprocessing/UnrealBloomPass.js'), import('three/addons/postprocessing/OutputPass.js'), import('three/addons/loaders/RGBELoader.js')]);
+    new RGBELoader().load('img/tex/comfy_cafe_1k.hdr', t => { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromEquirectangular(t).texture; t.dispose(); pm.dispose();
+      scene.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.metalness > 0.4) m.envMapIntensity = Math.min(m.envMapIntensity ?? 1, 0.45); }); }); }); // 스테인리스가 하얗게 번쩍이지 않게 // 아늑한 카페 사진의 빛으로 반사
+    const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+    composer = new EffectComposer(renderer, rt);
+    class LayerPass extends RenderPass { // 1) 가게 2) 손·든 물건 (깊이 지우고 위에)
+      constructor(layer, held) { super(scene, camera); this.layer = layer; this.held = held; if (held) this.clear = false; }
+      render(r, w, rb, dt, mask) {
+        camera.layers.set(this.layer); const bg = scene.background;
+        if (this.held) { scene.background = null; r.setRenderTarget(rb); r.clearDepth(); }
+        super.render(r, w, rb, dt, mask); scene.background = bg; camera.layers.set(0);
+      }
+    }
+    composer.addPass(new LayerPass(0, false));
+    composer.addPass(new LayerPass(HELD_LAYER, true));
+    composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.22, 0.45, 2.6)); // 등불·간판·불꽃만 은은하게 번짐
+    composer.addPass(new OutputPass());
+    composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight);
+    renderer.toneMappingExposure = 0.85;
+    addEventListener('resize', () => composer?.setSize(innerWidth, innerHeight));
+  } catch (e) { console.error(e); composer = null; }
 }
 let lookT = 0;
 function applyLook(dt) {
@@ -6459,10 +6658,12 @@ function drawFrame() {
   hudTimer -= dt;
   if (hudTimer <= 0) { hudTimer = 0.1; updateHud(); }
   // 1) 가게 전체 2) 손에 든 것·손은 깊이를 지우고 한 번 더 그려서 냄비·조리대에 묻히지 않게
-  applyLook(1 / 60); camera.layers.set(0); renderer.autoClear = true; renderer.render(scene, camera);
+  applyLook(1 / 60);
+  if (composer) composer.render(); else {
+  camera.layers.set(0); renderer.autoClear = true; renderer.render(scene, camera);
   const bg = scene.background; scene.background = null; // 배경색이 있으면 두 번째 그리기 때 화면을 지워 버리므로 잠시 뺌
   renderer.autoClear = false; renderer.clearDepth(); camera.layers.set(HELD_LAYER); renderer.render(scene, camera);
-  scene.background = bg;
+  scene.background = bg; }
   camera.layers.set(0);
   checkBlack(dt || 1 / 60);
 }
@@ -6491,7 +6692,7 @@ frame();
 
 // 테스트용 핸들
 window.__game = { setHand: h => setHand(h), sky: (m, r) => updateSky(m, r),
-  get G() { return G; }, Sound, VoiceFiles, charSVG, DEFAULT_LOOK, pickVisit, spawnVisit, playTalk, notebook, act, aimed, press, grillStart, grillEnd, serve, spawnCustomer, baskets, endDay,
+  get G() { return G; }, get char3d() { return Object.keys(CHAR3D); }, Sound, VoiceFiles, charSVG, DEFAULT_LOOK, pickVisit, spawnVisit, playTalk, notebook, act, aimed, press, grillStart, grillEnd, serve, spawnCustomer, baskets, endDay,
   view(y, p) { yaw = y; pitch = p; },
   step(sec) { for (let t = 0; t < sec; t += 0.05) { update(0.05); visuals(0.05, t); } updateHud(); },
 };

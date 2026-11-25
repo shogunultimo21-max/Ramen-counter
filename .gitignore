@@ -5,3 +5,6 @@ previews/
 desktop/node_modules/
 desktop/app/
 desktop/dist/
+
+# 힉스필드 원본 그림 (크기가 커서 git에 안 올림 — 게임용 축소본은 img/)
+art/

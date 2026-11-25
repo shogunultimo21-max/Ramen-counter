@@ -27,12 +27,19 @@ const three = path.resolve(import.meta.dirname, 'node_modules/three');
 const copy = (src, dst) => { fs.mkdirSync(path.dirname(dst), { recursive: true }); fs.copyFileSync(src, dst); };
 copy(path.join(three, 'build/three.module.js'), path.join(out, 'vendor/three/three.module.js'));
 for (const f of ['environments/RoomEnvironment.js']) copy(path.join(three, 'examples/jsm', f), path.join(out, 'vendor/three/jsm', f));
+// 고화질용: 화면 효과(빛 번짐)와 HDR 조명 불러오기 — 서로 불러 쓰는 파일이 많아 폴더째
+for (const d of ['postprocessing', 'shaders']) fs.cpSync(path.join(three, 'examples/jsm', d), path.join(out, 'vendor/three/jsm', d), { recursive: true });
+copy(path.join(three, 'examples/jsm/loaders/RGBELoader.js'), path.join(out, 'vendor/three/jsm/loaders/RGBELoader.js'));
+// 3D 손님: 모델 불러오기 + 같은 모델을 여러 명으로 복제
+for (const f of ['loaders/GLTFLoader.js', 'utils/BufferGeometryUtils.js', 'utils/SkeletonUtils.js']) copy(path.join(three, 'examples/jsm', f), path.join(out, 'vendor/three/jsm', f));
 
 // 3) 글꼴 (desktop/fonts — 미리 받아 둔 송명체·유지슈쿠)
 fs.cpSync(path.resolve(import.meta.dirname, 'fonts'), path.join(out, 'vendor/fonts'), { recursive: true });
 
 // 4) 음성 파일
 fs.cpSync(path.join(root, 'voices'), path.join(out, 'voices'), { recursive: true });
+// 5) 그림 (등장인물 얼굴 등 — 게임용 축소본)
+fs.cpSync(path.join(root, 'img'), path.join(out, 'img'), { recursive: true });
 for (const f of ['manifest.json', 'icon.png', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']) {
   if (fs.existsSync(path.join(root, f))) copy(path.join(root, f), path.join(out, f));
 }
