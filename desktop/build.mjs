@@ -18,7 +18,7 @@ const swap = (from, to) => {
 swap('https://unpkg.com/three@0.160.0/build/three.module.js', './vendor/three/three.module.js');
 swap('https://unpkg.com/three@0.160.0/examples/jsm/', './vendor/three/jsm/');
 html = html.replace(/<link rel="preconnect"[^>]*>/g, '');
-swap('https://fonts.googleapis.com/css2?family=Song+Myung&family=Yuji+Syuku&display=swap', './vendor/fonts/fonts.css');
+swap('https://fonts.googleapis.com/css2?family=Jua&family=Song+Myung&family=Yuji+Syuku&display=swap', './vendor/fonts/fonts.css');
 html = html.replace('<head>', '<head>\n<script>window.IS_DESKTOP = true;</script>');
 fs.writeFileSync(path.join(out, 'index.html'), html);
 
