@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>인생라멘 2D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Yuji+Syuku&display=swap">
+<style>
+  html, body { margin: 0; height: 100%; background: #140d08; overflow: hidden; font-family: "Jua", sans-serif; font-synthesis: none; color: #2b211b; user-select: none; -webkit-user-select: none; }
+  #wrap { position: absolute; left: 50%; top: 50%; width: 1280px; height: 714px; transform-origin: 0 0; }
+  #stage { position: absolute; inset: 0; overflow: hidden; background: #1d130c; }
+  img { -webkit-user-drag: none; }
+  .hidden { display: none !important; }
+
+  /* 두 화면(앞: 손님·조리대 / 뒤: 면 솥·육수·그릴)이 옆으로 밀리며 바뀜 */
+  #views { position: absolute; inset: 0; width: 2560px; display: flex; transition: transform .35s cubic-bezier(.4,.1,.2,1); }
+  #views.back { transform: translateX(-1280px); }
+  .view { position: relative; width: 1280px; height: 714px; flex: none; overflow: hidden; }
+  .bg { position: absolute; inset: 0; background: url(img/bg2d/front.jpg?v=6) 0 0 / 1280px 714px; }
+  .frontClip { clip-path: inset(437px 0 0 0); z-index: 3; pointer-events: none; }
+  .vig { position: absolute; inset: 0; pointer-events: none; z-index: 9; background: radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 58%, rgba(20,10,4,.42) 100%); }
+
+  /* 손님 */
+  canvas.cust { position: absolute; top: 26px; width: 400px; height: 400px; z-index: 2; pointer-events: none; }
+  .seatHit { position: absolute; top: 120px; width: 230px; height: 300px; z-index: 6; cursor: pointer; border-radius: 30px; }
+  .seatHit.serveable { box-shadow: inset 0 0 0 4px rgba(255,214,102,.85); background: rgba(255,214,102,.08); }
+  .ticket { position: absolute; top: 4px; width: 224px; z-index: 7; background: #fffaf0; border-radius: 4px 4px 10px 10px; padding: 8px 10px 9px; box-shadow: 0 5px 12px rgba(0,0,0,.4); font-size: 15px; line-height: 1.35; transition: opacity .3s, transform .3s; }
+  .ticket::before { content: ''; position: absolute; top: -5px; left: 50%; margin-left: -18px; width: 36px; height: 10px; background: #c6c6cc; border-radius: 3px; }
+  .ticket b { font-size: 18px; } .ticket .firm { color: #b8322a; } .ticket .add { color: #2f7a3a; } .ticket .del { color: #9a8a7a; text-decoration: line-through; }
+  .ticket .tops { display: flex; flex-wrap: wrap; gap: 3px 4px; margin-top: 4px; }
+  .ticket .tp { display: inline-flex; align-items: center; gap: 1px; background: #f3ead8; border-radius: 6px; padding: 0 5px 0 2px; font-size: 14px; line-height: 22px; }
+  .ticket .tp img { width: 20px; height: 20px; }
+  .ticket .tp.add { background: #dff0dc; color: #2f7a3a; }
+  .ticket .tp.del { background: #eee; color: #9a8a7a; text-decoration: line-through; }
+  .ticket .tp.del img { opacity: .4; filter: grayscale(1); }
+  .ticket .bar { height: 6px; background: #e6dcc8; border-radius: 3px; margin-top: 6px; overflow: hidden; } .ticket .bar i { display: block; height: 100%; border-radius: 3px; }
+  .bubble { position: absolute; z-index: 8; background: #fffdf6; border: 3px solid #3a2a20; border-radius: 16px; padding: 5px 12px; font-size: 17px; max-width: 260px; box-shadow: 0 3px 0 rgba(0,0,0,.2); pointer-events: none; animation: pop .18s ease-out; }
+  .bubble::after { content: ''; position: absolute; left: 22px; bottom: -11px; border: 8px solid transparent; border-top-color: #3a2a20; }
+  .bubble.happy { border-color: #2f7a3a; } .bubble.happy::after { border-top-color: #2f7a3a; }
+  .bubble.angry { border-color: #b8322a; background: #fff3ee; } .bubble.angry::after { border-top-color: #b8322a; }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } }
+
+  /* 조리대 (앞 화면 아래쪽) */
+  #work { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  #work > * { pointer-events: auto; }
+  /* 작업대 그림 속 물건 위에 겹치는 누르는 자리 */
+  .hot { position: absolute; cursor: pointer; border-radius: 16px; transition: background .12s, box-shadow .12s; }
+  .hot:hover { background: rgba(255,230,160,.16); box-shadow: 0 0 0 3px rgba(255,214,102,.65); }
+  .hot .lbl { bottom: -8px; }
+  .hot .key { position: absolute; left: 4px; top: 2px; background: rgba(28,16,8,.82); color: #f6ecd8; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; text-align: center; line-height: 20px; }
+  .hot.locked { cursor: default; background: rgba(20,12,6,.55); }
+  .hot.locked:hover { box-shadow: none; }
+  .hot.locked .lbl { opacity: .8; }
+  .bin .lbl { bottom: -6px; font-size: 12px; padding: 0 6px; }
+  /* 아래 띠 (서랍 앞): 날짜·돈 · 면 바구니 상태 · 버튼 */
+  .bar { position: absolute; left: 10px; right: 10px; bottom: 4px; display: flex; align-items: center; gap: 10px; }
+  .panel { background: rgba(28,16,8,.86); color: #f6ecd8; border-radius: 10px; padding: 3px 12px; font-size: 14px; white-space: nowrap; display: flex; gap: 14px; align-items: center; }
+  .panel .big { font-size: 16px; } .panel img { width: 18px; height: 18px; vertical-align: -4px; }
+    .lbl { position: absolute; left: 50%; transform: translateX(-50%); bottom: -4px; background: rgba(28,16,8,.82); color: #f6ecd8; font-size: 13px; padding: 1px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none; }
+  .slot { position: absolute; top: 548px; width: 122px; height: 100px; border-radius: 50%; cursor: pointer; }
+  .slot.empty { background: radial-gradient(ellipse at 50% 60%, rgba(0,0,0,.18) 0 52%, transparent 54%); }
+  .slot.empty::after { content: '그릇 자리'; position: absolute; left: 0; right: 0; top: 38px; text-align: center; color: rgba(255,240,220,.45); font-size: 14px; }
+  .slot.active .bowl { filter: drop-shadow(0 0 6px #ffd666) drop-shadow(0 0 2px #ffd666); }
+  .slot .num { position: absolute; left: 6px; top: 0; background: rgba(28,16,8,.8); color: #f6ecd8; border-radius: 50%; width: 22px; height: 22px; text-align: center; font-size: 14px; line-height: 22px; z-index: 2; }
+  .slot .state { position: absolute; left: 50%; transform: translateX(-50%); bottom: -10px; font-size: 12px; background: rgba(28,16,8,.82); color: #f6ecd8; padding: 1px 8px; border-radius: 6px; white-space: nowrap; }
+
+  /* 그릇: 위에서 비스듬히 본 모양 (테두리·국물·면·토핑) */
+  .bowl { position: absolute; left: 0; top: 2px; width: 150px; height: 112px; pointer-events: none; transform: scale(.8); transform-origin: 0 0; }
+  .bowl .body { position: absolute; left: 6px; right: 6px; top: 34px; bottom: 0; border-radius: 0 0 70px 70px / 0 0 62px 62px; background: linear-gradient(#fbf6ee, #d9cfc2); box-shadow: inset 0 -6px 10px rgba(0,0,0,.12); }
+  .bowl .body::after { content: ''; position: absolute; left: 10%; right: 10%; top: 22px; height: 7px; background: repeating-linear-gradient(90deg, #b8322a 0 10px, transparent 10px 16px); opacity: .75; border-radius: 4px; }
+  .bowl .rim { position: absolute; left: 0; right: 0; top: 0; height: 70px; border-radius: 50%; background: radial-gradient(ellipse at 50% 50%, #e9e1d4 0 62%, #fffdf8 66%, #e8dfd2 100%); box-shadow: 0 2px 0 #cfc4b5; }
+  .bowl .soup { position: absolute; left: 11px; right: 11px; top: 8px; height: 52px; border-radius: 50%; }
+  .bowl .noodle { position: absolute; left: 30px; right: 30px; top: 16px; height: 34px; border-radius: 50%; background: repeating-linear-gradient(170deg, #f3d77f 0 3px, #e2bd5a 3px 5px, #f7e3a0 5px 7px); box-shadow: 0 0 0 2px rgba(240,210,120,.5); }
+  .bowl .noodle.rinsed { background: repeating-linear-gradient(170deg, #fbecb8 0 3px, #eed08a 3px 5px, #fff6d6 5px 7px); box-shadow: 0 0 0 2px rgba(170,215,240,.8), 0 0 8px rgba(170,215,240,.7); }
+  .bowl .tp { position: absolute; width: 38px; height: 38px; }
+  .bowl .veg { position: absolute; left: 46px; top: 10px; width: 58px; height: 40px; border-radius: 50% 50% 40% 40%; background: radial-gradient(circle at 30% 40%, #8bc34a 0 18%, transparent 19%), radial-gradient(circle at 65% 35%, #a5d66b 0 16%, transparent 17%), radial-gradient(circle at 50% 70%, #f3f0d8 0 30%, transparent 31%), radial-gradient(circle at 25% 75%, #e8b07a 0 14%, transparent 15%), radial-gradient(ellipse at 50% 55%, #e9e2c0, #cdbf8e); box-shadow: 0 3px 4px rgba(0,0,0,.25); }
+  .bowl .veg.burnt { filter: brightness(.45) saturate(.6); } .bowl .veg.raw { filter: saturate(1.6) brightness(1.1); }
+  .bowl .tp.butter { left: 60px; top: 2px; width: 30px; height: 30px; }
+  /* 츠케멘 쟁반 */
+  .bowl .tray { position: absolute; left: -4px; right: -6px; top: 26px; height: 82px; border-radius: 12px; background: linear-gradient(#3e2619, #24150d); box-shadow: inset 0 0 0 3px #6b2a1e, 0 4px 6px rgba(0,0,0,.35); }
+  .bowl .plate { position: absolute; left: 2px; top: 22px; width: 100px; height: 66px; border-radius: 50%; background: radial-gradient(ellipse at 50% 45%, #fdfbf6 0 58%, #e9e3d8 64%, #2f5f9a 66% 69%, #f4efe6 71%); box-shadow: 0 3px 4px rgba(0,0,0,.3); }
+  .bowl .tnoodle { position: absolute; left: 16px; top: 28px; width: 72px; height: 48px; border-radius: 48% 52% 44% 46%; background: repeating-linear-gradient(160deg, #fbecb8 0 3px, #eed08a 3px 5px, #fff6d6 5px 7px); box-shadow: 0 0 0 2px rgba(170,215,240,.75), 0 0 8px rgba(170,215,240,.6); }
+  .bowl .dip { position: absolute; right: -2px; top: 36px; width: 52px; height: 52px; border-radius: 50%; background: radial-gradient(circle, #f4efe6 0 62%, #d8cfc2 64%, #a83a2a 66% 70%, #efe7da 72%); box-shadow: 0 3px 4px rgba(0,0,0,.35); }
+  .bowl .dsoup { position: absolute; left: 9px; top: 9px; width: 34px; height: 34px; border-radius: 50%; }
+  .bowl .trayimg { position: absolute; left: -6px; top: 24px; width: 164px; height: 82px; filter: drop-shadow(0 4px 4px rgba(0,0,0,.35)); }
+  .bowl .tp.sm { width: 30px; height: 30px; }
+  .bowl .tp.chashu.sm { width: 36px; height: 36px; }
+  .bowl .tp.chashu { width: 46px; height: 46px; }
+  .bowl .tag { position: absolute; left: 50%; transform: translateX(-50%); top: -6px; font-size: 12px; background: #b8322a; color: #fff; padding: 0 6px; border-radius: 6px; white-space: nowrap; }
+
+  .jar { position: absolute; top: 100px; width: 84px; height: 100px; cursor: pointer; text-align: center; }
+  .jar img { width: 70px; height: 70px; }
+  .tray { position: absolute; left: 736px; top: 100px; display: grid; grid-template-columns: repeat(3, 64px); gap: 6px; background: rgba(28,16,8,.55); border-radius: 14px; padding: 6px; }
+  .tslot { width: 64px; height: 64px; border-radius: 12px; background: #fff7e8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; position: relative; cursor: pointer; transition: transform .08s; }
+  .tslot:active { transform: scale(.94); }
+  .tslot img { width: 36px; height: 36px; }
+  .tslot small { position: absolute; left: 6px; top: 3px; color: #8a7a6a; font-size: 12px; }
+  .tslot.off { opacity: .35; pointer-events: none; }
+  .side { position: absolute; right: 16px; top: 16px; width: 214px; display: flex; flex-direction: column; gap: 10px; }
+  .bar .btn { padding: 5px 12px; font-size: 15px; box-shadow: 0 3px 0 #7a1e18; } .bar .btn.dark { box-shadow: 0 3px 0 #2a1e16; } .bar .btn small { display: inline; margin-left: 6px; }
+  .mini { display: flex; gap: 4px; background: rgba(28,16,8,.86); border-radius: 10px; padding: 3px; }
+  .mini div { min-width: 64px; }
+  .btn { all: unset; cursor: pointer; background: #c8392e; color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 19px; box-shadow: 0 4px 0 #7a1e18; text-align: center; transition: transform .06s; }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #7a1e18; }
+  .btn.green { background: #2f7a3a; box-shadow: 0 4px 0 #1a4a22; }
+  .btn.dark { background: #4a3a2e; box-shadow: 0 4px 0 #2a1e16; font-size: 16px; padding: 9px 12px; }
+  .btn small { display: block; font-size: 12px; opacity: .8; }
+    .mini div { background: #3a2a20; color: #f6ecd8; border-radius: 6px; font-size: 12px; text-align: center; padding: 1px 6px; line-height: 1.25; white-space: nowrap; }
+
+  /* 뒤 주방 */
+  .kitchen { position: absolute; inset: 0; background: url(img/bg2d/kitchen.jpg?v=8) 0 0 / 1280px 714px, #3a2a20; }
+  .spot { position: absolute; cursor: pointer; }
+  /* 면 솥 상태판 (해면기 위 벽에 한 줄) */
+  .basket { width: 72px; height: 86px; border-radius: 12px; color: #fff; font-size: 12px; text-shadow: 0 2px 3px rgba(0,0,0,.7); background: rgba(28,16,8,.62); }
+  .basket:hover, .basket.hl { background: rgba(120,80,20,.75); box-shadow: 0 0 0 3px rgba(255,214,102,.7); }
+  .basket .ring { position: absolute; left: 10px; top: 4px; width: 52px; height: 52px; border-radius: 50%; background: rgba(0,0,0,.25); }
+  .basket .no { position: absolute; top: 1px; left: 2px; background: rgba(28,16,8,.92); width: 18px; height: 18px; border-radius: 50%; text-align: center; line-height: 18px; font-size: 11px; }
+  .basket .nood { position: absolute; left: 18px; top: 12px; width: 36px; height: 36px; opacity: .25; transition: opacity .2s; }
+  .basket.on .nood { opacity: 1; }
+  .basket .t { position: absolute; top: 62px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; }
+  .station { position: absolute; border-radius: 16px; }
+  .station.locked { background: rgba(15,9,4,.5); }
+  .station.open { cursor: pointer; }
+  /* 웍 볶는 모션 */
+  #wokAnim { position: absolute; left: 730px; top: 270px; width: 300px; height: 260px; pointer-events: none; z-index: 5; opacity: 0; transition: opacity .25s;
+    -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 72%, transparent 100%); mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 72%, transparent 100%); }
+  #wokAnim.on { opacity: 1; }
+  .station .wokg { position: absolute; left: 50%; top: -168px; transform: translateX(-50%); width: 180px; }
+  .station#wokSpot .lbl { top: auto; bottom: -14px; transform: translateX(-50%); }
+  .station#wokSpot { z-index: 6; } /* 웍 영상(z 5) 위로 게이지·글씨가 보이게 */
+  .station#wokSpot.on, .station#wokSpot.on:hover { background: none; box-shadow: none; }
+  .station.open:hover { background: rgba(160,215,245,.22); box-shadow: 0 0 0 3px rgba(140,200,240,.8); }
+  .rinseFx { position: absolute; left: 40px; top: 450px; z-index: 20; background: rgba(40,110,170,.92); color: #fff; padding: 6px 14px; border-radius: 10px; font-size: 18px; animation: pop .2s, fadeUp 1.2s forwards; pointer-events: none; }
+  @keyframes fadeUp { 70% { opacity: 1; } to { opacity: 0; transform: translateY(-30px); } }
+  .station .lbl { bottom: auto; top: 50%; transform: translate(-50%, -50%); font-size: 13px; }
+  .tebo { position: absolute; cursor: pointer; border-radius: 14px; }
+  .tebo:hover { background: rgba(255,230,160,.2); box-shadow: 0 0 0 2px rgba(255,214,102,.7); }
+  .tebo b { position: absolute; left: 50%; top: -4px; transform: translateX(-50%); background: rgba(28,16,8,.88); color: #f6ecd8; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; text-align: center; line-height: 20px; font-weight: normal; }
+  .pot { width: 124px; height: 170px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; border-radius: 24px; }
+  .pot:hover { background: rgba(255,230,160,.18); }
+  .pot.locked { cursor: default; background: rgba(20,12,6,.5); }
+  .pot.locked:hover { background: rgba(20,12,6,.5); }
+  .pot .t, .grill .t { background: rgba(28,16,8,.85); color: #f6ecd8; padding: 3px 12px; border-radius: 8px; font-size: 16px; white-space: nowrap; }
+  .grill { position: absolute; width: 200px; height: 190px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; border-radius: 20px; cursor: pointer; }
+  .grill:hover { background: rgba(255,230,160,.14); }
+  .gauge { width: 220px; height: 16px; border-radius: 8px; background: #3a2a20; position: relative; overflow: hidden; border: 2px solid #1e140d; }
+  .gauge .ok { position: absolute; top: 0; bottom: 0; background: #4caf50; }
+  .gauge .needle { position: absolute; top: -2px; bottom: -2px; width: 4px; background: #fff; box-shadow: 0 0 4px #000; }
+  .meat { position: absolute; left: 64px; top: 34px; width: 70px; height: 70px; transition: filter .1s, opacity .2s; opacity: .55; pointer-events: none; }
+  .grill.on .meat { opacity: 1; }
+  .grill .gauge { width: 190px; margin-top: -26px; }
+
+  /* 공통 */
+  #hand { position: absolute; z-index: 30; pointer-events: none; width: 64px; height: 64px; margin: -20px 0 0 -10px; filter: drop-shadow(0 4px 4px rgba(0,0,0,.5)); }
+  #handTxt { position: absolute; z-index: 30; left: 50%; bottom: 286px; transform: translateX(-50%); background: rgba(28,16,8,.86); color: #f6ecd8; padding: 4px 14px; border-radius: 10px; font-size: 16px; pointer-events: none; }
+  #toast { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); z-index: 40; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
+  #toast div { background: rgba(28,16,8,.9); color: #f6ecd8; padding: 7px 16px; border-radius: 10px; font-size: 17px; animation: pop .2s; }
+  #toast div.warn { background: #8a4a12; } #toast div.good { background: #2f7a3a; } #toast div.bad { background: #8a1e18; }
+  .overlay { position: absolute; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(15,8,4,.72); }
+  .card { width: 520px; background: #fffaf0; border-radius: 18px; padding: 26px 30px; box-shadow: 0 12px 30px rgba(0,0,0,.5); text-align: center; }
+  .card .ver { font-size: 12px; color: #9a8a78; margin-top: 10px; }
+  .card h1 { margin: 0 0 4px; font-size: 40px; } .card .jp { font-family: "Yuji Syuku", serif; color: #b8322a; font-size: 18px; }
+  .card p { font-size: 17px; line-height: 1.6; margin: 12px 0; color: #4a3a2e; }
+  .card table { width: 100%; font-size: 18px; margin: 10px 0 18px; border-collapse: collapse; } .card td { padding: 4px 6px; border-bottom: 1px dashed #e2d6c2; } .card td:last-child { text-align: right; }
+  .keys { font-size: 14px; color: #8a7a6a; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div id="views">
+    <!-- 앞: 손님 · 조리대 -->
+    <div class="view" id="vFront">
+      <div class="bg"></div>
+      <div id="custLayer"></div>
+      <div class="bg frontClip"></div>
+      <div id="work">
+        <div class="hot" id="stack" style="left:10px;top:456px;width:146px;height:192px" title="빈 그릇 놓기"><span class="lbl">빈 그릇 놓기</span></div>
+        <div class="hot" id="misoJar" style="left:318px;top:500px;width:126px;height:150px" title="미소 넣기 (육수 전에)"><span class="lbl">미소 (육수 전에)</span></div>
+        <div class="hot" id="tareSpot" style="left:156px;top:500px;width:160px;height:160px" title="타레"><span class="lbl">타레</span></div>
+        <div id="slots"></div>
+        <div id="tray"></div>
+        <!-- 챠슈 그릴: 작업대 오른쪽 끝 숯불 그릴 (누르고 있다가 초록 구간에서 떼기) -->
+        <div class="grill hot" id="grill" style="left:1076px;top:470px"><div class="gauge"><div class="ok" id="grillOk"></div><div class="needle" id="needle" style="left:0"></div></div><img class="meat" id="meat" src="img/icons/chashu.png" alt=""><span class="lbl" style="bottom:-10px">챠슈 — 꾹 눌렀다 초록에서 떼기</span></div>
+        <div class="bar">
+          <div class="panel" id="panel"></div>
+          <div class="mini" id="miniFront" title="뒤 주방 면 바구니"></div>
+          <div style="flex:1"></div>
+          <button class="btn dark" id="undoF" title="방금 넣은 토핑·챠슈·미소 빼기">↶ 되돌리기<small>Z</small></button>
+          <button class="btn dark" id="trashF" title="손에 든 것 버리기 · 빈손이면 두 번 눌러 고른 그릇 버리기">🗑 버리기<small>Esc</small></button>
+          <button class="btn" id="toBack">뒤 주방 ▶<small>Space</small></button>
+        </div>
+      </div>
+      <div class="vig"></div>
+    </div>
+    <!-- 뒤: 면 솥 · 육수 · 챠슈 그릴 -->
+    <div class="view" id="vBack">
+      <div class="kitchen"></div>
+      <div id="backSpots"></div>
+      <div class="side" style="top:auto;bottom:14px;width:190px">
+        <button class="btn" id="toFront">◀ 손님 쪽으로<small>Space</small></button>
+        <button class="btn dark" id="trashB">🗑 손에 든 것 버리기<small>Esc</small></button>
+      </div>
+      <div class="vig"></div>
+    </div>
+  </div>
+  <img id="hand" class="hidden" alt="">
+  <div id="handTxt" class="hidden"></div>
+  <div id="toast"></div>
+  <div class="overlay" id="over"></div>
+</div></div>
+
+<script>
+// ================= 지역 (2D판 첫 판은 도쿄만) =================
+const HAKATA = false, YOKO = false, SAPPO = false;
+let G = null;
+</script>
+<script src="js2d/sound.js"></script>
+<script>
+// ================= 화면 맞추기 =================
+const wrap = document.getElementById('wrap');
+let SCALE = 1;
+function fit() { SCALE = Math.min(innerWidth / 1280, innerHeight / 714); wrap.style.transform = `scale(${SCALE}) translate(-50%, -50%)`; }
+addEventListener('resize', fit); fit();
+const $ = id => document.getElementById(id);
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+
+// ================= 규칙 (3D판과 같은 값) =================
+const CFG = { dayLength: 210, noodle: { katame: [6, 15], futsu: [15, 24], yawa: [24, 33] }, patience: 170, tip: 300 };
+const RAMEN = {
+  tonkotsu: { name: '돈코츠', price: 1000, base: ['negi', 'kikurage', 'nori'] },
+  shoyu: { name: '쇼유', price: 900, base: ['negi', 'nori', 'menma'] },
+  miso: { name: '미소', price: 1100, base: ['negi', 'menma', 'corn'], broth: 'tonkotsu', miso: true },
+  // 츠케멘 = 삶은 면을 뒤 주방 싱크에서 찬물에 헹궈서 + 진한 돈코츠 육수 (3D판과 같은 규칙)
+  tsukemen: { name: '츠케멘', price: 1100, base: ['nori', 'menma'], broth: 'tonkotsu', rinse: true },
+  // 미소 버터콘 (삿포로식) = 미소 + 돈코츠 육수 + 웍에 볶은 야채(버터 한 조각 같이) + 콘
+  sapporo: { name: '미소 버터콘', price: 1200, base: ['negi', 'corn'], broth: 'tonkotsu', miso: true, wok: true },
+};
+const brothOf = r => RAMEN[r].broth ?? r;
+const FIRM = { katame: '카타메', futsu: '보통', yawa: '야와라카메' };
+const FIRM_ALL = { raw: '덜 익음', ...FIRM, nobi: '불어 버림' };
+const FIRM_IDX = { raw: -1, katame: 0, futsu: 1, yawa: 2, nobi: 3 };
+const FIRM_COLOR = { raw: '#cfc7b0', katame: '#f5dc7a', futsu: '#e9b544', yawa: '#d68f2a', nobi: '#8a5a2a' };
+const TOPPINGS = { negi: '파', kikurage: '목이', nori: '김', ajitama: '아지타마', menma: '멘마', corn: '콘' };
+const GRILL = [0.5, 0.72]; // 챠슈: 이 구간에서 손을 떼면 알맞게 구워짐
+// 날짜마다 열리는 메뉴·토핑
+const DAYS = [
+  { menu: ['tonkotsu'], tops: ['negi', 'kikurage', 'nori', 'menma'], note: '첫 영업! 돈코츠 라멘만 팔아요.' },
+  { menu: ['tonkotsu', 'shoyu'], tops: ['negi', 'kikurage', 'nori', 'menma', 'ajitama'], note: '쇼유 라멘과 아지타마가 메뉴에 올랐어요.' },
+  { menu: ['tonkotsu', 'shoyu', 'miso'], tops: ['negi', 'kikurage', 'nori', 'menma', 'ajitama', 'corn'], note: '미소 라멘 시작! 미소는 육수를 붓기 전에 그릇에 넣어요.' },
+  { menu: ['tonkotsu', 'shoyu', 'miso', 'tsukemen'], tops: ['negi', 'kikurage', 'nori', 'menma', 'ajitama', 'corn'], note: '츠케멘 시작! 삶은 면을 뒤 주방 싱크에서 찬물에 헹군 뒤 돈코츠 육수 그릇에 담아요.' },
+  { menu: ['tonkotsu', 'shoyu', 'miso', 'tsukemen', 'sapporo'], tops: ['negi', 'kikurage', 'nori', 'menma', 'ajitama', 'corn'], note: '미소 버터콘 시작! 뒤 주방 웍을 꾹 눌러 야채를 볶고(초록에서 떼기), 미소 라멘 위에 올려요. 버터는 같이 올라가요.' },
+];
+const APP_VERSION = '2D v0.1', APP_DATE = '11/29'; // 베타에 올릴 때마다 올리기
+const dayCfg = () => DAYS[Math.min(G.day, DAYS.length) - 1];
+function firmOf(t) { const N = CFG.noodle; return t < N.katame[0] ? 'raw' : t < N.katame[1] ? 'katame' : t < N.futsu[1] ? 'futsu' : t < N.yawa[1] ? 'yawa' : 'nobi'; }
+const firmPenalty = (want, got) => got === 'raw' || got === 'nobi' ? 2 : Math.abs(FIRM_IDX[want] - FIRM_IDX[got]);
+const josa = (w, a, b) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return w + (c >= 0 && c % 28 ? a : b); };
+
+// ================= 손님 그림 (영상에서 뽑은 움직임 묶음) =================
+// line = 그림(384칸) 안에서 탁자 윗선 높이 → 게임 화면 카운터 윗면(y 418)에 맞춤
+const CLIPS = {
+  salaryman_wait: { n: 47, line: 330 }, salaryman_eat: { n: 56, line: 329 },
+  woman_wait: { n: 45, line: 309 }, woman_eat: { n: 60, line: 309 },
+  grandpa_wait: { n: 60, line: 327 }, grandpa_eat: { n: 58, line: 327 },
+  man_wait: { n: 59, line: 309 }, man_eat: { n: 59, line: 309 },
+  grandma_wait: { n: 57, line: 309 }, grandma_eat: { n: 37, line: 309 },
+};
+// 색 바꾼 버전 (옷 색만 다름, 모양 그림은 원본과 같이 씀)
+const CLIP_VARIANTS = { salaryman: ['v1', 'v2'], man: ['v1', 'v2'], grandma: ['v1', 'v2'] };
+for (const [k, vs] of Object.entries(CLIP_VARIANTS)) for (const v of vs) for (const st of ['wait', 'eat']) {
+  const base = CLIPS[`${k}_${st}`]; CLIPS[`${k}_${st}_${v}`] = { n: base.n, line: base.line, colorSrc: `img/cust2d/${k}_${st}_${v}.jpg`, maskSrc: `img/cust2d/${k}_${st}_mask.png` };
+}
+// 정지 그림 손님 27명 (Higgsfield 손님 그림 3장에서 잘라냄 · 기다림/먹기 두 장 · 420칸 안 탁자선 높이)
+const PEOPLE = [
+  ['a_office', '직장인 여성', 'f', 360], ['a_worker', '공사장 아저씨', 'm', 360], ['a_college', '대학생', 'f', 360],
+  ['a_punk', '펑크 청년', 'm', 360], ['a_uncle', '동네 아저씨', 'm', 360], ['a_schoolgirl', '여고생', 'f', 360],
+  ['a_tourist', '외국인 관광객', 'm', 360], ['a_perm', '파마 아주머니', 'f', 360], ['a_dad', '젊은 아빠', 'm', 360],
+  ['b_capman', '모자 쓴 할아버지', 'om', 340], ['b_delivery', '택배 기사', 'm', 340], ['b_nurse', '간호사', 'f', 340],
+  ['b_boss', '부장님', 'm', 340], ['b_artist', '화가', 'f', 340], ['b_sporty', '운동하는 청년', 'm', 340],
+  ['b_gyaru', '갸루', 'f', 340], ['b_tired', '야근한 회사원', 'm', 340], ['b_twintail', '트윈테일 소녀', 'f', 340],
+  ['c_police', '경찰관', 'm', 349], ['c_fisher', '어부 할아버지', 'om', 349], ['c_kimono', '기모노 할머니', 'of', 349],
+  ['c_boy', '초등학생', 'st', 352], ['c_redhead', '빨간 머리 관광객', 'f', 352], ['c_rocker', '록 뮤지션', 'm', 352],
+  ['c_glasses', '안경 쓴 회사원', 'f', 354], ['c_chef', '옆 가게 요리사', 'm', 354], ['c_taxi', '택시 기사', 'm', 354],
+].map(([id, name, vv, line]) => ({ id, name, vv, line, female: vv === 'f' || vv === 'of' || id === 'a_schoolgirl' || id === 'b_twintail', old: vv === 'om' || vv === 'of' }));
+const STILL = {};
+const KINDS = {
+  salaryman: { female: false, vv: 'm' }, man: { female: false, vv: 'm' }, woman: { female: true, vv: 'f' },
+  student: { female: false, vv: 'st' }, grandpa: { female: false, vv: 'om' }, grandma: { female: true, vv: 'of' },
+};
+const IMG = {};
+function loadImg(src) { return new Promise(r => { const im = new Image(); im.onload = () => r(im); im.onerror = () => r(null); im.src = src; }); }
+async function loadArt() {
+  const jobs = [];
+  for (const k of Object.keys(KINDS)) jobs.push(loadImg(`img/cust2d/${k}.png`).then(im => { IMG[k] = im; }));
+  for (const [name, c] of Object.entries(CLIPS)) jobs.push(Promise.all([loadImg(c.colorSrc ?? `img/cust2d/${name}.jpg`), loadImg(c.maskSrc ?? `img/cust2d/${name}_mask.png`)]).then(([a, b]) => { c.color = a; c.mask = b; c.ok = !!(a && b); }));
+  for (const P of PEOPLE) jobs.push(Promise.all([loadImg(`img/cust2d/people/${P.id}_wait.png`), loadImg(`img/cust2d/people/${P.id}_eat.png`)]).then(([w, e]) => { if (w && e) STILL[P.id] = { wait: w, eat: e, line: P.line }; }));
+  await Promise.all(jobs);
+}
+const off = document.createElement('canvas'), octx = off.getContext('2d'); off.width = off.height = 384;
+function drawClip(ctx, c, i, alpha) { // 색 그림에 모양(투명도)을 씌워서 그림
+  const C = 384, sx = (i % 8) * C, sy = Math.floor(i / 8) * C, s = 300 / 384;
+  octx.globalCompositeOperation = 'copy'; octx.drawImage(c.color, sx, sy, C, C, 0, 0, C, C);
+  octx.globalCompositeOperation = 'destination-in'; octx.drawImage(c.mask, sx, sy, C, C, 0, 0, C, C);
+  ctx.globalAlpha = alpha; ctx.drawImage(off, 50, 360 - c.line * s, 300, 300); ctx.globalAlpha = 1;
+}
+function drawStill(ctx, S, alpha, t, eating) { // 정지 그림 손님: 기다림/먹기 그림 + 숨쉬기 · 먹을 땐 살짝 끄덕
+  const s = 300 / 420, breathe = 1 + Math.sin(t * 1.7) * 0.012, bob = eating ? Math.max(0, Math.sin(t * 4.5)) * 3 : 0;
+  const w = 300, h = 300 * breathe, y = 360 - S.line * s * breathe + bob;
+  ctx.globalAlpha = alpha; ctx.drawImage(eating ? S.eat : S.wait, 50, y, w, h); ctx.globalAlpha = 1;
+}
+function drawStatic(ctx, im, alpha, t, eating) { // 움직임 영상이 없는 손님: 그림 한 장 + 숨쉬기
+  const s = 308 / 420, breathe = 1 + Math.sin(t * 1.7) * 0.012, bob = eating ? Math.abs(Math.sin(t * 5)) * 4 : 0;
+  const w = 308, h = 308 * breathe, y = 360 - 373 * s * breathe + bob;
+  ctx.globalAlpha = alpha; ctx.drawImage(im, 46, y, w, h); ctx.globalAlpha = 1;
+}
+
+// ================= 자리 (앞 화면 손님 4명) =================
+const SEAT_X = [196, 500, 800, 1086];
+const seatsEl = [];
+function buildSeats() {
+  const L = $('custLayer'); L.innerHTML = '';
+  SEAT_X.forEach((x, i) => {
+    const cv = document.createElement('canvas'); cv.className = 'cust'; cv.width = cv.height = 400; cv.style.left = (x - 200) + 'px'; L.appendChild(cv);
+    const hit = document.createElement('div'); hit.className = 'seatHit'; hit.style.left = (x - 115) + 'px'; hit.onclick = () => clickSeat(i); L.appendChild(hit);
+    const tk = document.createElement('div'); tk.className = 'ticket hidden'; tk.style.left = (x - 112) + 'px'; L.appendChild(tk);
+    seatsEl.push({ cv, ctx: cv.getContext('2d'), hit, tk, bubble: null });
+  });
+}
+
+// ================= 그릇 =================
+class Bowl {
+  constructor() { this.broth = null; this.miso = false; this.noodles = null; this.chashu = []; this.top = new Set(); this.temp = 0; }
+  kind() { if (this.broth !== 'tonkotsu') return this.broth; return this.miso ? (this.wok ? 'sapporo' : 'miso') : this.rinsed ? 'tsukemen' : 'tonkotsu'; }
+  ready() { return this.broth != null && this.noodles != null; }
+}
+const SOUP = { sapporo: 'radial-gradient(ellipse at 45% 40%, #f0bd6c, #d4923e 60%, #b8742a)', tsukemen: 'radial-gradient(ellipse at 45% 40%, #e9c08a, #c98f52 60%, #a8703a)', tonkotsu: 'radial-gradient(ellipse at 45% 40%, #fff8ea, #efdcbc 60%, #e2c79c)', shoyu: 'radial-gradient(ellipse at 45% 40%, #d8964f, #a8622c 60%, #8a4a1e)', miso: 'radial-gradient(ellipse at 45% 40%, #f0bd6c, #d4923e 60%, #b8742a)' };
+// 토핑 자리 (그릇 그림 안 좌표)
+const TP_POS = { chashu: [[92, 8], [100, 22], [84, 30]], nori: [12, 2], negi: [58, 26], kikurage: [28, 28], menma: [96, 30], ajitama: [40, 8], corn: [70, 34] };
+// 츠케멘 쟁반: 헹군 면(접시, 토핑·챠슈는 면 위) + 진한 츠케지루(작은 그릇)가 따로 나감
+const TRAY_POS = { chashu: [[44, 34], [54, 42], [34, 46]], nori: [20, 30], negi: [106, 54], kikurage: [62, 36], menma: [58, 54], ajitama: [26, 52], corn: [42, 60] };
+function trayHtml(b) {
+  let h = `<img class="trayimg" src="img/icons/tray_tsukemen.png" alt=""><span class="tag">츠케멘</span>`; // Higgsfield 그림: 검은 쟁반 + 면 접시 + 츠케지루
+  b.chashu.forEach((q, i) => { const [x, y] = TRAY_POS.chashu[i] ?? TRAY_POS.chashu[0]; h += `<img class="tp chashu sm" src="img/icons/chashu.png" style="left:${x}px;top:${y}px;filter:${q === 'raw' ? 'saturate(.5) brightness(1.25)' : q === 'burnt' ? 'brightness(.45)' : 'none'}" alt="">`; });
+  for (const k of Object.keys(TOPPINGS)) if (b.top.has(k)) { const [x, y] = TRAY_POS[k]; h += `<img class="tp sm" src="img/icons/${k}.png" style="left:${x}px;top:${y}px" alt="">`; }
+  return h;
+}
+function bowlHtml(b) {
+  if (b.kind() === 'tsukemen' && b.noodles != null) return trayHtml(b);
+  let h = '<div class="body"></div><div class="rim"></div>';
+  if (b.broth) h += `<div class="soup" style="background:${SOUP[b.kind()]}"></div>`;
+  else if (b.miso) h += `<div class="soup" style="left:50px;right:50px;top:22px;height:24px;background:${SOUP.miso}"></div>`;
+  if (b.noodles != null) h += `<div class="noodle${b.rinsed ? ' rinsed' : ''}"></div>`;
+  if (b.wok) h += `<div class="veg${b.wok === 'burnt' ? ' burnt' : b.wok === 'raw' ? ' raw' : ''}"></div><img class="tp butter" src="img/icons/butter.png" alt="">`;
+  b.chashu.forEach((q, i) => { const [x, y] = TP_POS.chashu[i] ?? TP_POS.chashu[0]; h += `<img class="tp chashu" src="img/icons/chashu.png" style="left:${x}px;top:${y - 6}px;filter:${q === 'raw' ? 'saturate(.5) brightness(1.25)' : q === 'burnt' ? 'brightness(.45)' : 'none'}" alt="">`; });
+  for (const k of Object.keys(TOPPINGS)) if (b.top.has(k)) { const [x, y] = TP_POS[k]; h += `<img class="tp" src="img/icons/${k}.png" style="left:${x}px;top:${y}px" alt="">`; }
+  return h;
+}
+function bowlState(b) { // 그릇 아래 짧은 안내 (다음에 할 일)
+  if (!b.broth) return b.miso ? '미소 → 육수 붓기' : '육수 붓기';
+  if (b.noodles == null) return `${RAMEN[b.kind()].name} → 면 넣기`;
+  if (b.kind() === 'tsukemen') return `츠케멘 · 면 ${FIRM_ALL[firmOf(b.noodles)]}${b.chashu.length ? ` · 챠슈${b.chashu.length}` : ''}`;
+  return `면 ${FIRM_ALL[firmOf(b.noodles)]}${b.chashu.length ? ` · 챠슈${b.chashu.length}` : ''}`;
+}
+function renderSlots() {
+  const S = $('slots'); S.innerHTML = '';
+  G.bowls.forEach((b, i) => {
+    const el = document.createElement('div');
+    el.className = 'slot' + (b ? '' : ' empty') + (G.active === i && b ? ' active' : '');
+    el.style.left = (424 + i * 124) + 'px';
+    el.title = `그릇 ${i + 1} — 누르면 고르기, 고른 그릇을 한 번 더 누르면 들기 (키: ${'QWE'[i]})`;
+    el.innerHTML = `<span class="num">${'QWE'[i]}</span>` + (b ? `<div class="bowl">${bowlHtml(b)}</div><span class="state">${bowlState(b)}</span>` : '');
+    el.onclick = () => clickSlot(i);
+    S.appendChild(el);
+  });
+}
+
+// ================= 토핑 판 =================
+// 토핑 통 6칸 (작업대 그림 속 스테인리스 통 위치)
+const BIN_POS = { negi: [796, 486, 86, 58], kikurage: [882, 486, 90, 58], nori: [958, 470, 100, 72], menma: [808, 546, 98, 66], ajitama: [906, 546, 96, 66], corn: [1002, 546, 100, 66] };
+function renderTray() {
+  const T = $('tray'); T.innerHTML = '';
+  const on = dayCfg().tops;
+  for (const [k, [x, y, w, h]] of Object.entries(BIN_POS)) {
+    const i = on.indexOf(k), el = document.createElement('div');
+    el.className = 'hot bin' + (i < 0 ? ' locked' : '');
+    el.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
+    el.innerHTML = i < 0 ? `<span class="lbl">🔒 ${TOPPINGS[k]}</span>` : `<span class="key">${i + 1}</span><span class="lbl">${TOPPINGS[k]}</span>`;
+    el.title = i < 0 ? `${TOPPINGS[k]} — 아직 메뉴에 없어요` : `${TOPPINGS[k]} 올리기 (${i + 1})`;
+    if (i >= 0) el.onclick = () => addTopping(k);
+    T.appendChild(el);
+  }
+}
+
+// ================= 뒤 주방 =================
+// 뒤 주방 그림(img/bg2d/kitchen.jpg): 왼쪽부터 헹굼 싱크 · 원형 해면기(테보 4개) · 육수 솥 2개 · 웍 · 교자 철판 · 밥솥
+const BASKET_POS = [[14, 604], [90, 604], [166, 604], [242, 604]]; // 싱크대 아래 앞쪽: 면 상태판 4칸 (왼쪽 위 x, y)
+// 원형 해면기 그림 속 테보 4개 (왼쪽부터, x, y, 너비, 높이)
+const TEBO_SPOTS = [[268, 370, 50, 118], [320, 378, 48, 110], [386, 368, 48, 120], [432, 372, 50, 116]];
+// 앞으로 열릴 자리 (그림에는 이미 있음): 헹굼 싱크 · 웍 · 교자 철판 · 밥솥
+const STATIONS = [
+  { id: 'sink', name: '헹굼 싱크 (츠케멘)', rect: [10, 496, 240, 100] },
+  { id: 'wok', name: '웍 (미소 버터콘)', rect: [786, 418, 190, 96] },
+  { id: 'gyoza', name: '교자 철판', rect: [990, 410, 175, 82] },
+  { id: 'rice', name: '밥솥', rect: [1060, 290, 196, 176] },
+];
+const stationOpen = id => id === 'sink' ? dayCfg().menu.includes('tsukemen') : id === 'wok' ? dayCfg().menu.some(r => RAMEN[r].wok) : false; // 지역·날짜가 되면 열림
+function buildBack() {
+  const B = $('backSpots'); B.innerHTML = '';
+  G.baskets.forEach((bk, i) => {
+    const el = document.createElement('div'); el.className = 'spot basket';
+    el.style.left = BASKET_POS[i][0] + 'px'; el.style.top = BASKET_POS[i][1] + 'px';
+    el.innerHTML = `<div class="ring"></div><span class="no">${i + 1}</span><img class="nood" src="img/icons/noodles.png" alt=""><span class="t"></span>`;
+    el.onclick = () => clickBasket(i); bk.el = el; B.appendChild(el);
+    const [tx, ty, tw, th] = TEBO_SPOTS[i], sp = document.createElement('div'); sp.className = 'tebo';
+    sp.style.cssText = `left:${tx}px;top:${ty}px;width:${tw}px;height:${th}px`; sp.innerHTML = `<b>${i + 1}</b>`; sp.title = `테보 ${i + 1}`;
+    sp.onclick = () => clickBasket(i); sp.onmouseenter = () => el.classList.add('hl'); sp.onmouseleave = () => el.classList.remove('hl'); B.appendChild(sp);
+  });
+  const lbl = document.createElement('div'); lbl.className = 'spot'; lbl.style.cssText = 'left:330px;top:612px;width:290px;text-align:center;cursor:default'; lbl.innerHTML = '<span class="lbl" style="position:static;transform:none;font-size:13px">면 솥 · 테보를 눌러 넣기 / 다시 눌러 건지기</span>'; B.appendChild(lbl);
+  // 육수 솥
+  const pots = [['tonkotsu', '돈코츠 육수', 562], ['shoyu', '쇼유 육수', 708]]; // 가스 화구 위 육수 솥 2개 (해면기 바로 옆)
+  for (const [k, name, x] of pots) {
+    const el = document.createElement('div'); el.className = 'spot pot'; el.dataset.k = k;
+    el.style.left = (x - 62) + 'px'; el.style.top = '372px';
+    el.innerHTML = `<span class="t">${name}</span>`;
+    el.onclick = () => { if (!el.classList.contains('locked')) clickBroth(k); }; B.appendChild(el);
+  }
+  for (const st of STATIONS) {
+    const [x, y, w, h] = st.rect, el = document.createElement('div'), open = stationOpen(st.id);
+    el.className = 'station' + (open ? '' : ' locked'); el.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
+    el.innerHTML = `<span class="lbl">${open ? '' : '🔒 '}${st.name}</span>`; el.title = open ? st.name : `${st.name} — 나중에 열려요`;
+    el.onclick = () => { if (!open) return toast(`${st.name}는 나중에 열려요`); if (st.id === 'sink') rinseNoodles(); };
+    if (open) el.classList.add('open');
+    if (open && st.id === 'wok') { // 웍: 꾹 누르고 있다가 초록 구간에서 떼기 (챠슈 그릴과 같은 방식)
+      el.id = 'wokSpot'; el.onclick = null;
+      el.innerHTML = `<div class="gauge wokg"><div class="ok" style="left:${GRILL[0] / 1.15 * 100}%;width:${(GRILL[1] - GRILL[0]) / 1.15 * 100}%"></div><div class="needle" id="wokNeedle" style="left:0"></div></div><span class="lbl">웍 — 꾹 눌렀다 초록에서 떼기</span>`;
+      el.onpointerdown = e => { e.preventDefault(); wokStart(); };
+      const anim = document.createElement('div'); anim.id = 'wokAnim';
+      anim.innerHTML = '<canvas width="298" height="253" style="width:100%;height:100%"></canvas>';
+      B.appendChild(anim); startWokAnim(anim.firstChild);
+    }
+    B.appendChild(el);
+  }
+}
+addEventListener('pointerup', () => { grillEnd(); wokEnd(); });
+$('grill').onpointerdown = e => { e.preventDefault(); grillStart(); };
+$('grillOk').style.cssText = `left:${GRILL[0] / 1.15 * 100}%;width:${(GRILL[1] - GRILL[0]) / 1.15 * 100}%`;
+
+// ================= 게임 상태 =================
+function newDay() {
+  const save = store.get('ramen2d', { day: 1, money: 0 });
+  G = {
+    day: save.day, money: save.money, time: 0, running: false, ended: false,
+    bowls: [null, null, null], active: null, hand: null, back: false, lastAdd: null,
+    baskets: [0, 1, 2, 3].map(() => ({ cooking: false, t: 0, last: null })),
+    grill: { on: false, t: 0 }, wok: { on: false, t: 0 },
+    seats: SEAT_X.map(() => null), nextSpawn: 3, nextId: 1, cast: [],
+    res: { happy: 0, normal: 0, angry: 0 }, earned: 0, cost: 0, recent: [],
+  };
+  buildBack(); renderSlots(); renderTray(); setHand(null); setView(false);
+  const lv = dayCfg();
+  $('misoJar').classList.toggle('locked', !lv.menu.some(r => RAMEN[r].miso)); $('misoJar').querySelector('.lbl').textContent = lv.menu.includes('miso') ? '미소 (육수 전에)' : '🔒 미소 (Day 3부터)';
+  document.querySelectorAll('.pot').forEach(p => { const on = lv.menu.some(r => brothOf(r) === p.dataset.k); p.classList.toggle('locked', !on); p.querySelector('.t').textContent = (on ? '' : '🔒 ') + (p.dataset.k === 'shoyu' ? '쇼유 육수' : '돈코츠 육수') + (on ? '' : ' (Day 2부터)'); });
+}
+
+// ================= 손 =================
+const HAND_ICON = { noodles: 'noodles', broth: 'broth', chashu: 'chashu', bowl: 'bowl', wok: 'wok' };
+function setHand(h) {
+  G.hand = h;
+  const im = $('hand'), tx = $('handTxt');
+  im.classList.toggle('hidden', !h); tx.classList.toggle('hidden', !h);
+  if (!h) return;
+  im.src = `img/icons/${HAND_ICON[h.type]}.png`;
+  tx.textContent = '손: ' + ({ noodles: () => `삶은 면 — ${FIRM_ALL[firmOf(h.t)]}${h.rinsed ? ' 💧헹굼' : ''}`, broth: () => `${RAMEN[h.ramen].name} 육수 (국자)`, wok: () => `웍 야채 + 버터 — ${{ raw: '덜 볶임', good: '알맞게 볶임', burnt: '탐' }[h.q]}`, chashu: () => `챠슈 — ${{ raw: '덜 구워짐', good: '알맞게 구워짐', burnt: '탐' }[h.q]}`, bowl: () => '라멘 그릇 → 손님을 눌러서 내기' })[h.type]();
+  document.querySelectorAll('.seatHit').forEach((el, i) => el.classList.toggle('serveable', h.type === 'bowl' && G.seats[i]?.state === 'waiting'));
+}
+addEventListener('pointermove', e => { const r = wrap.getBoundingClientRect(); const h = $('hand'); h.style.left = (e.clientX - r.left) / SCALE + 'px'; h.style.top = (e.clientY - r.top) / SCALE + 'px'; });
+let trashArm = 0; // 빈손으로 버리기를 한 번 누른 시각 (2.5초 안에 한 번 더 누르면 선택한 그릇을 버림)
+function dropHand() {
+  const h = G.hand;
+  if (!h) { // 빈손: 선택한 그릇(잘못 만든 것)을 버리기 — 실수 방지로 두 번 눌러야 함
+    const b = activeBowl();
+    if (!b) return toast('버릴 그릇을 먼저 골라요 (그릇을 누르거나 Q W E)', 'warn');
+    if (performance.now() - trashArm > 2500) { trashArm = performance.now(); return toast(`한 번 더 누르면 그릇 ${G.active + 1}을 버려요`, 'warn'); }
+    trashArm = 0; G.bowls[G.active] = null; G.active = null; G.lastAdd = null;
+    if (b.broth || b.noodles != null) { G.cost += 300; toast('그릇을 버렸어요 (재료비 −¥300)', 'warn'); } else toast('빈 그릇을 치웠어요');
+    renderSlots(); Sound.trash(); return;
+  }
+  if (h.type === 'bowl') { G.cost += 300; toast('들고 있던 그릇을 버렸어요 (재료비 −¥300)', 'warn'); }
+  else if (h.type === 'noodles') toast('면을 버렸어요', 'warn');
+  else if (h.type === 'chashu') toast('챠슈를 버렸어요', 'warn');
+  setHand(null); Sound.trash();
+  document.querySelectorAll('.seatHit').forEach(el => el.classList.remove('serveable'));
+}
+// 되돌리기: 방금 넣은 것 하나만 (토핑·챠슈·미소). 육수·면은 되돌릴 수 없음 → 그릇 버리기
+function noteAdd(b, type, key) { G.lastAdd = type === 'broth' || type === 'noodles' ? null : { b, type, key }; }
+function undoBowl() {
+  const e = G.lastAdd, b = e?.b;
+  const still = e && G.bowls.includes(b) && ({ top: () => b.top.has(e.key), chashu: () => b.chashu.length > 0, miso: () => b.miso && !b.broth, wok: () => !!b.wok })[e.type]();
+  if (!still) return toast('되돌리기는 방금 넣은 토핑·챠슈·미소 하나만 돼요 (육수·면은 그릇 버리기)', 'warn');
+  G.lastAdd = null;
+  if (e.type === 'top') { b.top.delete(e.key); toast(`${josa(TOPPINGS[e.key], '을', '를')} 뺐어요`); }
+  if (e.type === 'chashu') { b.chashu.pop(); toast('챠슈를 뺐어요'); }
+  if (e.type === 'miso') { b.miso = false; toast('미소를 뺐어요'); }
+  if (e.type === 'wok') { b.wok = null; toast('웍 야채를 뺐어요'); }
+  G.active = G.bowls.indexOf(b); renderSlots(); Sound.trash();
+}
+
+// ================= 조작 =================
+function setView(back) { G.back = back; $('views').classList.toggle('back', back); Sound.knob?.(); }
+function activeBowl() { return G.active != null ? G.bowls[G.active] : null; }
+function toppingTarget() { const a = activeBowl(); if (a?.ready()) return a; return G.bowls.find(b => b?.ready()) ?? null; }
+function placeBowl() {
+  if (G.hand) return;
+  const i = G.bowls.indexOf(null);
+  if (i < 0) return toast('그릇 자리가 꽉 찼어요', 'warn');
+  G.bowls[i] = new Bowl(); G.active = i; renderSlots(); Sound.place();
+}
+function clickSlot(i) {
+  const b = G.bowls[i], h = G.hand;
+  if (!b) { if (h?.type === 'bowl') { G.bowls[i] = h.bowl; G.active = i; setHand(null); renderSlots(); Sound.place(); } else if (!h) placeBowl(); return; }
+  if (!h) {
+    if (G.active !== i) { G.active = i; renderSlots(); Sound.pick(); return; }
+    G.bowls[i] = null; G.active = null; setHand({ type: 'bowl', bowl: b }); renderSlots(); Sound.pick(); return; // 이미 고른 그릇을 한 번 더 누르면 집어 듦
+  }
+  if (h.type === 'broth') { if (b.broth) return toast('육수는 이미 들어 있어요 — 잘못 부었으면 그릇 버리기(Esc 두 번)', 'warn'); b.broth = h.ramen; b.temp = 92; Sound.pour(); noteAdd(b, 'broth'); }
+  else if (h.type === 'noodles') { if (!b.broth) return toast('육수를 먼저 부어요', 'warn'); if (b.noodles != null) return toast('면은 이미 들어 있어요', 'warn'); b.noodles = h.t; b.rinsed = !!h.rinsed; Sound.splash(); noteAdd(b, 'noodles'); }
+  else if (h.type === 'wok') { if (!b.ready()) return toast('웍 야채는 육수와 면을 넣은 다음에 올려요', 'warn'); if (b.wok) return toast('이 그릇엔 이미 야채를 올렸어요', 'warn'); b.wok = h.q; noteAdd(b, 'wok'); }
+  else if (h.type === 'chashu') { if (!b.ready()) return toast('챠슈는 육수와 면을 넣은 다음에 올려요', 'warn'); if (b.chashu.length >= 3) return toast('챠슈는 3장까지만', 'warn'); b.chashu.push(h.q); noteAdd(b, 'chashu'); }
+  else return;
+  setHand(null); G.active = i; renderSlots(); Sound.place();
+}
+function addTopping(k) {
+  const b = toppingTarget();
+  if (!b) return toast('토핑은 육수와 면을 넣은 그릇에 올려요', 'warn');
+  if (b.top.has(k)) { b.top.delete(k); toast(`${josa(TOPPINGS[k], '을', '를')} 뺐어요`); if (G.lastAdd?.key === k) G.lastAdd = null; } else { b.top.add(k); Sound.place(); noteAdd(b, 'top', k); }
+  G.active = G.bowls.indexOf(b); renderSlots();
+}
+function addMiso() {
+  const a = activeBowl(), b = a && !a.broth && !a.miso ? a : G.bowls.find(x => x && !x.broth && !x.miso);
+  if (!b) return toast(a?.miso ? '미소는 이미 넣었어요' : '미소는 육수를 붓기 전에 넣어요 — 빈 그릇을 먼저 놓으세요', 'warn');
+  b.miso = true; noteAdd(b, 'miso'); G.active = G.bowls.indexOf(b); renderSlots(); Sound.place();
+}
+function rinseNoodles() { // 츠케멘: 삶은 면을 찬물에 헹굼 (헹군 면을 돈코츠 육수에 담으면 츠케멘)
+  const h = G.hand;
+  if (h?.type !== 'noodles') return toast('삶은 면을 들고 싱크를 누르면 찬물에 헹궈요 (츠케멘용)', 'warn');
+  if (h.rinsed) return toast('이미 헹궜어요', 'warn');
+  h.rinsed = true; setHand(h); Sound.splash(); setTimeout(() => Sound.pour(), 150);
+  const fx = document.createElement('div'); fx.className = 'rinseFx'; fx.textContent = '💧 찬물에 헹궜어요!'; $('backSpots').appendChild(fx); setTimeout(() => fx.remove(), 1200);
+  if (!G.seats.some(c => c?.state === 'waiting' && c.order.ramen === 'tsukemen')) toast('지금은 츠케멘 주문이 없어요 — 헹군 면은 츠케멘에만 써요', 'warn');
+}
+function clickBasket(i) {
+  const bk = G.baskets[i];
+  if (G.hand) return toast('손에 든 걸 먼저 내려놓아요', 'warn');
+  if (!bk.cooking) { bk.cooking = true; bk.t = 0; bk.last = null; Sound.splash(); return; }
+  bk.cooking = false; setHand({ type: 'noodles', t: bk.t }); Sound.splash();
+}
+function clickBroth(k) {
+  if (G.hand) return toast('손에 든 걸 먼저 내려놓아요', 'warn');
+  setHand({ type: 'broth', ramen: k }); Sound.pour();
+}
+// 웍 볶는 영상(힉스필드 Seedance → 45장 묶음): 배경 그림의 웍 자리에 그대로 겹쳐 재생, 가장자리는 흐리게
+const WOK_CLIP = { src: 'img/bg2d/wok_toss.jpg?v=2', n: 43, cols: 8, w: 298, h: 253, fade: 4 };
+function startWokAnim(cv) {
+  const ctx = cv.getContext('2d'), C = WOK_CLIP;
+  if (!C.img) { C.img = new Image(); C.img.src = C.src; }
+  let f = 0, last = 0;
+  const cell = (i, a) => { ctx.globalAlpha = a; ctx.drawImage(C.img, (i % C.cols) * C.w, Math.floor(i / C.cols) * C.h, C.w, C.h, 0, 0, C.w, C.h); };
+  (function loop(t) {
+    if (!cv.isConnected) return;
+    requestAnimationFrame(loop);
+    const on = G.wok?.on;
+    if (!on) { f = 0; return; } // 손 떼면 처음 장면부터 다시
+    if (t - last < 1000 / 12 || !C.img.complete) return;
+    last = t; ctx.clearRect(0, 0, C.w, C.h); cell(f, 1);
+    const j = f - (C.n - C.fade); if (j >= 0) cell(j, (j + 1) / (C.fade + 1)); // 끝 몇 장은 처음 장면과 겹쳐 이음매 숨김
+    ctx.globalAlpha = 1; f = f + 1 >= C.n ? C.fade : f + 1;
+  })(0);
+}
+function wokStart() {
+  if (!G?.running || G.wok.on) return;
+  if (G.hand) return toast('손에 든 걸 먼저 내려놓아요', 'warn');
+  G.wok.on = true; G.wok.t = 0; Sound.setSizzle(true); $('wokSpot')?.classList.add('on'); $('wokAnim')?.classList.add('on');
+}
+function wokEnd() {
+  if (!G?.wok?.on) return;
+  const t = G.wok.t; G.wok.on = false; Sound.setSizzle(false); $('wokSpot')?.classList.remove('on'); $('wokAnim')?.classList.remove('on');
+  const q = t < GRILL[0] ? 'raw' : t <= GRILL[1] ? 'good' : 'burnt';
+  setHand({ type: 'wok', q }); // 볶은 야채를 들고 앞으로 가서 그릇을 누르면 올라감 (버터 한 조각 같이)
+  if (q === 'good') { Sound.pick(); toast('🥘 알맞게 볶았어요! 그릇에 올려요'); } else { Sound.normal(); toast(q === 'raw' ? '야채가 덜 볶였어요' : '야채가 탔어요', 'warn'); }
+}
+function grillStart() { if (G?.running && !G.hand && !G.grill.on) { G.grill.on = true; G.grill.t = 0; Sound.setSizzle(true); } }
+function grillEnd() {
+  if (!G?.grill.on) return;
+  const t = G.grill.t; G.grill.on = false; Sound.setSizzle(false);
+  const q = t < GRILL[0] ? 'raw' : t <= GRILL[1] ? 'good' : 'burnt';
+  const b = toppingTarget();
+  if (b && b.chashu.length < 3) { b.chashu.push(q); noteAdd(b, 'chashu'); renderSlots(); } else setHand({ type: 'chashu', q });
+  if (q === 'good') Sound.pick(); else { Sound.normal(); toast(q === 'raw' ? '챠슈가 덜 구워졌어요' : '챠슈가 탔어요', 'warn'); }
+}
+function clickSeat(i) {
+  const c = G.seats[i], h = G.hand;
+  if (!c) return;
+  if (h?.type !== 'bowl') { if (c.state === 'waiting') say(c, `${RAMEN[c.order.ramen].name}, 면 ${FIRM[c.order.firm]}로 부탁해요`); return; }
+  if (c.state !== 'waiting') return toast('이 손님은 이미 받았어요', 'warn');
+  serve(c, h.bowl); setHand(null);
+  document.querySelectorAll('.seatHit').forEach(el => el.classList.remove('serveable'));
+}
+
+// ================= 손님 =================
+function makeOrder() {
+  const menu = dayCfg().menu, on = dayCfg().tops;
+  let ramen = pick(menu);
+  if (G.recent.length >= 2 && G.recent.slice(-2).every(r => r === ramen)) ramen = menu.find(r => r !== ramen) ?? ramen;
+  G.recent.push(ramen);
+  const base = RAMEN[ramen].base.filter(k => on.includes(k)), top = new Set(base);
+  const r = Math.random(), firm = r < 0.4 ? 'katame' : r < 0.8 ? 'futsu' : 'yawa';
+  if (on.includes('ajitama') && Math.random() < 0.4) top.add('ajitama');
+  if (Math.random() < 0.2) top.delete('negi');
+  if (on.includes('corn') && !base.includes('corn') && Math.random() < 0.12) top.add('corn');
+  return { ramen, firm, chashu: Math.random() < 0.25 ? 2 : 1, top, wok: !!RAMEN[ramen].wok };
+}
+// 오늘 올 손님 생김새 목록: 움직이는 손님(색 바꾼 버전 포함) + 정지 그림 손님을 섞어 한 명씩 → 하루 안에는 겹치지 않음
+function makeCast() {
+  const looks = [];
+  for (const k of ['salaryman', 'woman', 'grandpa', 'man', 'grandma']) { looks.push({ kind: k }); for (const v of CLIP_VARIANTS[k] ?? []) looks.push({ kind: k, v }); }
+  looks.push({ kind: 'student' });
+  for (const P of PEOPLE) if (STILL[P.id]) looks.push({ still: P.id, kind: P.vv === 'om' ? 'grandpa' : P.vv === 'of' ? 'grandma' : P.vv === 'st' ? 'student' : P.female ? 'woman' : 'man', P });
+  for (let i = looks.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [looks[i], looks[j]] = [looks[j], looks[i]]; }
+  return looks;
+}
+function customerVoice(kind, P) {
+  const K = P ? { female: P.female, vv: P.vv } : KINDS[kind], old = P ? P.old : kind === 'grandpa' || kind === 'grandma', own = Voices.byGender(K.female);
+  const pitch = own ? rand(0.92, 1.08) : K.female ? rand(1.15, 1.3) : rand(0.75, 0.9);
+  return { vv: K.vv + Math.floor(Math.random() * VV_CAST[K.vv]), voice: own ?? Voices.random(), pitch: old ? pitch * 0.9 : pitch, rate: old ? rand(0.85, 0.92) : rand(0.98, 1.12), fileRate: rand(0.97, 1.03) };
+}
+function spawnCustomer() {
+  const free = G.seats.map((c, i) => c ? -1 : i).filter(i => i >= 0);
+  if (!free.length) return false;
+  if (!G.cast.length) G.cast = makeCast(); // 다 나오면 다시 섞음 (하루에 30명 넘게 와야 겹침)
+  const look = G.cast.pop(), seat = pick(free), kind = look.kind;
+  const c = { id: G.nextId++, seat, kind, v: look.v ?? null, still: look.still ?? null, name: look.P?.name, state: 'arrive', t: 0, alpha: 0, order: makeOrder(), patience: CFG.patience, max: CFG.patience, voice: customerVoice(kind, look.P), frame: 0, clipT: 0, clip: null, prev: null, shake: 0 };
+  G.seats[seat] = c;
+  Sound.door(); Sound.line('irasshaimase', 'いらっしゃいませ！', SHOP_VOICE);
+  return true;
+}
+function say(c, text, mood = '') {
+  const S = seatsEl[c.seat];
+  S.bubble?.remove();
+  const el = document.createElement('div'); el.className = 'bubble ' + mood; el.innerHTML = text;
+  el.style.left = (SEAT_X[c.seat] - 40) + 'px'; el.style.top = '76px';
+  $('custLayer').appendChild(el); S.bubble = el;
+  clearTimeout(el._t); el._t = setTimeout(() => { el.remove(); if (S.bubble === el) S.bubble = null; }, 3600);
+}
+function ticketHtml(c) { // 주문표: 토핑은 그림 + 이름 (추가는 +초록, 뺀 건 줄 그음)
+  const o = c.order, on = dayCfg().tops, base = RAMEN[o.ramen].base.filter(k => on.includes(k));
+  const chip = (k, cls, pre = '') => `<span class="tp ${cls}"><img src="img/icons/${k}.png" alt="">${pre}${TOPPINGS[k]}</span>`;
+  const want = on.filter(k => o.top.has(k)).map(k => base.includes(k) ? chip(k, '') : chip(k, 'add', '+'));
+  const del = base.filter(k => !o.top.has(k)).map(k => chip(k, 'del'));
+  const r = c.patience / c.max, col = r > 0.45 ? '#4caf50' : r > 0.15 ? '#e0b030' : '#d0402a';
+  return `<b>${RAMEN[o.ramen].name}</b>${RAMEN[o.ramen].rinse ? ' <span style="color:#2a6ea8">💧헹굼</span>' : ''}${RAMEN[o.ramen].wok ? ' <span style="color:#c0602a">🥘웍+버터</span>' : ''} · <span class="firm">면 ${FIRM[o.firm]}</span> · ${o.chashu > 1 ? '<span class="add">챠슈 2장</span>' : '챠슈 1장'}<div class="tops">${want.join('') || '<span class="tp">토핑 없음</span>'}${del.length ? del.join('') : ''}</div><div class="bar"><i style="width:${Math.max(0, r * 100)}%;background:${col}"></i></div>`;
+}
+function evaluate(c, b) {
+  const issues = []; let m = 0;
+  if (!b.broth) { issues.push('육수가 없어요!'); m += 3; }
+  else if (b.kind() !== c.order.ramen) { issues.push(`${RAMEN[c.order.ramen].name} 시켰는데 ${josa(RAMEN[b.kind()].name, '이에요', '예요')}!`); m += 3; }
+  if (b.noodles == null) { issues.push('면이 없어요!'); m += 3; }
+  else { const f = firmOf(b.noodles), d = firmPenalty(c.order.firm, f); if (d) { issues.push(`${FIRM[c.order.firm]} 주문인데 면이 ${FIRM_ALL[f]}`); m += d; } }
+  if (b.chashu.length !== c.order.chashu) { issues.push(`챠슈 ${c.order.chashu}장 주문인데 ${b.chashu.length}장`); m += 1; }
+  if (c.order.wok && !b.wok) { issues.push('볶은 야채가 빠졌어요'); m += 1; }
+  else if (c.order.wok && b.wok !== 'good') { issues.push(b.wok === 'raw' ? '야채가 덜 볶였어요' : '야채가 탔어요'); m += 1; }
+  else if (!c.order.wok && b.wok) { issues.push('이 라멘엔 볶은 야채를 안 올려요'); m += 1; }
+  if (b.chashu.some(q => q !== 'good')) { issues.push(b.chashu.includes('burnt') ? '챠슈가 탔어요' : '챠슈가 덜 구워졌어요'); m += 1; }
+  for (const k of Object.keys(TOPPINGS)) {
+    const want = c.order.top.has(k), has = b.top.has(k);
+    if (want && !has) { issues.push(`${josa(TOPPINGS[k], '이', '가')} 빠졌어요`); m += 1; }
+    if (!want && has) { issues.push(RAMEN[c.order.ramen].base.includes(k) ? `${TOPPINGS[k]} 빼 달라고 했는데…` : `${josa(TOPPINGS[k], '은', '는')} 안 시켰어요`); m += 1; }
+  }
+  const r = c.patience / c.max, timeScore = r > 0.45 ? 3 : r > 0.15 ? 2 : 1;
+  if (timeScore < 3) issues.push(r > 0.15 ? '조금 늦었어요' : '너무 오래 기다렸어요');
+  const score = timeScore - m;
+  return { res: m >= 3 ? 'angry' : score >= 3 ? 'happy' : score >= 1 ? 'normal' : 'angry', issues };
+}
+function serve(c, bowl) {
+  const { res, issues } = evaluate(c, bowl);
+  c.result = res; c.state = res === 'angry' ? 'angryLeave' : 'eating'; c.t = 0; c.eatT = rand(14, 20);
+  G.cost += Math.round(RAMEN[c.order.ramen].price * 0.4);
+  seatsEl[c.seat].tk.classList.add('hidden');
+  if (res === 'happy') { say(c, `😊 ${pick(['완벽해요! 맛있겠다!', '와, 이거지!', '냄새부터 최고예요!'])}`, 'happy'); Sound.happy(); Sound.line(pick(['itadakimasu', 'umai']), pick(['いただきます！', 'うまい！']), c.voice); }
+  else if (res === 'normal') { say(c, `😐 ${issues.slice(0, 2).join('<br>')}`); Sound.normal(); }
+  else { say(c, `😠 ${issues.slice(0, 2).join('<br>')}`, 'angry'); Sound.angry(); c.shake = 0.6; }
+}
+function leave(c, res) {
+  c.result = res ?? c.result; c.state = 'leaving'; c.t = 0;
+  G.res[c.result]++;
+  if (c.result !== 'angry') {
+    const pay = RAMEN[c.order.ramen].price + (c.result === 'happy' ? CFG.tip : 0);
+    G.money += pay; G.earned += pay;
+    toast(`+¥${pay.toLocaleString()}${c.result === 'happy' ? ' (팁 포함)' : ''}`, 'good');
+    Sound.line('gochisousama', 'ごちそうさまでした！', c.voice);
+    setTimeout(() => Sound.line('arigatou', 'ありがとうございました！', SHOP_VOICE), 900);
+  }
+  seatsEl[c.seat].tk.classList.add('hidden');
+}
+function clipFor(c) {
+  const st = c.state === 'eating' ? 'eat' : 'wait';
+  if (c.still) return null;
+  const cl = CLIPS[`${c.kind}_${st}${c.v ? '_' + c.v : ''}`];
+  return cl?.ok ? cl : null;
+}
+function drawCustomer(i, c, dt) {
+  const S = seatsEl[i], ctx = S.ctx;
+  ctx.clearRect(0, 0, 400, 400);
+  if (!c) return;
+  ctx.save();
+  if (c.shake > 0) { c.shake -= dt; ctx.translate(Math.sin(c.shake * 60) * 5, 0); }
+  const cl = clipFor(c);
+  if (cl !== c.clip) { c.prev = c.clip ? { clip: c.clip, frame: c.frame, t: 0 } : null; c.clip = cl; c.frame = 0; }
+  // 12장/초로 넘기기, 끝 4장은 처음 장면과 겹쳐 그려 이음매를 숨김
+  c.clipT += dt;
+  const step = c.clipT >= 1 / 12; if (step) c.clipT %= 1 / 12;
+  if (cl) {
+    if (c.prev) { drawClip(ctx, c.prev.clip, c.prev.frame, c.alpha); c.prev.t += dt; if (step) c.prev.frame = (c.prev.frame + 1) % c.prev.clip.n; }
+    const a = c.prev ? Math.min(1, c.prev.t / 0.35) : 1;
+    drawClip(ctx, cl, c.frame, c.alpha * a);
+    const j = c.frame - (cl.n - 4); if (j >= 0) drawClip(ctx, cl, j, c.alpha * a * (j + 1) / 5);
+    if (c.prev && a >= 1) c.prev = null;
+    if (step) c.frame = c.frame + 1 >= cl.n ? 4 : c.frame + 1;
+  } else if (c.still && STILL[c.still]) {
+    drawStill(ctx, STILL[c.still], c.alpha, G.time + c.id, c.state === 'eating');
+  } else if (IMG[c.kind]) {
+    drawStatic(ctx, IMG[c.kind], c.alpha, G.time + c.id, c.state === 'eating');
+    if (c.state === 'eating') { ctx.globalAlpha = c.alpha; ctx.drawImage(bowlIcon, 150, 300, 100, 100); ctx.globalAlpha = 1; }
+  }
+  if (c.state === 'waiting' && c.patience / c.max < 0.15) { ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = 'rgba(200,40,20,.12)'; ctx.fillRect(0, 0, 400, 400); ctx.globalCompositeOperation = 'source-over'; }
+  ctx.restore();
+}
+const bowlIcon = new Image(); bowlIcon.src = 'img/icons/bowl.png';
+
+function updateCustomers(dt) {
+  G.seats.forEach((c, i) => {
+    if (!c) return;
+    c.t += dt;
+    const S = seatsEl[i];
+    if (c.state === 'waiting' || c.state === 'eating') c.alpha = 1;
+    if (c.state === 'arrive') { c.alpha = Math.min(1, c.t / 0.6); if (c.t > 1.2) { c.state = 'waiting'; c.t = 0; S.tk.classList.remove('hidden'); say(c, `📝 ${RAMEN[c.order.ramen].name} 라멘, 면 ${FIRM[c.order.firm]}로요!`); Sound.ding(); } }
+    else if (c.state === 'waiting') {
+      c.patience -= dt;
+      if (!c.warned && c.patience < c.max * 0.3) { c.warned = true; say(c, pick(['😕 아직인가요…?', '😕 배고파요…'])); }
+      if (c.patience <= 0) { say(c, '😠 너무 오래 기다렸어요!', 'angry'); Sound.angry(); c.shake = 0.6; c.state = 'angryLeave'; c.t = 0; c.result = 'angry'; }
+    } else if (c.state === 'eating') { c.eatT -= dt; if (c.eatT <= 0) leave(c); }
+    else if (c.state === 'angryLeave') { if (c.t > 1.2) leave(c, 'angry'); }
+    else if (c.state === 'leaving') { c.alpha = Math.max(0, 1 - c.t / 0.6); if (c.t > 0.7) { G.seats[i] = null; S.tk.classList.add('hidden'); } }
+    if (c.state === 'waiting' || c.state === 'arrive') { const h = ticketHtml(c); if (S.tk._h !== h) { S.tk.innerHTML = h; S.tk._h = h; } }
+  });
+}
+
+// ================= 화면 갱신 =================
+const clockTxt = t => { const m = Math.floor(660 + (t / CFG.dayLength) * 180); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`; };
+function renderPanel() {
+  const h = `<span class="big">Day ${G.day} · ${clockTxt(Math.min(G.time, CFG.dayLength))}</span><span><img src="img/icons/money.png" alt=""> ¥${G.money.toLocaleString()}</span><span><img src="img/icons/happy.png" alt=""> ${G.res.happy} · <img src="img/icons/neutral.png" alt=""> ${G.res.normal} · <img src="img/icons/angry.png" alt=""> ${G.res.angry}</span>`;
+  if ($('panel')._h !== h) { $('panel').innerHTML = h; $('panel')._h = h; }
+}
+function basketText(bk) { return bk.cooking ? FIRM_ALL[firmOf(bk.t)] : '비었음'; }
+function renderBaskets() {
+  const mini = G.baskets.map((bk, i) => `<div style="${bk.cooking ? `background:${FIRM_COLOR[firmOf(bk.t)]};color:#2b211b` : ''}">면 ${i + 1}<br>${basketText(bk)}</div>`).join('');
+  if ($('miniFront')._h !== mini) { $('miniFront').innerHTML = mini; $('miniFront')._h = mini; }
+  G.baskets.forEach(bk => {
+    if (!bk.el) return;
+    bk.el.classList.toggle('on', bk.cooking);
+    bk.el.querySelector('.t').textContent = bk.cooking ? `${basketText(bk)} ${Math.floor(bk.t)}초` : '비었음';
+    const p = Math.min(1, bk.t / 33) * 360, col = bk.cooking ? FIRM_COLOR[firmOf(bk.t)] : 'transparent';
+    bk.el.querySelector('.ring').style.background = bk.cooking ? `conic-gradient(${col} ${p}deg, rgba(0,0,0,.25) ${p}deg)` : 'none';
+    bk.el.querySelector('.ring').style.mask = 'radial-gradient(circle, transparent 60%, #000 61%)';
+    bk.el.querySelector('.ring').style.webkitMask = 'radial-gradient(circle, transparent 60%, #000 61%)';
+  });
+  const n = $('needle'); if (n) n.style.left = `calc(${Math.min(1.15, G.grill.t) / 1.15 * 100}% - 2px)`;
+  $('grill').classList.toggle('on', G.grill.on); const meat = $('meat'); if (meat) meat.style.filter = G.grill.on ? `brightness(${1.3 - G.grill.t * 0.6})` : 'none';
+}
+function toast(html, cls = '') {
+  const el = document.createElement('div'); el.className = cls; el.innerHTML = html; $('toast').appendChild(el);
+  while ($('toast').children.length > 3) $('toast').firstChild.remove();
+  setTimeout(() => el.remove(), 2600);
+}
+
+// ================= 하루 진행 =================
+function update(dt) {
+  G.time += dt;
+  if (G.time >= G.nextSpawn && G.time < CFG.dayLength - 25) {
+    spawnCustomer();
+    const t = G.time; G.nextSpawn = t + (t < 60 ? rand(26, 32) : t < 150 ? rand(17, 23) : rand(22, 28));
+  }
+  for (const bk of G.baskets) if (bk.cooking) { bk.t += dt; const f = firmOf(bk.t); if (f !== bk.last && FIRM[f]) Sound.ding(); bk.last = f; }
+  if (G.grill.on) { G.grill.t += dt / 3.5; if (G.grill.t > 1.15) grillEnd(); }
+  if (G.wok.on) { G.wok.t += dt / 3.0; if (G.wok.t > 1.15) wokEnd(); const n = $('wokNeedle'); if (n) n.style.left = `calc(${Math.min(1.15, G.wok.t) / 1.15 * 100}% - 2px)`; }
+  updateCustomers(dt);
+  Sound.setBoil(0.25 + G.baskets.filter(b => b.cooking).length * 0.35);
+  if (G.time >= CFG.dayLength && G.seats.every(c => !c)) endDay();
+  else if (G.time >= CFG.dayLength + 60) { G.seats.forEach(c => c && c.state !== 'leaving' && leave(c, c.state === 'eating' ? c.result : 'angry')); }
+}
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (G?.running) update(dt);
+  if (G) { G.seats.forEach((c, i) => drawCustomer(i, c, G.running ? dt : 0)); renderPanel(); renderBaskets(); Sound.update?.(dt); }
+  requestAnimationFrame(frame);
+}
+
+// ================= 시작 · 마감 =================
+function showStart() {
+  const lv = dayCfg();
+  $('over').classList.remove('hidden');
+  $('over').innerHTML = `<div class="card"><div class="jp">人生らーめん</div><h1>Day ${G.day}</h1><p>${lv.note}<br>메뉴: ${lv.menu.map(r => RAMEN[r].name).join(' · ')}</p>
+    <p style="font-size:15px;text-align:left;background:#f3ead8;border-radius:12px;padding:10px 14px">① <b>빈 그릇</b>을 놓고 → ② <b>뒤 주방</b>에서 육수를 떠 와 붓고 → ③ 바구니에서 <b>면</b>을 건져 넣고<br>④ 작업대 오른쪽 그릴에서 <b>챠슈</b>를 굽고 <b>토핑</b>을 올린 뒤 → ⑤ 그릇을 두 번 눌러 들고 <b>손님</b>을 눌러 내요</p>
+    <button class="btn green" id="go" style="display:inline-block;padding:14px 40px;font-size:22px">영업 시작</button>
+    <div class="keys">Space 앞/뒤 · 앞에서 1~6 토핑 · 뒤에서 1~4 면 테보 · Q W E 그릇 고르기(한 번 더 누르면 들기) · Z 되돌리기 · R 면 헹구기(츠케멘) · Esc 버리기(빈손이면 두 번 → 고른 그릇)</div><div class="ver">${APP_VERSION} · ${APP_DATE}</div></div>`;
+  $('go').onclick = () => { $('over').classList.add('hidden'); Sound.init(); VoiceFiles.decode(); G.running = true; Sound.line('irasshaimase', 'いらっしゃいませ！', SHOP_VOICE); };
+}
+function endDay() {
+  if (G.ended) return; G.ended = true; G.running = false; Sound.setBoil(0); Sound.setSizzle(false);
+  const profit = G.earned - G.cost;
+  store.set('ramen2d', { day: G.day + 1, money: G.money - G.cost });
+  $('over').classList.remove('hidden');
+  $('over').innerHTML = `<div class="card"><div class="jp">本日の営業終了</div><h1>Day ${G.day} 마감</h1>
+    <table><tr><td>😊 만족</td><td>${G.res.happy}명</td></tr><tr><td>😐 보통</td><td>${G.res.normal}명</td></tr><tr><td>😠 화남</td><td>${G.res.angry}명</td></tr>
+    <tr><td>매출</td><td>¥${G.earned.toLocaleString()}</td></tr><tr><td>재료비</td><td>−¥${G.cost.toLocaleString()}</td></tr><tr><td><b>오늘 번 돈</b></td><td><b>¥${profit.toLocaleString()}</b></td></tr></table>
+    <button class="btn green" id="next" style="display:inline-block;padding:14px 40px;font-size:22px">다음 날로</button></div>`;
+  $('next').onclick = () => { newDay(); showStart(); };
+}
+
+// ================= 키보드 =================
+addEventListener('keydown', e => {
+  if (!G?.running) return;
+  if (e.code === 'Space') { e.preventDefault(); setView(!G.back); return; }
+  if (e.key === 'Escape') { dropHand(); return; }
+  if (e.key === 'z' || e.key === 'Z' || e.key === 'Backspace') { e.preventDefault(); undoBowl(); return; }
+  if ((e.key === 'r' || e.key === 'R') && stationOpen('sink')) { rinseNoodles(); return; }
+  const n = parseInt(e.key, 10);
+  if (n >= 1 && n <= 9) { // 숫자: 뒤 주방에선 테보 1~4, 앞 화면에선 토핑 1~6
+    if (G.back) { if (n <= G.baskets.length) clickBasket(n - 1); return; }
+    const k = dayCfg().tops[n - 1]; if (k) addTopping(k); return;
+  }
+  const qi = 'qwe'.indexOf(e.key.toLowerCase()); if (qi >= 0) clickSlot(qi);
+});
+addEventListener('contextmenu', e => { e.preventDefault(); if (G?.running) dropHand(); });
+$('toBack').onclick = () => setView(true); $('toFront').onclick = () => setView(false);
+$('trashF').onclick = $('trashB').onclick = () => dropHand();
+$('undoF').onclick = () => undoBowl();
+$('stack').onclick = () => placeBowl();
+$('misoJar').onclick = () => { if (dayCfg().menu.some(r => RAMEN[r].miso)) addMiso(); };
+$('tareSpot').onclick = () => toast('타레는 육수 솥에 미리 섞어 두었어요 — 육수만 부으면 돼요');
+document.addEventListener('pointerdown', () => Sound.wake?.());
+
+// ================= 시작 =================
+buildSeats();
+loadArt().then(() => { newDay(); showStart(); requestAnimationFrame(frame); });
+window.__g = { get G() { return G; }, spawnCustomer, CLIPS };
+</script>
+</body></html>
