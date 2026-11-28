@@ -252,7 +252,7 @@ const DAYS = [
   { menu: ['tonkotsu', 'shoyu', 'miso', 'tsukemen'], tops: ['negi', 'kikurage', 'nori', 'menma', 'ajitama', 'corn'], note: '츠케멘 시작! 삶은 면을 뒤 주방 싱크에서 찬물에 헹군 뒤 돈코츠 육수 그릇에 담아요.' },
   { menu: ['tonkotsu', 'shoyu', 'miso', 'tsukemen', 'sapporo'], tops: ['negi', 'kikurage', 'nori', 'menma', 'ajitama', 'corn'], note: '미소 버터콘 시작! 뒤 주방 웍을 꾹 눌러 야채를 볶고(초록에서 떼기), 미소 라멘 위에 올려요. 버터는 같이 올라가요.' },
 ];
-const APP_VERSION = '2D v0.1', APP_DATE = '11/29'; // 베타에 올릴 때마다 올리기
+const APP_VERSION = '2D v0.2', APP_DATE = '11/29'; // 베타에 올릴 때마다 올리기
 const dayCfg = () => DAYS[Math.min(G.day, DAYS.length) - 1];
 function firmOf(t) { const N = CFG.noodle; return t < N.katame[0] ? 'raw' : t < N.katame[1] ? 'katame' : t < N.futsu[1] ? 'futsu' : t < N.yawa[1] ? 'yawa' : 'nobi'; }
 const firmPenalty = (want, got) => got === 'raw' || got === 'nobi' ? 2 : Math.abs(FIRM_IDX[want] - FIRM_IDX[got]);
@@ -294,7 +294,7 @@ function loadImg(src) { return new Promise(r => { const im = new Image(); im.onl
 async function loadArt() {
   const jobs = [];
   for (const k of Object.keys(KINDS)) jobs.push(loadImg(`img/cust2d/${k}.png`).then(im => { IMG[k] = im; }));
-  for (const [name, c] of Object.entries(CLIPS)) jobs.push(Promise.all([loadImg(c.colorSrc ?? `img/cust2d/${name}.jpg`), loadImg(c.maskSrc ?? `img/cust2d/${name}_mask.png`)]).then(([a, b]) => { c.color = a; c.mask = b; c.ok = !!(a && b); }));
+  for (const [name, c] of Object.entries(CLIPS)) jobs.push(Promise.all([loadImg((c.colorSrc ?? `img/cust2d/${name}.jpg`) + '?v=2'), loadImg(c.maskSrc ?? `img/cust2d/${name}_mask.png`)]).then(([a, b]) => { c.color = a; c.mask = b; c.ok = !!(a && b); }));
   for (const P of PEOPLE) jobs.push(Promise.all([loadImg(`img/cust2d/people/${P.id}_wait.png`), loadImg(`img/cust2d/people/${P.id}_eat.png`)]).then(([w, e]) => { if (w && e) STILL[P.id] = { wait: w, eat: e, line: P.line }; }));
   await Promise.all(jobs);
 }

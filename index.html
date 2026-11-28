@@ -922,7 +922,7 @@
 <script type="module">
 import * as THREE from 'three';
 // 게임 버전 — 베타에 올릴 때마다 올림 (시작 화면·일시정지에 표시해서 어느 버전인지 바로 확인)
-const APP_VERSION = 'v1.20', APP_DATE = '11/25';
+const APP_VERSION = 'v1.21', APP_DATE = '11/29';
 document.querySelectorAll('.ver').forEach(el => { el.textContent = `${APP_VERSION} · ${APP_DATE}`; });
 
 // ================= 전국 라멘 제패: 지역 =================
@@ -3469,7 +3469,11 @@ function makePerson(look) {
 // 고화질에서만 불러옴. 다 불러오기 전이나 다른 손님은 위의 블록 사람(makePerson) 그대로
 const CHAR_KINDS = ['salaryman', 'man', 'woman', 'student', 'grandpa', 'grandma']; // 3D 모델이 있는 손님 종류 (나머지는 블록 사람)
 // 같은 모델에 옷 색만 다른 질감(img/chars/<이름>.jpg) — 손님마다 이 중 하나를 무작위로 입힘
-const CHAR_SKINS = { salaryman: ['salaryman'], man: ['man'], woman: ['woman'], student: ['student'], grandpa: ['grandpa'], grandma: ['grandma'] };
+const CHAR_SKINS = {
+  salaryman: ['salaryman', 'salaryman_charcoal', 'salaryman_brown', 'salaryman_black'], man: ['man', 'man_red', 'man_green', 'man_mustard'],
+  woman: ['woman', 'woman_pink', 'woman_blue', 'woman_sage'], student: ['student', 'student_navy'],
+  grandpa: ['grandpa', 'grandpa_olive', 'grandpa_navy', 'grandpa_wine'], grandma: ['grandma', 'grandma_lavender', 'grandma_mustard', 'grandma_teal'],
+};
 const CHAR3D = {};
 const CHAR_S = 0.0085, SIT_Y = 0.35; // 모델(cm, 키 1.9m) → 게임 키 약 1.6m · 앉으면 높은 의자(0.75m)에 맞춰 올림
 const SEATED = new Set(['ordering', 'waiting', 'eating', 'kaedama']);
@@ -6923,7 +6927,7 @@ frame();
 
 // 테스트용 핸들
 window.__game = { setHand: h => setHand(h), sky: (m, r) => updateSky(m, r),
-  get G() { return G; }, get char3d() { return Object.keys(CHAR3D); }, titleCrowd, Sound, VoiceFiles, charSVG, DEFAULT_LOOK, pickVisit, spawnVisit, playTalk, notebook, act, aimed, press, grillStart, grillEnd, serve, spawnCustomer, baskets, endDay,
+  get G() { return G; }, get char3d() { return Object.keys(CHAR3D); }, CHAR3D, titleCrowd, Sound, VoiceFiles, charSVG, DEFAULT_LOOK, pickVisit, spawnVisit, playTalk, notebook, act, aimed, press, grillStart, grillEnd, serve, spawnCustomer, baskets, endDay,
   view(y, p) { yaw = y; pitch = p; },
   step(sec) { for (let t = 0; t < sec; t += 0.05) { update(0.05); visuals(0.05, t); } updateHud(); },
 };
