@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>인생라멘 2D</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Yuji+Syuku&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Song+Myung&family=Yuji+Syuku&display=swap">
 <style>
   html, body { margin: 0; height: 100%; background: #140d08; overflow: hidden; font-family: "Jua", sans-serif; font-synthesis: none; color: #2b211b; user-select: none; -webkit-user-select: none; }
   #wrap { position: absolute; left: 50%; top: 50%; width: 1280px; height: 714px; transform-origin: 0 0; }
@@ -163,6 +163,37 @@
   .card p { font-size: 17px; line-height: 1.6; margin: 12px 0; color: #4a3a2e; }
   .card table { width: 100%; font-size: 18px; margin: 10px 0 18px; border-collapse: collapse; } .card td { padding: 4px 6px; border-bottom: 1px dashed #e2d6c2; } .card td:last-child { text-align: right; }
   .keys { font-size: 14px; color: #8a7a6a; margin-top: 12px; }
+  .card .how { font-size: 15px; text-align: left; background: #f3ead8; border-radius: 12px; padding: 10px 14px; }
+  /* 제목 화면: 가게 앞 화면 위에 로고 · 손님 2명 · 버튼 */
+  #stage.titling #work, #stage.titling .seatHit, #stage.titling .ticket, #stage.titling .bubble { visibility: hidden; }
+  /* 제목 화면: 3D판과 같은 정체성 — 「人生らーめん」 · 人生 도장 · 할아버지의 비법 노트 */
+  #title { position: absolute; inset: 0; z-index: 60; color: #f6ecd8; transition: opacity .6s; overflow: hidden; }
+  #title.out { opacity: 0; pointer-events: none; }
+  #title .shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(14,7,3,.94) 0, rgba(14,7,3,.86) 36%, rgba(14,7,3,.25) 56%, rgba(14,7,3,0) 70%), linear-gradient(rgba(14,7,3,0) 60%, rgba(14,7,3,.55)); }
+  #title .glow { position: absolute; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(rgba(255,150,70,.32), rgba(255,120,40,0) 65%); mix-blend-mode: screen; animation: lantern 3.2s ease-in-out infinite alternate; pointer-events: none; }
+  @keyframes lantern { from { opacity: .55; transform: scale(.94); } to { opacity: 1; transform: scale(1.04); } }
+  #title .steam { position: absolute; width: 46px; height: 120px; border-radius: 50%; background: radial-gradient(ellipse, rgba(255,255,255,.34), rgba(255,255,255,0) 70%); filter: blur(5px); animation: steam 3.6s ease-in infinite; pointer-events: none; }
+  @keyframes steam { 0% { transform: translateY(20px) scaleX(.7); opacity: 0; } 30% { opacity: .9; } 100% { transform: translateY(-110px) scaleX(1.5); opacity: 0; } }
+  #title .side { position: absolute; left: 76px; top: 0; bottom: 0; width: 480px; display: flex; flex-direction: column; justify-content: center; }
+  #title .jp { white-space: nowrap; font-family: "Yuji Syuku", serif; font-size: 68px; line-height: 1.05; color: #fbeed2; letter-spacing: 2px; text-shadow: 0 4px 18px rgba(0,0,0,.6); animation: rise .9s ease-out both; }
+  #title .kr { display: flex; align-items: center; gap: 14px; margin-top: 16px; animation: rise .9s .15s ease-out both; }
+  #title .kr h1 { margin: 0; font: 400 36px/1 "Song Myung", "AppleMyungjo", serif; letter-spacing: .24em; color: #f2c86a; }
+  #title .seal { width: 50px; height: 50px; border-radius: 7px; background: #b8322a; color: #fbe9d6; display: grid; place-items: center; font: 400 21px/1.05 "Yuji Syuku", serif; writing-mode: vertical-rl; box-shadow: 0 3px 0 #6e1a14; transform: rotate(-4deg); }
+  #title .sub { margin: 16px 0 0; font-size: 17px; color: rgba(246,236,216,.75); animation: rise .9s .3s ease-out both; }
+  @keyframes rise { from { transform: translateY(14px); opacity: 0; } }
+  /* 할아버지 노트 한 장 (바랜 종이) */
+  #title .note { margin: 26px 0 0 4px; width: 330px; padding: 16px 20px 14px; background: linear-gradient(#efe0bf, #e2cc9e); color: #4a3422; border-radius: 3px; transform: rotate(-2.5deg); box-shadow: 0 10px 24px rgba(0,0,0,.5); filter: sepia(.25); position: relative; animation: rise .9s .45s ease-out both; }
+  #title .note::before { content: ''; position: absolute; left: 14px; top: 0; bottom: 0; width: 2px; background: rgba(184,50,42,.35); }
+  #title .note .q { font: 400 22px/1.5 "Song Myung", "AppleMyungjo", serif; padding-left: 14px; }
+  #title .note .by { text-align: right; font-size: 14px; color: #7a5a3a; margin-top: 6px; }
+  #title .menu { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin-top: 30px; animation: rise .9s .6s ease-out both; }
+  #title .menu .btn { min-width: 260px; padding: 13px 28px; font-size: 25px; text-align: left; }
+  #title .menu .btn small { display: block; font-size: 15px; opacity: .85; margin-top: 3px; }
+  #title .menu .sub2 { all: unset; cursor: pointer; color: rgba(241,227,200,.8); font-size: 16px; padding: 4px 10px; border-radius: 8px; }
+  #title .menu .sub2:hover { background: rgba(255,255,255,.08); }
+  #title .menu .sub2.warn { background: #8a1e18; color: #fff; }
+  #title .ver { position: absolute; right: 16px; bottom: 12px; color: rgba(241,227,200,.65); font-size: 13px; text-align: right; line-height: 1.5; }
+  #title .tap { position: absolute; left: 76px; bottom: 14px; color: rgba(241,227,200,.55); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -206,7 +237,8 @@
   <img id="hand" class="hidden" alt="">
   <div id="handTxt" class="hidden"></div>
   <div id="toast"></div>
-  <div class="overlay" id="over"></div>
+  <div class="overlay hidden" id="over"></div>
+  <div id="title" class="hidden"></div>
 </div></div>
 
 <script>
@@ -252,7 +284,7 @@ const DAYS = [
   { menu: ['tonkotsu', 'shoyu', 'miso', 'tsukemen'], tops: ['negi', 'kikurage', 'nori', 'menma', 'ajitama', 'corn'], note: '츠케멘 시작! 삶은 면을 뒤 주방 싱크에서 찬물에 헹군 뒤 돈코츠 육수 그릇에 담아요.' },
   { menu: ['tonkotsu', 'shoyu', 'miso', 'tsukemen', 'sapporo'], tops: ['negi', 'kikurage', 'nori', 'menma', 'ajitama', 'corn'], note: '미소 버터콘 시작! 뒤 주방 웍을 꾹 눌러 야채를 볶고(초록에서 떼기), 미소 라멘 위에 올려요. 버터는 같이 올라가요.' },
 ];
-const APP_VERSION = '2D v0.2', APP_DATE = '11/29'; // 베타에 올릴 때마다 올리기
+const APP_VERSION = '2D v0.3', APP_DATE = '11/29'; // 베타에 올릴 때마다 올리기
 const dayCfg = () => DAYS[Math.min(G.day, DAYS.length) - 1];
 function firmOf(t) { const N = CFG.noodle; return t < N.katame[0] ? 'raw' : t < N.katame[1] ? 'katame' : t < N.futsu[1] ? 'futsu' : t < N.yawa[1] ? 'yawa' : 'nobi'; }
 const firmPenalty = (want, got) => got === 'raw' || got === 'nobi' ? 2 : Math.abs(FIRM_IDX[want] - FIRM_IDX[got]);
@@ -803,19 +835,49 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (G?.running) update(dt);
-  if (G) { G.seats.forEach((c, i) => drawCustomer(i, c, G.running ? dt : 0)); renderPanel(); renderBaskets(); Sound.update?.(dt); }
+  if (G?.title) G.time += dt; // 제목 화면에서도 손님이 움직이게
+  if (G) { G.seats.forEach((c, i) => drawCustomer(i, c, G.running || G.title ? dt : 0)); renderPanel(); renderBaskets(); Sound.update?.(dt); }
   requestAnimationFrame(frame);
 }
 
 // ================= 시작 · 마감 =================
+const FINE_POINTER = matchMedia('(pointer: fine)').matches; // 마우스·키보드 기기 (폰에선 단축키 설명 안 보임)
+const HOW_TO = '① <b>빈 그릇</b>을 놓고 → ② <b>뒤 주방</b>에서 육수를 떠 와 붓고 → ③ 바구니에서 <b>면</b>을 건져 넣고<br>④ 작업대 오른쪽 그릴에서 <b>챠슈</b>를 굽고 <b>토핑</b>을 올린 뒤 → ⑤ 그릇을 두 번 눌러 들고 <b>손님</b>을 눌러 내요';
 function showStart() {
   const lv = dayCfg();
   $('over').classList.remove('hidden');
   $('over').innerHTML = `<div class="card"><div class="jp">人生らーめん</div><h1>Day ${G.day}</h1><p>${lv.note}<br>메뉴: ${lv.menu.map(r => RAMEN[r].name).join(' · ')}</p>
-    <p style="font-size:15px;text-align:left;background:#f3ead8;border-radius:12px;padding:10px 14px">① <b>빈 그릇</b>을 놓고 → ② <b>뒤 주방</b>에서 육수를 떠 와 붓고 → ③ 바구니에서 <b>면</b>을 건져 넣고<br>④ 작업대 오른쪽 그릴에서 <b>챠슈</b>를 굽고 <b>토핑</b>을 올린 뒤 → ⑤ 그릇을 두 번 눌러 들고 <b>손님</b>을 눌러 내요</p>
+    ${G.day === 1 ? `<p class="how">${HOW_TO}</p>` : `<details style="text-align:left;margin:0 0 12px"><summary style="cursor:pointer;color:#8a6a4a;font-size:15px">만드는 순서 다시 보기</summary><p class="how">${HOW_TO}</p></details>`}
     <button class="btn green" id="go" style="display:inline-block;padding:14px 40px;font-size:22px">영업 시작</button>
-    <div class="keys">Space 앞/뒤 · 앞에서 1~6 토핑 · 뒤에서 1~4 면 테보 · Q W E 그릇 고르기(한 번 더 누르면 들기) · Z 되돌리기 · R 면 헹구기(츠케멘) · Esc 버리기(빈손이면 두 번 → 고른 그릇)</div><div class="ver">${APP_VERSION} · ${APP_DATE}</div></div>`;
+    ${FINE_POINTER ? '<div class="keys">Space 앞/뒤 · 앞에서 1~6 토핑 · 뒤에서 1~4 면 테보 · Q W E 그릇 고르기(한 번 더 누르면 들기) · Z 되돌리기 · R 면 헹구기(츠케멘) · Esc 버리기(빈손이면 두 번 → 고른 그릇)</div>' : ''}</div>`;
   $('go').onclick = () => { $('over').classList.add('hidden'); Sound.init(); VoiceFiles.decode(); G.running = true; Sound.line('irasshaimase', 'いらっしゃいませ！', SHOP_VOICE); };
+}
+// 제목 화면: 가게 앞에 손님 둘이 앉아 있고(하나는 먹고, 하나는 기다림) 위에 간판
+function showTitle() {
+  const save = store.get('ramen2d', { day: 1, money: 0 });
+  G.title = true; $('stage').classList.add('titling');
+  const looks = makeCast().filter(l => !l.still); // 움직이는 영상 손님만
+  [2, 3].forEach((seat, k) => { const L = looks[k]; G.seats[seat] = { id: 900 + k, seat, kind: L.kind, v: L.v ?? null, still: null, state: k ? 'waiting' : 'eating', t: 0, alpha: 1, order: makeOrder(), patience: 1e9, max: 1e9, frame: k * 17, clipT: 0, clip: null, prev: null, shake: 0 }; });
+  const cont = save.day > 1;
+  const T = $('title'); T.classList.remove('hidden', 'out');
+  T.innerHTML = `<div class="glow" style="left:1010px;top:-40px"></div><div class="glow" style="left:560px;top:-70px;animation-delay:-1.6s"></div>
+    <div class="steam" style="left:770px;top:300px"></div><div class="steam" style="left:800px;top:300px;animation-delay:-1.2s"></div><div class="steam" style="left:830px;top:300px;animation-delay:-2.4s"></div>
+    <div class="shade"></div>
+    <div class="side">
+      <div class="jp">人生らーめん</div>
+      <div class="kr"><span class="seal">人生</span><h1>인생라멘</h1></div>
+      <p class="sub">할아버지가 남긴 골목 라멘집, 그리고 비어 있는 마지막 한 장</p>
+      <div class="note"><div class="q">「너만의 <b>인생 라멘</b>을<br>찾아라.」</div><div class="by">— 할아버지의 비법 노트, 마지막 장</div></div>
+      <div class="menu">${cont ? `<button class="btn green" id="tContinue">이어하기<small>Day ${save.day} · ¥${save.money.toLocaleString()}</small></button><button class="sub2" id="tReset">처음부터 하기</button>`
+        : `<button class="btn" id="tNew">가게 문 열기<small>할아버지의 가게, 오늘부터 내가</small></button>`}</div>
+    </div>
+    <div class="tap">${FINE_POINTER ? '마우스로 누르고 · 키보드 단축키도 돼요' : '화면을 눌러서 해요 · 가로로 보면 더 커요'}</div>
+    <div class="ver">그림 Higgsfield · 목소리 VOICEVOX<br>${APP_VERSION} · ${APP_DATE}</div>`;
+  const go = () => { Sound.init(); Sound.wake?.(); T.classList.add('out'); setTimeout(() => T.classList.add('hidden'), 500); G.title = false; $('stage').classList.remove('titling'); newDay(); showStart(); };
+  if (cont) {
+    $('tContinue').onclick = go;
+    $('tReset').onclick = e => { const b = e.currentTarget; if (!b.classList.contains('warn')) { b.classList.add('warn'); b.textContent = '정말요? 기록이 지워져요 — 한 번 더 누르면 Day 1부터'; return; } store.set('ramen2d', { day: 1, money: 0 }); go(); };
+  } else $('tNew').onclick = go;
 }
 function endDay() {
   if (G.ended) return; G.ended = true; G.running = false; Sound.setBoil(0); Sound.setSizzle(false);
@@ -854,7 +916,7 @@ document.addEventListener('pointerdown', () => Sound.wake?.());
 
 // ================= 시작 =================
 buildSeats();
-loadArt().then(() => { newDay(); showStart(); requestAnimationFrame(frame); });
+loadArt().then(() => { newDay(); showTitle(); requestAnimationFrame(frame); });
 window.__g = { get G() { return G; }, spawnCustomer, CLIPS };
 </script>
 </body></html>
